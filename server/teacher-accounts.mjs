@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+Ôªøimport { createClient } from '@supabase/supabase-js';
 
 const ACCOUNT_EMAIL_DOMAIN = 'accounts.points-mvp.local';
 
@@ -14,6 +14,9 @@ function normalizeLoginName(value) {
 
 function normalizePhone(value) {
   const digits = String(value || '').replace(/\D/g, '');
+  if (!digits) {
+    return '';
+  }
   if (digits.length === 13 && digits.startsWith('86')) {
     return digits.slice(2);
   }
@@ -29,7 +32,7 @@ function createClients(env) {
   const supabaseAnonKey = env.SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey || !env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw createHttpError(500, '»±…Ÿ∑˛ŒÒ∂À Supabase ª∑æ≥±‰¡ø°£');
+    throw createHttpError(500, 'Áº∫Â∞ëÊúçÂä°Á´Ø Supabase ÁéØÂ¢ÉÂèòÈáè„ÄÇ');
   }
 
   const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
@@ -51,13 +54,13 @@ function getBearerToken(headers = {}) {
 async function verifyAdminAccess(env, headers) {
   const token = getBearerToken(headers);
   if (!token) {
-    throw createHttpError(401, '»±…Ÿπ‹¿Ì‘±µ«¬ºÃ¨°£');
+    throw createHttpError(401, 'Áº∫Â∞ëÁÆ°ÁêÜÂëòÁôªÂΩïÊÄÅ„ÄÇ');
   }
 
   const { anonClient } = createClients(env);
   const { data: userData, error: userError } = await anonClient.auth.getUser(token);
   if (userError || !userData?.user) {
-    throw createHttpError(401, 'π‹¿Ì‘±µ«¬ºÃ¨“— ß–ß£¨«Î÷ÿ–¬µ«¬º°£');
+    throw createHttpError(401, 'ÁÆ°ÁêÜÂëòÁôªÂΩïÊÄÅÂ∑≤Â§±ÊïàÔºåËØ∑ÈáçÊñ∞ÁôªÂΩï„ÄÇ');
   }
 
   const { data: profile, error: profileError } = await anonClient
@@ -70,7 +73,7 @@ async function verifyAdminAccess(env, headers) {
     throw createHttpError(500, profileError.message);
   }
   if (!profile || profile.role !== 'admin' || !profile.is_active) {
-    throw createHttpError(403, 'µ±«∞’À∫≈√ª”–π‹¿Ì‘±»®œﬁ°£');
+    throw createHttpError(403, 'ÂΩìÂâçË¥¶Âè∑Ê≤°ÊúâÁÆ°ÁêÜÂëòÊùÉÈôê„ÄÇ');
   }
 
   return userData.user;
@@ -97,50 +100,39 @@ async function listAllAuthUsers(serviceClient) {
   return users;
 }
 
-async function ensureTeacherExists(serviceClient, teacherId) {
-  const { data, error } = await serviceClient
-    .from('teachers')
-    .select('id, name, display_name, phone, campus_id, status')
-    .eq('id', teacherId)
-    .maybeSingle();
-
-  if (error) {
-    throw createHttpError(500, error.message);
-  }
-  if (!data) {
-    throw createHttpError(400, 'Œ¥’“µΩ∂‘”¶¿œ ¶º«¬º°£');
-  }
-  return data;
-}
-
-async function findExistingProfile(serviceClient, teacherId, phone) {
-  if (teacherId) {
-    const { data, error } = await serviceClient
-      .from('user_profiles')
-      .select('id, role, phone, display_name, teacher_id, is_active, must_change_password')
-      .eq('teacher_id', teacherId)
-      .maybeSingle();
-    if (error) {
-      throw createHttpError(500, error.message);
-    }
-    if (data) {
-      return data;
-    }
-  }
-
-  if (!phone) {
+async function findProfileByUserId(serviceClient, userId) {
+  if (!userId) {
     return null;
   }
 
   const { data, error } = await serviceClient
     .from('user_profiles')
     .select('id, role, phone, display_name, teacher_id, is_active, must_change_password')
-    .eq('phone', phone)
+    .eq('id', userId)
     .maybeSingle();
 
   if (error) {
     throw createHttpError(500, error.message);
   }
+
+  return data || null;
+}
+
+async function findProfileByTeacherId(serviceClient, teacherId) {
+  if (!teacherId) {
+    return null;
+  }
+
+  const { data, error } = await serviceClient
+    .from('user_profiles')
+    .select('id, role, phone, display_name, teacher_id, is_active, must_change_password')
+    .eq('teacher_id', teacherId)
+    .maybeSingle();
+
+  if (error) {
+    throw createHttpError(500, error.message);
+  }
+
   return data || null;
 }
 
@@ -156,8 +148,6 @@ function findAuthUser(users, options) {
 }
 
 async function createOrUpdateAuthUser(serviceClient, options) {
-  const users = await listAllAuthUsers(serviceClient);
-  const existingUser = findAuthUser(users, options);
   const payload = {
     email: options.authEmail,
     email_confirm: true,
@@ -166,12 +156,12 @@ async function createOrUpdateAuthUser(serviceClient, options) {
       display_name: options.displayName,
       role: 'teacher',
       login_name: options.loginName,
-      phone: options.phone
+      ...(options.phone ? { phone: options.phone } : {})
     }
   };
 
-  if (existingUser) {
-    const { data, error } = await serviceClient.auth.admin.updateUserById(existingUser.id, payload);
+  if (options.existingUser) {
+    const { data, error } = await serviceClient.auth.admin.updateUserById(options.existingUser.id, payload);
     if (error) {
       throw createHttpError(500, error.message);
     }
@@ -217,13 +207,81 @@ async function upsertTeacherProfile(serviceClient, payload) {
   return data;
 }
 
+async function getTeacherById(serviceClient, teacherId) {
+  if (!teacherId) {
+    return null;
+  }
+
+  const { data, error } = await serviceClient
+    .from('teachers')
+    .select('id, name, display_name, phone, campus_id, status')
+    .eq('id', teacherId)
+    .maybeSingle();
+
+  if (error) {
+    throw createHttpError(500, error.message);
+  }
+  if (!data) {
+    throw createHttpError(400, 'Êú™ÊâæÂà∞ÂØπÂ∫îËÄÅÂ∏àËÆ∞ÂΩï„ÄÇ');
+  }
+  return data;
+}
+
+async function createTeacherRecord(serviceClient, displayName) {
+  const { data, error } = await serviceClient
+    .from('teachers')
+    .insert({
+      name: displayName,
+      display_name: displayName,
+      phone: null,
+      role: 'teacher',
+      campus_id: null,
+      status: 'active'
+    })
+    .select('id, name, display_name, phone, campus_id, status')
+    .single();
+
+  if (error) {
+    throw createHttpError(500, error.message);
+  }
+  return data;
+}
+
+async function syncTeacherDisplayName(serviceClient, teacher, displayName) {
+  if (!teacher || !displayName || teacher.display_name === displayName) {
+    return teacher;
+  }
+
+  const { data, error } = await serviceClient
+    .from('teachers')
+    .update({ display_name: displayName })
+    .eq('id', teacher.id)
+    .select('id, name, display_name, phone, campus_id, status')
+    .single();
+
+  if (error) {
+    throw createHttpError(500, error.message);
+  }
+  return data;
+}
+
+async function ensureTeacherRecord(serviceClient, options) {
+  const linkedTeacherId = String(options.teacherId || options.profileTeacherId || '').trim();
+  if (!linkedTeacherId) {
+    return createTeacherRecord(serviceClient, options.displayName);
+  }
+
+  const existingTeacher = await getTeacherById(serviceClient, linkedTeacherId);
+  return syncTeacherDisplayName(serviceClient, existingTeacher, options.displayName);
+}
+
 async function listTeacherAccounts(env, headers) {
   await verifyAdminAccess(env, headers);
   const { serviceClient } = createClients(env);
   const [profiles, users] = await Promise.all([
     serviceClient
       .from('user_profiles')
-      .select('id, role, phone, display_name, teacher_id, is_active, must_change_password, created_at, teacher:teacher_id ( id, name, display_name, phone, campus_id, campuses:campus_id ( id, name ) )')
+      .select('id, role, phone, display_name, teacher_id, is_active, must_change_password, created_at, teacher:teacher_id ( id, name, display_name, phone, campus_id, status )')
       .eq('role', 'teacher')
       .order('created_at', { ascending: false }),
     listAllAuthUsers(serviceClient)
@@ -253,6 +311,7 @@ async function createOrUpdateTeacherAccount(env, headers, body) {
   await verifyAdminAccess(env, headers);
   const { serviceClient } = createClients(env);
 
+  const userId = String(body.userId || '').trim();
   const teacherId = String(body.teacherId || '').trim();
   const loginName = normalizeLoginName(body.loginName);
   const phone = normalizePhone(body.phone);
@@ -260,16 +319,38 @@ async function createOrUpdateTeacherAccount(env, headers, body) {
   const password = String(body.password || '666666').trim();
   const mustChangePassword = body.mustChangePassword !== false;
   const isActive = body.isActive !== false;
+  const authEmail = buildAuthEmailFromLoginName(loginName);
 
-  if (!teacherId || !loginName || !phone || !displayName || password.length < 6) {
-    throw createHttpError(400, '«ÎÕÍ’˚ÃÓ–¥¿œ ¶°¢’À∫≈°¢ ÷ª˙∫≈°¢œ‘ æ√˚≥∆∫Õ√‹¬Î°£');
+  if (!loginName || !displayName || password.length < 6) {
+    throw createHttpError(400, 'ËØ∑ÂÆåÊï¥Â°´ÂÜôËÄÅÂ∏àÂêçÁß∞„ÄÅË¥¶Âè∑ÂêçÂíåÂØÜÁ†Å„ÄÇ');
   }
 
-  const teacher = await ensureTeacherExists(serviceClient, teacherId);
-  const existingProfile = await findExistingProfile(serviceClient, teacherId, phone);
+  const users = await listAllAuthUsers(serviceClient);
+  let existingProfile = await findProfileByUserId(serviceClient, userId);
+  if (!existingProfile) {
+    existingProfile = await findProfileByTeacherId(serviceClient, teacherId);
+  }
+
+  const existingAuthUser = findAuthUser(users, {
+    userId: existingProfile?.id || userId,
+    authEmail,
+    loginName,
+    phone
+  });
+
+  if (!existingProfile && existingAuthUser?.id) {
+    existingProfile = await findProfileByUserId(serviceClient, existingAuthUser.id);
+  }
+
+  const teacher = await ensureTeacherRecord(serviceClient, {
+    teacherId,
+    profileTeacherId: existingProfile?.teacher_id || '',
+    displayName
+  });
+
   const { user, mode } = await createOrUpdateAuthUser(serviceClient, {
-    userId: existingProfile?.id || '',
-    authEmail: buildAuthEmailFromLoginName(loginName),
+    existingUser: existingAuthUser,
+    authEmail,
     loginName,
     phone,
     displayName,
@@ -280,9 +361,9 @@ async function createOrUpdateTeacherAccount(env, headers, body) {
   const profile = await upsertTeacherProfile(serviceClient, {
     id: profileId,
     role: 'teacher',
-    phone,
+    phone: phone || null,
     display_name: displayName,
-    teacher_id: teacherId,
+    teacher_id: teacher.id,
     is_active: isActive,
     must_change_password: mustChangePassword
   });
@@ -291,7 +372,7 @@ async function createOrUpdateTeacherAccount(env, headers, body) {
     mode,
     profile,
     login_name: loginName,
-    auth_email: buildAuthEmailFromLoginName(loginName),
+    auth_email: authEmail,
     teacher
   };
 }
@@ -304,7 +385,7 @@ async function resetTeacherPassword(env, headers, body) {
   const mustChangePassword = body.mustChangePassword !== false;
 
   if (!userId || password.length < 6) {
-    throw createHttpError(400, '÷ÿ÷√√‹¬Î»±…Ÿ±ÿ“™≤Œ ˝°£');
+    throw createHttpError(400, 'ÈáçÁΩÆÂØÜÁ†ÅÁº∫Â∞ëÂøÖË¶ÅÂèÇÊï∞„ÄÇ');
   }
 
   const { data, error } = await serviceClient.auth.admin.updateUserById(userId, {
@@ -355,4 +436,3 @@ export async function handleTeacherAccountsRequest({ method = 'GET', headers = {
     };
   }
 }
-

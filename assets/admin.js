@@ -1,10 +1,8 @@
 ﻿import { isSupabaseConfigured } from './supabase-client.js';
 import {
   fetchAdminPointRules,
-  fetchCampuses,
   fetchLevelTiers,
   fetchTeacherAccountDirectory,
-  fetchTeachers,
   upsertLevelTiers,
   upsertPointRules,
   resetTeacherAccountPassword,
@@ -19,9 +17,6 @@ import {
 
 const CATEGORY_ORDER = ['classroom', 'homework', 'project', 'habits'];
 const BADGE_RULES_STORAGE_KEY = 'points-mvp.badge-rules';
-const DEFAULT_POINT_RULES_BY_ID = new Map(DEFAULT_POINT_RULES.map(function (rule) {
-  return [rule.id, rule];
-}));
 
 function getCategoryRank(category) {
   const index = CATEGORY_ORDER.indexOf(category);
@@ -107,17 +102,6 @@ function saveBadgeRulesToStorage(rows) {
   window.localStorage.setItem(BADGE_RULES_STORAGE_KEY, JSON.stringify(rows));
 }
 
-function suggestAccountName(existing, teacher, index) {
-  if (existing?.login_name) {
-    return existing.login_name;
-  }
-  const phoneTail = String(teacher?.phone || '').replace(/\D/g, '').slice(-4);
-  if (phoneTail) {
-    return `t${phoneTail}`;
-  }
-  return `teacher${index + 1}`;
-}
-
 function initAdminPage() {
   const elements = {
     tiersTableBody: document.getElementById('tiersTableBody'),
@@ -129,10 +113,9 @@ function initAdminPage() {
     adminNotice: document.getElementById('adminNotice'),
     teacherAccountCount: document.getElementById('teacherAccountCount'),
     teacherAccountForm: document.getElementById('teacherAccountForm'),
-    accountTeacherSelect: document.getElementById('accountTeacherSelect'),
+    accountUserIdInput: document.getElementById('accountUserIdInput'),
     accountLoginNameInput: document.getElementById('accountLoginNameInput'),
     accountDisplayNameInput: document.getElementById('accountDisplayNameInput'),
-    accountPhoneInput: document.getElementById('accountPhoneInput'),
     accountPasswordInput: document.getElementById('accountPasswordInput'),
     accountMustChangePasswordSelect: document.getElementById('accountMustChangePasswordSelect'),
     accountActiveSelect: document.getElementById('accountActiveSelect'),
@@ -145,13 +128,16 @@ function initAdminPage() {
     levelTiers: normalizeLevelTiers([]),
     pointRules: normalizePointRules(DEFAULT_POINT_RULES),
     badges: loadBadgeRulesFromStorage(),
-    teachers: [],
     teacherAccounts: [],
     isSaving: false,
     isLoading: false,
     isSavingAccount: false,
-    selectedTeacherId: ''
+    selectedAccountId: ''
   };
+
+  function getTeacherAccountButtonLabel() {
+    return state.selectedAccountId ? '保存账号修改' : '创建老师账号';
+  }
 
   function showNotice(message, type) {
     elements.adminNotice.textContent = message;
@@ -174,7 +160,8 @@ function initAdminPage() {
   function setAccountBusy(isBusy) {
     state.isSavingAccount = isBusy;
     elements.teacherAccountSaveButton.disabled = isBusy;
-    elements.teacherAccountSaveButton.textContent = isBusy ? '保存中...' : '保存老师账号';
+    elements.teacherAccountResetButton.disabled = isBusy;
+    elements.teacherAccountSaveButton.textContent = isBusy ? '保存中...' : getTeacherAccountButtonLabel();
   }
 
   function renderLevelTable() {
@@ -238,46 +225,22 @@ function initAdminPage() {
     }).join('');
   }
 
-  function renderTeacherSelect() {
-    if (!state.teachers.length) {
-      elements.accountTeacherSelect.innerHTML = '<option value="">暂无老师</option>';
-      return;
-    }
-
-    elements.accountTeacherSelect.innerHTML = ['<option value="">请选择老师</option>'].concat(
-      state.teachers.map(function (teacher) {
-        const campusName = teacher.campus_id ? ` · ${teacher.campus_name || '已绑定校区'}` : '';
-        return `<option value="${escapeHtml(teacher.id)}">${escapeHtml(teacher.display_name || teacher.name)}${escapeHtml(campusName)}</option>`;
-      })
-    ).join('');
-
-    if (state.selectedTeacherId) {
-      elements.accountTeacherSelect.value = state.selectedTeacherId;
-    }
-  }
-
   function renderTeacherAccounts() {
     const accounts = Array.isArray(state.teacherAccounts) ? state.teacherAccounts : [];
     elements.teacherAccountCount.textContent = String(accounts.length);
 
     if (!accounts.length) {
-      elements.teacherAccountsBody.innerHTML = '<tr><td colspan="7"><div class="empty-state">当前还没有开通老师账号。</div></td></tr>';
+      elements.teacherAccountsBody.innerHTML = '<tr><td colspan="6"><div class="empty-state">当前还没有开通老师账号。</div></td></tr>';
       return;
     }
 
     elements.teacherAccountsBody.innerHTML = accounts.map(function (account) {
-      const teacherName = account.teacher?.display_name || account.teacher?.name || account.display_name || '未绑定老师';
+      const teacherName = account.display_name || account.teacher?.display_name || account.teacher?.name || '未命名老师';
       const lastLogin = account.last_sign_in_at ? new Date(account.last_sign_in_at).toLocaleString('zh-CN') : '从未登录';
       return `
         <tr>
-          <td>
-            <div class="admin-category-cell">
-              <strong>${escapeHtml(teacherName)}</strong>
-              <span>${escapeHtml(account.teacher?.campuses?.name || '未绑定校区')}</span>
-            </div>
-          </td>
+          <td><strong>${escapeHtml(teacherName)}</strong></td>
           <td>${escapeHtml(account.login_name || '-')}</td>
-          <td>${escapeHtml(account.phone || '-')}</td>
           <td>${account.is_active ? '<span class="student-status-badge is-normal">启用</span>' : '<span class="student-status-badge is-merged">停用</span>'}</td>
           <td>${account.must_change_password ? '<span class="student-risk-badge is-medium">需改密</span>' : '<span class="student-risk-badge is-none">已通过</span>'}</td>
           <td>${escapeHtml(lastLogin)}</td>
@@ -296,8 +259,8 @@ function initAdminPage() {
     renderLevelTable();
     renderPointRulesTable();
     renderBadgesTable();
-    renderTeacherSelect();
     renderTeacherAccounts();
+    elements.teacherAccountSaveButton.textContent = getTeacherAccountButtonLabel();
   }
 
   function readLevelTiers() {
@@ -351,37 +314,33 @@ function initAdminPage() {
   }
 
   function resetTeacherAccountForm() {
-    state.selectedTeacherId = '';
+    state.selectedAccountId = '';
+    elements.accountUserIdInput.value = '';
     elements.teacherAccountForm.reset();
     elements.accountPasswordInput.value = '666666';
     elements.accountMustChangePasswordSelect.value = 'true';
     elements.accountActiveSelect.value = 'true';
-    renderTeacherSelect();
+    elements.teacherAccountSaveButton.textContent = getTeacherAccountButtonLabel();
   }
 
-  function prefillTeacherAccountForm(teacherId) {
-    state.selectedTeacherId = teacherId;
-    renderTeacherSelect();
-    const teacher = state.teachers.find(function (item) {
-      return item.id === teacherId;
-    });
+  function prefillTeacherAccountForm(accountId) {
     const account = state.teacherAccounts.find(function (item) {
-      return item.teacher_id === teacherId;
-    });
-    const teacherIndex = state.teachers.findIndex(function (item) {
-      return item.id === teacherId;
+      return item.id === accountId;
     });
 
-    if (!teacher) {
+    if (!account) {
+      resetTeacherAccountForm();
       return;
     }
 
-    elements.accountDisplayNameInput.value = account?.display_name || teacher.display_name || teacher.name || '';
-    elements.accountPhoneInput.value = account?.phone || teacher.phone || '';
-    elements.accountLoginNameInput.value = suggestAccountName(account, teacher, teacherIndex < 0 ? 0 : teacherIndex);
-    elements.accountMustChangePasswordSelect.value = String(account?.must_change_password !== false);
-    elements.accountActiveSelect.value = String(account?.is_active !== false);
+    state.selectedAccountId = account.id;
+    elements.accountUserIdInput.value = account.id;
+    elements.accountDisplayNameInput.value = account.display_name || account.teacher?.display_name || account.teacher?.name || '';
+    elements.accountLoginNameInput.value = account.login_name || '';
+    elements.accountMustChangePasswordSelect.value = String(account.must_change_password !== false);
+    elements.accountActiveSelect.value = String(account.is_active !== false);
     elements.accountPasswordInput.value = '666666';
+    elements.teacherAccountSaveButton.textContent = getTeacherAccountButtonLabel();
   }
 
   async function seedDefaultsIfNeeded(levelTiers, pointRules) {
@@ -404,33 +363,22 @@ function initAdminPage() {
       renderAll();
       elements.saveConfigButton.disabled = true;
       elements.resetConfigButton.disabled = true;
-      showNotice('缺少 Supabase 配置，请先在 .env 中填写 SUPABASE_URL 和 SUPABASE_ANON_KEY。', 'error');
+      showNotice('缺少 Supabase 配置，请先在 .env 中填写 VITE_SUPABASE_URL 和 VITE_SUPABASE_ANON_KEY。', 'error');
       state.isLoading = false;
       return;
     }
 
     try {
-      const [rawLevelTiers, rawPointRules, rawCampuses, rawTeachers, rawTeacherAccounts] = await Promise.all([
+      const [rawLevelTiers, rawPointRules, rawTeacherAccounts] = await Promise.all([
         fetchLevelTiers().catch(function () { return []; }),
         fetchAdminPointRules().catch(function () { return []; }),
-        fetchCampuses().catch(function () { return []; }),
-        fetchTeachers(),
         fetchTeacherAccountDirectory().catch(function () { return []; })
       ]);
-      const campusMap = new Map((rawCampuses || []).map(function (campus) {
-        return [campus.id, campus.name];
-      }));
 
       const seeded = await seedDefaultsIfNeeded(rawLevelTiers, rawPointRules);
       state.levelTiers = normalizeLevelTiers(seeded.levelTiers);
       state.pointRules = normalizePointRules(seeded.pointRules);
       state.badges = loadBadgeRulesFromStorage();
-      state.teachers = rawTeachers.map(function (teacher) {
-        return {
-          ...teacher,
-          campus_name: teacher.campus_name || campusMap.get(teacher.campus_id) || ''
-        };
-      });
       state.teacherAccounts = Array.isArray(rawTeacherAccounts) ? rawTeacherAccounts : [];
       renderAll();
       if (seeded.seeded) {
@@ -515,33 +463,31 @@ function initAdminPage() {
       return;
     }
 
-    const teacherId = elements.accountTeacherSelect.value;
+    const userId = elements.accountUserIdInput.value.trim();
     const loginName = elements.accountLoginNameInput.value.trim();
     const displayName = elements.accountDisplayNameInput.value.trim();
-    const phone = elements.accountPhoneInput.value.trim();
     const password = elements.accountPasswordInput.value.trim();
     const mustChangePassword = elements.accountMustChangePasswordSelect.value === 'true';
     const isActive = elements.accountActiveSelect.value === 'true';
 
-    if (!teacherId || !loginName || !displayName || !phone || password.length < 6) {
-      showNotice('请先完整填写老师账号信息。', 'error');
+    if (!loginName || !displayName || password.length < 6) {
+      showNotice('请先完整填写老师名称、账号名和初始密码。', 'error');
       return;
     }
 
     try {
       setAccountBusy(true);
-      await saveTeacherAccount({
-        teacherId,
+      const result = await saveTeacherAccount({
+        userId,
         loginName,
         displayName,
-        phone,
         password,
         mustChangePassword,
         isActive
       });
       await reloadTeacherAccounts();
-      prefillTeacherAccountForm(teacherId);
-      showNotice(`老师账号已保存：${loginName}`, 'success');
+      prefillTeacherAccountForm(result?.profile?.id || userId);
+      showNotice(`${state.selectedAccountId ? '老师账号已更新' : '老师账号已创建'}：${loginName}`, 'success');
     } catch (error) {
       showNotice(`老师账号保存失败：${error.message}`, 'error');
     } finally {
@@ -552,12 +498,7 @@ function initAdminPage() {
   async function handleAccountTableClick(event) {
     const editButton = event.target.closest('[data-account-edit]');
     if (editButton) {
-      const account = state.teacherAccounts.find(function (item) {
-        return item.id === editButton.dataset.accountEdit;
-      });
-      if (account?.teacher_id) {
-        prefillTeacherAccountForm(account.teacher_id);
-      }
+      prefillTeacherAccountForm(editButton.dataset.accountEdit);
       return;
     }
 
@@ -573,6 +514,9 @@ function initAdminPage() {
         mustChangePassword: true
       });
       await reloadTeacherAccounts();
+      if (state.selectedAccountId === resetButton.dataset.accountReset) {
+        prefillTeacherAccountForm(state.selectedAccountId);
+      }
       showNotice('密码已重置为 666666，并要求首次登录修改密码。', 'success');
     } catch (error) {
       showNotice(`重置密码失败：${error.message}`, 'error');
@@ -586,12 +530,6 @@ function initAdminPage() {
     saveBadgeRulesToStorage(state.badges);
     renderBadgesTable();
     showNotice('徽章规则已恢复到试运行默认值。', 'success');
-  });
-  elements.accountTeacherSelect.addEventListener('change', function (event) {
-    const teacherId = event.target.value;
-    if (teacherId) {
-      prefillTeacherAccountForm(teacherId);
-    }
   });
   elements.teacherAccountResetButton.addEventListener('click', resetTeacherAccountForm);
   elements.teacherAccountForm.addEventListener('submit', handleTeacherAccountSave);
@@ -607,5 +545,3 @@ if (document.readyState === 'loading') {
 } else {
   initAdminPage();
 }
-
-

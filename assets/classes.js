@@ -221,12 +221,13 @@ if (authContext) {
   }
 
   function renderCreateTeacherOptions() {
-    const campusId = elements.createClassCampusSelect.value;
-    const teachers = state.teachers.filter(function (teacher) {
-      return !campusId || teacher.campus_id === campusId;
+    const teachers = state.teachers.slice().sort(function (left, right) {
+      const leftName = String(left.display_name || left.name || '');
+      const rightName = String(right.display_name || right.name || '');
+      return leftName.localeCompare(rightName, 'zh-CN');
     });
 
-    const options = ['<option value="">暂不分配老师</option>'].concat(
+    const options = ['<option value="">\u6682\u4e0d\u5206\u914d\u8001\u5e08</option>'].concat(
       teachers.map(function (teacher) {
         return `<option value="${escapeHtml(teacher.id)}">${escapeHtml(teacher.display_name || teacher.name)}</option>`;
       })

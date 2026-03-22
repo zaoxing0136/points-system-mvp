@@ -56,26 +56,19 @@
             <p class="eyebrow">Teacher Accounts</p>
             <h2>在线开通老师账号</h2>
           </div>
-          <p class="section-tip">管理员直接分配账号名和初始密码。老师首次登录后再改密码。</p>
+          <p class="section-tip">只填老师名称、账号名和初始密码。系统会自动补一条老师档案，后续再去建班分配校区即可。</p>
         </div>
         <div class="admin-account-layout">
           <form id="teacherAccountForm" class="admin-account-form">
+            <input id="accountUserIdInput" type="hidden" />
             <div class="students-form-grid">
               <label class="students-form-field">
-                <span>关联老师 *</span>
-                <select id="accountTeacherSelect" required></select>
+                <span>老师名称 *</span>
+                <input id="accountDisplayNameInput" type="text" placeholder="例如：陈老师" required />
               </label>
               <label class="students-form-field">
                 <span>账号名 *</span>
                 <input id="accountLoginNameInput" type="text" placeholder="例如：cls / xls / sls" required />
-              </label>
-              <label class="students-form-field">
-                <span>展示名称 *</span>
-                <input id="accountDisplayNameInput" type="text" placeholder="例如：陈老师" required />
-              </label>
-              <label class="students-form-field">
-                <span>手机号 *</span>
-                <input id="accountPhoneInput" type="text" placeholder="仅作联系信息，不参与登录" required />
               </label>
               <label class="students-form-field">
                 <span>初始密码 *</span>
@@ -99,11 +92,11 @@
               </label>
               <div class="students-form-field admin-account-tipbox">
                 <span>说明</span>
-                <div class="admin-account-tip">账号名登录，不依赖短信。老师页只看到自己名下班级与学生。</div>
+                <div class="admin-account-tip">账号名登录，不依赖手机号，不预绑定校区。老师能带多个校区的班，班级归属看班级本身，不看老师档案。</div>
               </div>
             </div>
             <div class="teacher-dialog-actions">
-              <button id="teacherAccountSaveButton" class="primary-button" type="submit">保存老师账号</button>
+              <button id="teacherAccountSaveButton" class="primary-button" type="submit">创建老师账号</button>
               <button id="teacherAccountResetButton" class="ghost-button" type="button">清空表单</button>
             </div>
           </form>
@@ -112,9 +105,8 @@
             <table class="editable-table admin-account-table">
               <thead>
                 <tr>
-                  <th>老师</th>
+                  <th>老师名称</th>
                   <th>账号名</th>
-                  <th>手机号</th>
                   <th>状态</th>
                   <th>首次登录</th>
                   <th>最后登录</th>
