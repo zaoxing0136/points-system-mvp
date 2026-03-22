@@ -320,10 +320,36 @@ export async function searchStudents(keyword) {
 
 export async function addStudentToClass(payload) {
   const supabase = ensureSupabase();
+  const row = Array.isArray(payload) ? payload[0] : payload;
   return runQuery(
     supabase
       .from('class_students')
-      .insert(payload)
+      .upsert({
+        ...row,
+        joined_at: row?.joined_at || new Date().toISOString(),
+        member_status: row?.member_status || 'active'
+      }, { onConflict: 'class_id,student_id' })
+      .select('id, class_id, student_id, joined_at, member_status, joined_by_id, notes')
+      .single()
+  );
+}
+
+export async function removeStudentFromClass(payload) {
+  const supabase = ensureSupabase();
+  const classId = String(payload?.classId || payload?.class_id || '').trim();
+  const studentId = String(payload?.studentId || payload?.student_id || '').trim();
+  const notes = String(payload?.notes || '').trim();
+
+  return runQuery(
+    supabase
+      .from('class_students')
+      .update({
+        member_status: 'removed',
+        notes: notes || '\u79fb\u51fa\u73ed\u7ea7'
+      })
+      .eq('class_id', classId)
+      .eq('student_id', studentId)
+      .eq('member_status', 'active')
       .select('id, class_id, student_id, joined_at, member_status, joined_by_id, notes')
       .single()
   );

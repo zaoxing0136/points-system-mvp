@@ -13,6 +13,7 @@ import {
   fetchSubjects,
   fetchTeachers,
   insertPointLedger,
+  removeStudentFromClass,
   searchStudents
 } from './supabase-service.js';
 import {
@@ -60,7 +61,7 @@ function mountFileModeFallback() {
     selectionHint.textContent = 'file:// mode is disabled for real data.';
   }
 
-  ['openCreateClassButton', 'openAddStudentButton', 'classBoostToggleButton', 'openRedeemButton'].forEach(function (id) {
+  ['openCreateClassButton', 'openAddStudentButton', 'classBoostToggleButton', 'removeSelectedStudentButton', 'openRedeemButton'].forEach(function (id) {
     const button = document.getElementById(id);
     if (button) {
       button.disabled = true;
@@ -111,6 +112,7 @@ if (isFileMode) {
       closeSheetButton: document.getElementById('closeSheetButton'),
       sheetOverlay: document.getElementById('sheetOverlay'),
       studentSpotlight: document.getElementById('studentSpotlight'),
+      removeSelectedStudentButton: document.getElementById('removeSelectedStudentButton'),
       openRedeemButton: document.getElementById('openRedeemButton'),
       redeemHint: document.getElementById('redeemHint'),
       categoryTabs: document.getElementById('categoryTabs'),
@@ -873,6 +875,8 @@ if (isFileMode) {
 
       elements.panelEmptyState.hidden = hasStudent;
       elements.panelContent.hidden = !hasStudent;
+      elements.removeSelectedStudentButton.disabled = !hasStudent;
+
       elements.openRedeemButton.disabled = !hasStudent;
       if (elements.redeemHint) {
         elements.redeemHint.hidden = true;
@@ -1444,6 +1448,35 @@ if (isFileMode) {
       elements.redeemItemInput.focus();
     }
 
+    async function handleRemoveSelectedStudent() {
+      const selectedClass = getSelectedClass();
+      const student = getSelectedStudent();
+      if (!selectedClass || !student) {
+        showToast('\u8bf7\u5148\u9009\u62e9\u5b66\u751f');
+        return;
+      }
+
+      const studentName = getStudentDisplayName(student);
+      const confirmed = window.confirm(`\u786e\u8ba4\u628a${studentName}\u79fb\u51fa${selectedClass.class_name}\u5417\uff1f`);
+      if (!confirmed) {
+        return;
+      }
+
+      try {
+        await removeStudentFromClass({
+          classId: selectedClass.id,
+          studentId: student.student_id,
+          notes: '\u8001\u5e08\u7aef\u79fb\u51fa\u73ed\u7ea7'
+        });
+        state.feedback = null;
+        await loadRosterAndRecords();
+        showToast(`${studentName} \u5df2\u79fb\u51fa\u5f53\u524d\u73ed\u7ea7`);
+      } catch (error) {
+        showInlineNotice(`\u79fb\u51fa\u73ed\u7ea7\u5931\u8d25\uff1a${error.message}`, 'error');
+        showToast('\u79fb\u51fa\u5931\u8d25');
+      }
+    }
+
     elements.campusSelect.addEventListener('change', async function (event) {
       state.campusId = event.target.value;
       state.classBoostArmed = false;
@@ -1554,6 +1587,7 @@ if (isFileMode) {
 
     elements.openCreateClassButton.addEventListener('click', openCreateClassDialog);
     elements.openAddStudentButton.addEventListener('click', openAddStudentDialog);
+    elements.removeSelectedStudentButton.addEventListener('click', handleRemoveSelectedStudent);
     elements.openRedeemButton.addEventListener('click', openRedeemDialog);
     elements.createClassCampusSelect.addEventListener('change', renderDialogOptions);
     elements.createClassForm.addEventListener('submit', handleCreateClassSubmit);

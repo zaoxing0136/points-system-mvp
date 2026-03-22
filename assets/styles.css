@@ -5179,3 +5179,52 @@ input:disabled {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Member removal and account form polish */
+.teacher-panel-tools {
+  flex-wrap: wrap;
+}
+
+.teacher-panel-tools .ghost-button {
+  min-width: 124px;
+}
+
+.teacher-remove-button,
+.class-roster-remove-button {
+  border-color: rgba(226, 85, 85, 0.18);
+  background: rgba(255, 244, 244, 0.92);
+  color: #b33636;
+}
+
+.class-roster-remove-button {
+  min-height: 34px;
+  padding: 0 12px;
+}
+
+.admin-account-form {
+  gap: 14px;
+}
+
+.admin-account-form .students-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-account-form .students-form-field {
+  min-width: 0;
+}
+
+.admin-account-table td:last-child {
+  width: 156px;
+}
+
+@media (max-width: 720px) {
+  .admin-account-form .students-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-panel-tools .ghost-button,
+  .class-roster-remove-button {
+    width: 100%;
+  }
+}

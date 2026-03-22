@@ -9,6 +9,7 @@ import {
   fetchClassesDirectory,
   fetchSubjects,
   fetchTeachers,
+  removeStudentFromClass,
   searchStudents
 } from './supabase-service.js';
 import {
@@ -356,24 +357,23 @@ if (authContext) {
 
     if (state.loadingDetail) {
       elements.classRosterSummary.textContent = '正在读取班级学生...';
-      elements.classRosterBody.innerHTML = '<tr><td colspan="5"><div class="empty-state">正在读取当前班级学生...</div></td></tr>';
+      elements.classRosterBody.innerHTML = '<tr><td colspan="6"><div class="empty-state">正在读取当前班级学生...</div></td></tr>';
       return;
     }
 
     elements.classRosterSummary.textContent = `当前班级共 ${state.roster.length} 名学生`;
     if (!state.roster.length) {
-      elements.classRosterBody.innerHTML = '<tr><td colspan="5"><div class="empty-state">当前班级还没有学生，请先从学生主档搜索并加入。</div></td></tr>';
+      elements.classRosterBody.innerHTML = '<tr><td colspan="6"><div class="empty-state">当前班级还没有学生，请先从学生主档搜索并加入。</div></td></tr>';
     } else {
       elements.classRosterBody.innerHTML = state.roster.map(function (student) {
-        return `
-          <tr>
+        return `<tr>
             <td>${escapeHtml(student.display_name || student.legal_name || '-')}</td>
             <td>${escapeHtml(student.legal_name || '-')}</td>
             <td>${escapeHtml(student.grade || '-')}</td>
             <td>${escapeHtml(buildStudentStatusLabel(student.status))}</td>
             <td>${escapeHtml(formatDateTime(student.joined_at))}</td>
-          </tr>
-        `;
+            <td><button class="inline-button class-roster-remove-button" type="button" data-remove-class-student="${escapeHtml(student.student_id)}">\u79fb\u51fa</button></td>
+          </tr>`;
       }).join('');
     }
 
@@ -580,6 +580,35 @@ if (authContext) {
     }
   }
 
+  async function handleRemoveStudent(studentId) {
+    const selectedClass = getSelectedClass();
+    if (!selectedClass || !studentId) {
+      showNotice('\u8bf7\u5148\u9009\u62e9\u73ed\u7ea7\u3002', 'error');
+      return;
+    }
+
+    const targetStudent = state.roster.find(function (student) {
+      return student.student_id === studentId;
+    });
+    const studentName = targetStudent?.display_name || targetStudent?.legal_name || '\u8be5\u5b66\u751f';
+    const confirmed = window.confirm(`\u786e\u8ba4\u628a${studentName}\u79fb\u51fa\u5f53\u524d\u73ed\u7ea7\u5417\uff1f`);
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await removeStudentFromClass({
+        classId: selectedClass.id,
+        studentId,
+        notes: '\u7ba1\u7406\u7aef\u79fb\u51fa\u73ed\u7ea7'
+      });
+      await refreshDirectory(selectedClass.id, true);
+      showNotice(`${studentName} \u5df2\u79fb\u51fa\u5f53\u524d\u73ed\u7ea7\u3002`, 'success');
+    } catch (error) {
+      showInlineNotice(`\u79fb\u51fa\u73ed\u7ea7\u5931\u8d25\uff1a${error.message}`, 'error');
+    }
+  }
+
   function openCreateClassDialog() {
     elements.createClassCampusSelect.value = state.campusFilter !== 'all' ? state.campusFilter : (state.campuses[0]?.id || '');
     elements.createClassSubjectSelect.value = state.subjectFilter !== 'all' ? state.subjectFilter : (state.subjects[0]?.id || '');
@@ -644,6 +673,14 @@ if (authContext) {
       return;
     }
     handleAddStudent(button.dataset.addClassStudent);
+  });
+
+  elements.classRosterBody.addEventListener('click', function (event) {
+    const button = event.target.closest('[data-remove-class-student]');
+    if (!button) {
+      return;
+    }
+    handleRemoveStudent(button.dataset.removeClassStudent);
   });
 
   elements.openCreateClassButton.addEventListener('click', openCreateClassDialog);
