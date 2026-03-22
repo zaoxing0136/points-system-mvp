@@ -1,7 +1,7 @@
-ï»¿import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.SUPABASE_ANON_KEY;
+const supabaseUrl = __PUBLIC_SUPABASE_URL__;
+const supabaseAnonKey = __PUBLIC_SUPABASE_ANON_KEY__;
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
@@ -17,7 +17,7 @@ export const supabase = isSupabaseConfigured
 
 export function ensureSupabase() {
   if (!supabase) {
-    throw new Error('ç¼ºå°‘ Supabase é…ç½®ï¼Œè¯·å…ˆè®¾ç½® SUPABASE_URL å’Œ SUPABASE_ANON_KEYã€‚');
+    throw new Error('È±ÉÙ Supabase ÅäÖÃ£¬ÇëÏÈÉèÖÃ VITE_SUPABASE_URL ºÍ VITE_SUPABASE_ANON_KEY¡£');
   }
   return supabase;
 }

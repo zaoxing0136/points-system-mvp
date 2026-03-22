@@ -1,4 +1,4 @@
-﻿import { defineConfig, loadEnv } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import { resolve } from 'node:path';
 import { handleTeacherAccountsRequest } from './server/teacher-accounts.mjs';
 
@@ -53,7 +53,11 @@ export default defineConfig(function ({ mode }) {
   const env = loadEnv(mode, __dirname, '');
 
   return {
-    envPrefix: ['VITE_', 'SUPABASE_'],
+    envPrefix: 'VITE_',
+    define: {
+      __PUBLIC_SUPABASE_URL__: JSON.stringify(env.VITE_SUPABASE_URL || env.SUPABASE_URL || ''),
+      __PUBLIC_SUPABASE_ANON_KEY__: JSON.stringify(env.VITE_SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY || '')
+    },
     plugins: [teacherAccountsApiPlugin(env)],
     build: {
       rollupOptions: {
@@ -70,4 +74,3 @@ export default defineConfig(function ({ mode }) {
     }
   };
 });
-
