@@ -114,6 +114,11 @@ function initAdminPage() {
     teacherAccountCount: document.getElementById('teacherAccountCount'),
     teacherAccountForm: document.getElementById('teacherAccountForm'),
     accountUserIdInput: document.getElementById('accountUserIdInput'),
+    teacherAccountFormTitle: document.getElementById('teacherAccountFormTitle'),
+    teacherAccountFormHint: document.getElementById('teacherAccountFormHint'),
+    teacherAccountPreviewLogin: document.getElementById('teacherAccountPreviewLogin'),
+    teacherAccountPreviewEmail: document.getElementById('teacherAccountPreviewEmail'),
+    teacherAccountPreviewPassword: document.getElementById('teacherAccountPreviewPassword'),
     accountLoginNameInput: document.getElementById('accountLoginNameInput'),
     accountDisplayNameInput: document.getElementById('accountDisplayNameInput'),
     accountPasswordInput: document.getElementById('accountPasswordInput'),
@@ -137,6 +142,29 @@ function initAdminPage() {
 
   function getTeacherAccountButtonLabel() {
     return state.selectedAccountId ? '保存账号修改' : '创建老师账号';
+  }
+
+  function normalizeLoginName(value) {
+    return String(value || '').trim().toLowerCase();
+  }
+
+  function buildTeacherAccountEmail(loginName) {
+    const normalized = normalizeLoginName(loginName);
+    return normalized ? normalized + '@accounts.points-mvp.local' : '保存后自动生成';
+  }
+
+  function syncTeacherAccountPreview() {
+    const isEditing = Boolean(state.selectedAccountId);
+    const loginName = normalizeLoginName(elements.accountLoginNameInput.value);
+    const password = (elements.accountPasswordInput.value || '').trim() || '666666';
+    elements.teacherAccountFormTitle.textContent = isEditing ? '编辑老师账号' : '创建老师账号';
+    elements.teacherAccountFormHint.textContent = isEditing
+      ? '修改账号名、密码或启停状态。老师仍然不绑定固定校区。'
+      : '只填老师名称、账号名和初始密码。保存后系统自动生成登录邮箱映射。';
+    elements.teacherAccountPreviewLogin.textContent = loginName || '待输入';
+    elements.teacherAccountPreviewEmail.textContent = buildTeacherAccountEmail(loginName);
+    elements.teacherAccountPreviewPassword.textContent = password;
+    elements.teacherAccountSaveButton.textContent = getTeacherAccountButtonLabel();
   }
 
   function showNotice(message, type) {
@@ -239,7 +267,12 @@ function initAdminPage() {
       const lastLogin = account.last_sign_in_at ? new Date(account.last_sign_in_at).toLocaleString('zh-CN') : '从未登录';
       return `
         <tr>
-          <td><strong>${escapeHtml(teacherName)}</strong></td>
+          <td>
+            <div class="admin-account-name">
+              <strong>${escapeHtml(teacherName)}</strong>
+              <span>${escapeHtml(buildTeacherAccountEmail(account.login_name || ''))}</span>
+            </div>
+          </td>
           <td>${escapeHtml(account.login_name || '-')}</td>
           <td>${account.is_active ? '<span class="student-status-badge is-normal">启用</span>' : '<span class="student-status-badge is-merged">停用</span>'}</td>
           <td>${account.must_change_password ? '<span class="student-risk-badge is-medium">需改密</span>' : '<span class="student-risk-badge is-none">已通过</span>'}</td>
@@ -260,7 +293,7 @@ function initAdminPage() {
     renderPointRulesTable();
     renderBadgesTable();
     renderTeacherAccounts();
-    elements.teacherAccountSaveButton.textContent = getTeacherAccountButtonLabel();
+    syncTeacherAccountPreview();
   }
 
   function readLevelTiers() {
@@ -320,7 +353,7 @@ function initAdminPage() {
     elements.accountPasswordInput.value = '666666';
     elements.accountMustChangePasswordSelect.value = 'true';
     elements.accountActiveSelect.value = 'true';
-    elements.teacherAccountSaveButton.textContent = getTeacherAccountButtonLabel();
+    syncTeacherAccountPreview();
   }
 
   function prefillTeacherAccountForm(accountId) {
@@ -340,7 +373,7 @@ function initAdminPage() {
     elements.accountMustChangePasswordSelect.value = String(account.must_change_password !== false);
     elements.accountActiveSelect.value = String(account.is_active !== false);
     elements.accountPasswordInput.value = '666666';
-    elements.teacherAccountSaveButton.textContent = getTeacherAccountButtonLabel();
+    syncTeacherAccountPreview();
   }
 
   async function seedDefaultsIfNeeded(levelTiers, pointRules) {
@@ -464,11 +497,14 @@ function initAdminPage() {
     }
 
     const userId = elements.accountUserIdInput.value.trim();
-    const loginName = elements.accountLoginNameInput.value.trim();
+    const loginName = normalizeLoginName(elements.accountLoginNameInput.value);
     const displayName = elements.accountDisplayNameInput.value.trim();
     const password = elements.accountPasswordInput.value.trim();
     const mustChangePassword = elements.accountMustChangePasswordSelect.value === 'true';
     const isActive = elements.accountActiveSelect.value === 'true';
+    const wasEditing = Boolean(userId || state.selectedAccountId);
+
+    elements.accountLoginNameInput.value = loginName;
 
     if (!loginName || !displayName || password.length < 6) {
       showNotice('请先完整填写老师名称、账号名和初始密码。', 'error');
@@ -487,11 +523,12 @@ function initAdminPage() {
       });
       await reloadTeacherAccounts();
       prefillTeacherAccountForm(result?.profile?.id || userId);
-      showNotice(`${state.selectedAccountId ? '老师账号已更新' : '老师账号已创建'}：${loginName}`, 'success');
+      showNotice(`${wasEditing ? '老师账号已更新' : '老师账号已创建'}：${loginName}`, 'success');
     } catch (error) {
       showNotice(`老师账号保存失败：${error.message}`, 'error');
     } finally {
       setAccountBusy(false);
+      syncTeacherAccountPreview();
     }
   }
 
@@ -533,6 +570,16 @@ function initAdminPage() {
   });
   elements.teacherAccountResetButton.addEventListener('click', resetTeacherAccountForm);
   elements.teacherAccountForm.addEventListener('submit', handleTeacherAccountSave);
+  [
+    elements.accountDisplayNameInput,
+    elements.accountLoginNameInput,
+    elements.accountPasswordInput,
+    elements.accountMustChangePasswordSelect,
+    elements.accountActiveSelect
+  ].forEach(function (field) {
+    field.addEventListener('input', syncTeacherAccountPreview);
+    field.addEventListener('change', syncTeacherAccountPreview);
+  });
   elements.teacherAccountsBody.addEventListener('click', handleAccountTableClick);
 
   renderAll();
@@ -545,3 +592,5 @@ if (document.readyState === 'loading') {
 } else {
   initAdminPage();
 }
+
+

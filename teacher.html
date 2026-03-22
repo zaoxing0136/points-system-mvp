@@ -8,7 +8,18 @@
     <script>
       window.__FILE_MODE__ = window.location.protocol === 'file:';
     </script>
-    <script type="module" src="./assets/teacher.js"></script>
+    <script>
+      if (window.__FILE_MODE__) {
+        document.write('<script src="./assets/avatars/avatar-library.manifest.global.js"><\\/script>');
+        document.write('<script src="./assets/file-preview-runtime.js"><\\/script>');
+        document.write('<script src="./assets/teacher-file-preview.global.js"><\\/script>');
+      }
+    </script>
+    <script type="module">
+      if (!window.__FILE_MODE__) {
+        import('./assets/teacher.js');
+      }
+    </script>
   </head>
   <body class="teacher-body teacher-console-body">
     <main class="page-shell teacher-console teacher-dopamine-console">
@@ -185,61 +196,19 @@
       <div class="teacher-dialog-form teacher-dialog-form--search">
         <div class="teacher-dialog-head">
           <div>
-            <h2>搜索并加入班级</h2>
+            <h2>???????</h2>
           </div>
-          <button id="closeAddStudentButton" class="icon-button" type="button" aria-label="关闭">×</button>
+          <button id="closeAddStudentButton" class="icon-button" type="button" aria-label="??">?</button>
         </div>
         <form id="studentSearchForm" class="teacher-search-form">
-          <input id="studentSearchInput" type="search" placeholder="搜索昵称 / 姓名 / 学号 / 家长手机号" />
-          <button class="primary-button" type="submit">搜索</button>
+          <input id="studentSearchInput" type="search" placeholder="???? / ?? / ?? / ?????" />
+          <button class="primary-button" type="submit">??</button>
         </form>
-        <div id="studentSearchHint" class="teacher-search-hint">已有学生优先</div>
+        <div id="studentSearchHint" class="teacher-search-hint">??????</div>
         <div id="studentSearchResults" class="teacher-search-results"></div>
-        <section class="teacher-temp-student-box">
-          <div class="teacher-temp-student-intro">
-            <span class="teacher-temp-student-badge">临时建档</span>
-            <h3>搜不到，直接先入班</h3>
-            <p>先开课，再由教务补正式档案。</p>
-            <div class="teacher-temp-student-pill-row" aria-hidden="true">
-              <span class="teacher-temp-student-pill">试听</span>
-              <span class="teacher-temp-student-pill">补课</span>`r`n              <span class="teacher-temp-student-pill">临时报名</span>
-            </div>
-          </div>
-          <form id="createTempStudentForm" class="teacher-temp-student-form teacher-temp-student-form-card">
-            <div class="filters-grid teacher-dialog-grid">
-              <label class="field-group">
-                <span>学生姓名</span>
-                <input id="tempStudentLegalNameInput" type="text" placeholder="先填学生姓名" required />
-              </label>
-              <label class="field-group">
-                <span>展示昵称</span>
-                <input id="tempStudentDisplayNameInput" type="text" placeholder="可留空，默认同姓名" />
-              </label>
-            </div>
-            <div class="filters-grid teacher-dialog-grid">
-              <label class="field-group">
-                <span>年级</span>
-                <input id="tempStudentGradeInput" type="text" placeholder="例如：三年级 / 大班" />
-              </label>
-              <label class="field-group">
-                <span>家长手机号</span>
-                <input id="tempStudentParentPhoneInput" type="text" placeholder="方便课后联系" />
-              </label>
-            </div>
-            <div class="filters-grid teacher-dialog-grid">
-              <label class="field-group">
-                <span>家长姓名</span>
-                <input id="tempStudentParentNameInput" type="text" placeholder="可选" />
-              </label>
-              <label class="field-group">
-                <span>备注</span>
-                <input id="tempStudentNotesInput" type="text" placeholder="试听 / 补课 / 待教务确认" />
-              </label>
-            </div>
-            <div class="teacher-dialog-actions teacher-dialog-actions--single">
-              <button id="createTempStudentButton" class="primary-button" type="submit">创建临时学生并加入</button>
-            </div>
-          </form>
+        <section class="teacher-search-note">
+          <h3>?????????</h3>
+          <p>?????????????????????????????????????????????????????????</p>
         </section>
       </div>
     </dialog>
@@ -337,6 +306,9 @@
     </script>
   </body>
 </html>
+
+
+
 
 
 

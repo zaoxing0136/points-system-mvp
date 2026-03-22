@@ -1,11 +1,17 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>学生管理 / 学生导入</title>
     <link rel="stylesheet" href="./assets/styles.css" />
-    <script type="module" src="./assets/students.js"></script>
+    <script type="module">
+      if (window.location.protocol === 'file:') {
+        import('./assets/students-file-preview.js');
+      } else {
+        import('./assets/students.js');
+      }
+    </script>
   </head>
   <body class="admin-body">
     <main class="page-shell admin-shell students-shell">
@@ -29,11 +35,11 @@
             <p class="eyebrow">Student Archive</p>
             <h2>学生主档列表</h2>
           </div>
-          <p class="section-tip">教务统一导入和维护学生主档。老师后续建班时可搜索这些学生并加入班级。</p>
+          <p class="section-tip">学生主档只由管理员统一导入和维护。老师端只允许把学生加入班级、移出班级，不允许修改学生正式资料。</p>
         </div>
 
         <form id="studentsSearchForm" class="students-search-form">
-          <input id="studentsSearchInput" type="search" placeholder="搜索正式姓名 / 昵称 / 手机尾号 / 学号" />
+          <input id="studentsSearchInput" type="search" placeholder="搜索正式姓名 / 显示名称 / 手机尾号 / 学号" />
           <button class="ghost-button" type="submit">搜索</button>
           <button id="clearStudentsSearchButton" class="inline-button" type="button">清空</button>
         </form>
@@ -52,7 +58,7 @@
           <label class="students-filter-label">
             <span>校区筛选</span>
             <select id="studentsCampusFilter" disabled></select>
-            <small>学生主档没有固定校区字段，MVP 暂不做精确校区筛选。</small>
+            <small>学生主档没有固定校区字段，MVP 阶段先不做按校区精确筛选。</small>
           </label>
         </div>
 
@@ -107,15 +113,20 @@
           <button id="closeStudentDetailButton" class="ghost-button" type="button">关闭</button>
         </div>
         <div id="studentDetailContent" class="students-detail-panel"></div>
+        <div class="teacher-dialog-actions students-detail-actions">
+          <button id="editStudentFromDetailButton" class="primary-button" type="button">编辑学生主档</button>
+        </div>
       </div>
     </dialog>
 
     <dialog id="createStudentDialog" class="teacher-dialog">
       <form id="createStudentForm" class="teacher-dialog-form students-dialog-form">
+        <input id="editingStudentIdInput" type="hidden" />
         <div class="teacher-dialog-head">
           <div>
-            <p class="eyebrow">Create Student</p>
-            <h2>手动新增学生</h2>
+            <p class="eyebrow">Student Archive</p>
+            <h2 id="studentFormTitle">新增学生主档</h2>
+            <p id="studentFormHint" class="students-form-copy">只有管理员可以维护学生主档。老师端只处理班级关系，不处理学生正式资料。</p>
           </div>
           <button id="closeCreateStudentButton" class="ghost-button" type="button">关闭</button>
         </div>
@@ -126,12 +137,21 @@
             <input id="createLegalNameInput" type="text" required />
           </label>
           <label class="students-form-field">
-            <span>展示昵称</span>
+            <span>显示名称</span>
             <input id="createDisplayNameInput" type="text" />
           </label>
           <label class="students-form-field">
             <span>年级</span>
             <input id="createGradeInput" type="text" />
+          </label>
+          <label class="students-form-field">
+            <span>状态</span>
+            <select id="createStudentStatusSelect">
+              <option value="normal">normal</option>
+              <option value="temporary">temporary</option>
+              <option value="pending_merge">pending_merge</option>
+              <option value="merged">merged</option>
+            </select>
           </label>
           <label class="students-form-field">
             <span>家长姓名</span>
@@ -185,7 +205,7 @@
             <thead>
               <tr>
                 <th>行号</th>
-                <th>展示昵称</th>
+                <th>显示名称</th>
                 <th>正式姓名</th>
                 <th>年级</th>
                 <th>家长手机号</th>
@@ -205,3 +225,4 @@
     </dialog>
   </body>
 </html>
+

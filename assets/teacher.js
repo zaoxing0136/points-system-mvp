@@ -2,8 +2,7 @@
 import { getAuthDisplayName, mountSessionActions, requirePageAuth } from './auth.js';
 import {
   addStudentToClass,
-  createClass,
-  createStudents,
+  createClass,
   fetchCampuses,
   fetchClasses,
   fetchClassRoster,
@@ -138,15 +137,7 @@ if (isFileMode) {
       studentSearchForm: document.getElementById('studentSearchForm'),
       studentSearchInput: document.getElementById('studentSearchInput'),
       studentSearchHint: document.getElementById('studentSearchHint'),
-      studentSearchResults: document.getElementById('studentSearchResults'),
-      createTempStudentForm: document.getElementById('createTempStudentForm'),
-      tempStudentLegalNameInput: document.getElementById('tempStudentLegalNameInput'),
-      tempStudentDisplayNameInput: document.getElementById('tempStudentDisplayNameInput'),
-      tempStudentGradeInput: document.getElementById('tempStudentGradeInput'),
-      tempStudentParentNameInput: document.getElementById('tempStudentParentNameInput'),
-      tempStudentParentPhoneInput: document.getElementById('tempStudentParentPhoneInput'),
-      tempStudentNotesInput: document.getElementById('tempStudentNotesInput'),
-      createTempStudentButton: document.getElementById('createTempStudentButton'),
+      studentSearchResults: document.getElementById('studentSearchResults'),
       redeemDialog: document.getElementById('redeemDialog'),
       redeemForm: document.getElementById('redeemForm'),
       closeRedeemButton: document.getElementById('closeRedeemButton'),
@@ -338,46 +329,6 @@ if (isFileMode) {
 
     function normalizeText(value) {
       return String(value || '').trim();
-    }
-
-    function buildStudentCode(index = 0) {
-      const now = new Date();
-      const stamp = [
-        now.getFullYear(),
-        String(now.getMonth() + 1).padStart(2, '0'),
-        String(now.getDate()).padStart(2, '0'),
-        String(now.getHours()).padStart(2, '0'),
-        String(now.getMinutes()).padStart(2, '0'),
-        String(now.getSeconds()).padStart(2, '0'),
-        String(now.getMilliseconds()).padStart(3, '0')
-      ].join('');
-      const randomToken = Math.random().toString(36).slice(2, 6).toUpperCase();
-      return `STU${stamp}${String(index).padStart(3, '0')}${randomToken}`;
-    }
-
-    function resetTempStudentForm() {
-      if (elements.createTempStudentForm) {
-        elements.createTempStudentForm.reset();
-      }
-      elements.createTempStudentButton.disabled = false;
-      elements.createTempStudentButton.textContent = '创建临时学生并加入';
-    }
-
-    function primeTempStudentForm() {
-      const keyword = normalizeText(elements.studentSearchInput.value);
-      state.lastSearchKeyword = keyword;
-      if (!keyword) {
-        return;
-      }
-      if (!normalizeText(elements.tempStudentLegalNameInput.value)) {
-        elements.tempStudentLegalNameInput.value = keyword;
-      }
-      if (!normalizeText(elements.tempStudentDisplayNameInput.value)) {
-        elements.tempStudentDisplayNameInput.value = keyword;
-      }
-      if (!normalizeText(elements.tempStudentNotesInput.value)) {
-        elements.tempStudentNotesInput.value = '老师端临时创建，待教务确认';
-      }
     }
 
     function resetPanelScroll() {
@@ -1288,23 +1239,16 @@ if (isFileMode) {
         event.preventDefault();
       }
 
-      if (!state.classId) {
-        showToast('请先选择班级');
-        return;
-      }
-
-      primeTempStudentForm();
-
       try {
         state.searchResults = await searchStudents(elements.studentSearchInput.value || '');
         renderSearchResults();
         elements.studentSearchHint.textContent = state.searchResults.length
-          ? `搜到 ${state.searchResults.length} 位学生`
-          : '没有找到，可直接建临时学生。';
+          ? `?? ${state.searchResults.length} ???`
+          : '???????????????';
       } catch (error) {
         state.searchResults = [];
         renderSearchResults();
-        elements.studentSearchHint.textContent = `搜索失败：${error.message}`;
+        elements.studentSearchHint.textContent = `?????${error.message}`;
       }
     }
 
@@ -1340,72 +1284,6 @@ if (isFileMode) {
           return;
         }
         showInlineNotice(`加入班级失败：${error.message}`, 'error');
-      }
-    }
-
-    async function handleCreateTempStudent(event) {
-      if (event) {
-        event.preventDefault();
-      }
-      if (state.isCreatingTempStudent) {
-        return;
-      }
-
-      const selectedClass = getSelectedClass();
-      if (!selectedClass) {
-        showToast('请先选择班级');
-        return;
-      }
-
-      const legalName = normalizeText(elements.tempStudentLegalNameInput.value);
-      if (!legalName) {
-        showToast('请先填写学生姓名');
-        elements.tempStudentLegalNameInput.focus();
-        return;
-      }
-
-      const payload = {
-        student_code: buildStudentCode(),
-        legal_name: legalName,
-        display_name: normalizeText(elements.tempStudentDisplayNameInput.value) || legalName,
-        grade: normalizeText(elements.tempStudentGradeInput.value),
-        parent_name: normalizeText(elements.tempStudentParentNameInput.value),
-        parent_phone: normalizeText(elements.tempStudentParentPhoneInput.value),
-        avatar_url: '',
-        notes: normalizeText(elements.tempStudentNotesInput.value) || '老师端临时创建，待教务确认',
-        status: 'temporary',
-        created_by_role: 'teacher',
-        created_by_id: state.authContext.teacherId || null
-      };
-
-      state.isCreatingTempStudent = true;
-      elements.createTempStudentButton.disabled = true;
-      elements.createTempStudentButton.textContent = '创建中...';
-
-      try {
-        const [insertedStudent] = await createStudents([payload]);
-        await addStudentToClass({
-          class_id: selectedClass.id,
-          student_id: insertedStudent.id,
-          member_status: 'active',
-          joined_by_id: state.authContext.teacherId || null,
-          notes: '老师端创建临时学生并加入班级'
-        });
-        state.selectedStudentId = insertedStudent.id;
-        closeDialog(elements.addStudentDialog);
-        resetTempStudentForm();
-        elements.studentSearchInput.value = '';
-        state.searchResults = [];
-        await loadRosterAndRecords();
-        selectStudent(insertedStudent.id);
-        showToast('临时学生已创建并加入当前班级');
-      } catch (error) {
-        showInlineNotice(`创建临时学生失败：${error.message}`, 'error');
-        showToast('创建临时学生失败');
-      } finally {
-        state.isCreatingTempStudent = false;
-        elements.createTempStudentButton.disabled = false;
-        elements.createTempStudentButton.textContent = '创建临时学生并加入';
       }
     }
 
@@ -1598,8 +1476,7 @@ if (isFileMode) {
       closeDialog(elements.createClassDialog);
     });
 
-    elements.studentSearchForm.addEventListener('submit', handleStudentSearch);
-    elements.createTempStudentForm.addEventListener('submit', handleCreateTempStudent);
+    elements.studentSearchForm.addEventListener('submit', handleStudentSearch);
     elements.studentSearchResults.addEventListener('click', function (event) {
       const button = event.target.closest('[data-add-student-id]');
       if (!button) {

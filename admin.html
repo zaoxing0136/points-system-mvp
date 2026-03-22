@@ -56,12 +56,26 @@
             <p class="eyebrow">Teacher Accounts</p>
             <h2>在线开通老师账号</h2>
           </div>
-          <p class="section-tip">只填老师名称、账号名和初始密码。系统会自动补一条老师档案，后续再去建班分配校区即可。</p>
+          <p class="section-tip">老师账号不绑定校区。一个老师可以带多个校区的班，班级归属只在建班时分配。</p>
         </div>
-        <div class="admin-account-layout">
-          <form id="teacherAccountForm" class="admin-account-form">
+
+        <div class="admin-account-layout admin-account-layout--stacked">
+          <form id="teacherAccountForm" class="admin-account-form admin-account-form--minimal">
             <input id="accountUserIdInput" type="hidden" />
-            <div class="students-form-grid">
+
+            <div class="admin-account-form-head">
+              <div>
+                <p class="eyebrow">Teacher Access</p>
+                <h3 id="teacherAccountFormTitle">创建老师账号</h3>
+                <p id="teacherAccountFormHint" class="admin-account-copy">只填老师名称、账号名和初始密码。保存后系统自动生成登录邮箱映射。</p>
+              </div>
+              <div class="admin-account-chip-row">
+                <span class="admin-account-chip">默认密码 666666</span>
+                <span class="admin-account-chip">支持管理员重置密码</span>
+              </div>
+            </div>
+
+            <div class="admin-account-quick-grid">
               <label class="students-form-field">
                 <span>老师名称 *</span>
                 <input id="accountDisplayNameInput" type="text" placeholder="例如：陈老师" required />
@@ -74,6 +88,9 @@
                 <span>初始密码 *</span>
                 <input id="accountPasswordInput" type="text" value="666666" required />
               </label>
+            </div>
+
+            <div class="admin-account-inline-grid">
               <label class="students-form-field">
                 <span>首次登录</span>
                 <select id="accountMustChangePasswordSelect">
@@ -81,8 +98,6 @@
                   <option value="false">直接进入系统</option>
                 </select>
               </label>
-            </div>
-            <div class="students-form-grid">
               <label class="students-form-field">
                 <span>账号状态</span>
                 <select id="accountActiveSelect">
@@ -90,11 +105,23 @@
                   <option value="false">停用</option>
                 </select>
               </label>
-              <div class="students-form-field admin-account-tipbox">
-                <span>说明</span>
-                <div class="admin-account-tip">账号名登录，不依赖手机号，不预绑定校区。老师能带多个校区的班，班级归属看班级本身，不看老师档案。</div>
+            </div>
+
+            <div class="admin-account-preview">
+              <div>
+                <span>登录账号</span>
+                <strong id="teacherAccountPreviewLogin">待输入</strong>
+              </div>
+              <div>
+                <span>系统邮箱映射</span>
+                <strong id="teacherAccountPreviewEmail">保存后自动生成</strong>
+              </div>
+              <div>
+                <span>当前密码</span>
+                <strong id="teacherAccountPreviewPassword">666666</strong>
               </div>
             </div>
+
             <div class="teacher-dialog-actions">
               <button id="teacherAccountSaveButton" class="primary-button" type="submit">创建老师账号</button>
               <button id="teacherAccountResetButton" class="ghost-button" type="button">清空表单</button>
@@ -102,6 +129,13 @@
           </form>
 
           <div class="table-wrap admin-account-table-wrap">
+            <div class="admin-account-table-head">
+              <div>
+                <p class="eyebrow">Teacher Directory</p>
+                <h3>已开通账号</h3>
+              </div>
+              <p class="admin-account-copy">老师先有账号，后面再去建班页分班。跨校区上课时，不需要重新建老师档案。</p>
+            </div>
             <table class="editable-table admin-account-table">
               <thead>
                 <tr>
@@ -202,3 +236,4 @@
     </main>
   </body>
 </html>
+

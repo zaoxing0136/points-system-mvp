@@ -224,6 +224,18 @@ export async function createStudents(rows) {
   );
 }
 
+export async function updateStudent(studentId, payload) {
+  const supabase = ensureSupabase();
+  return runQuery(
+    supabase
+      .from('students')
+      .update(payload)
+      .eq('id', studentId)
+      .select(STUDENT_FIELDS)
+      .single()
+  );
+}
+
 export async function fetchStudentDuplicateCandidates(options = {}) {
   const supabase = ensureSupabase();
   const legalNames = uniqueTruthy(options.legalNames);

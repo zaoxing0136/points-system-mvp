@@ -4,7 +4,8 @@ import {
   createStudents,
   fetchCampuses,
   fetchStudentDuplicateCandidates,
-  fetchStudentsList
+  fetchStudentsList,
+  updateStudent
 } from './supabase-service.js';
 import {
   createAvatarHtml,
@@ -113,9 +114,24 @@ function buildStudentInsertRow(draft, index) {
     parent_phone: normalizeText(draft.parent_phone),
     avatar_url: normalizeText(draft.avatar_url),
     notes: normalizeText(draft.notes),
-    status: 'normal',
+    status: normalizeText(draft.status) || 'normal',
     created_by_role: 'admin',
     created_by_id: null
+  };
+}
+
+function buildStudentUpdateRow(draft) {
+  const legalName = normalizeText(draft.legal_name);
+  const displayName = normalizeText(draft.display_name) || legalName;
+  return {
+    legal_name: legalName,
+    display_name: displayName,
+    grade: normalizeText(draft.grade),
+    parent_name: normalizeText(draft.parent_name),
+    parent_phone: normalizeText(draft.parent_phone),
+    avatar_url: normalizeText(draft.avatar_url),
+    notes: normalizeText(draft.notes),
+    status: normalizeText(draft.status) || 'normal'
   };
 }
 
@@ -135,6 +151,10 @@ function buildDuplicateAssessment(draft, candidates, batchRows, currentRowNumber
   }
 
   (candidates || []).forEach(function (student) {
+    if (draft.id && student.id === draft.id) {
+      return;
+    }
+
     const sameLegalName = normalizeText(student.legal_name) === legalName;
     if (!sameLegalName) {
       return;
@@ -144,12 +164,12 @@ function buildDuplicateAssessment(draft, candidates, batchRows, currentRowNumber
     const sameGrade = grade && normalizeText(student.grade) === grade;
 
     if (samePhone) {
-      collectMessage(`系统已有：${student.legal_name} / ${student.parent_phone || '未填手机号'}，高疑似重复`, 'high');
+      collectMessage(`系统已有：${student.legal_name} / ${student.parent_phone || '未填手机号'}，高度疑似重复`, 'high');
       return;
     }
 
     if (sameGrade) {
-      collectMessage(`系统已有：${student.legal_name} / ${student.grade || '未填年级'}，中疑似重复`, 'medium');
+      collectMessage(`系统已有：${student.legal_name} / ${student.grade || '未填年级'}，中度疑似重复`, 'medium');
     }
   });
 
@@ -204,15 +224,20 @@ if (authContext) {
     downloadTemplateButton: document.getElementById('downloadTemplateButton'),
     studentDetailDialog: document.getElementById('studentDetailDialog'),
     closeStudentDetailButton: document.getElementById('closeStudentDetailButton'),
+    editStudentFromDetailButton: document.getElementById('editStudentFromDetailButton'),
     studentDetailContent: document.getElementById('studentDetailContent'),
     createStudentDialog: document.getElementById('createStudentDialog'),
     createStudentForm: document.getElementById('createStudentForm'),
+    editingStudentIdInput: document.getElementById('editingStudentIdInput'),
+    studentFormTitle: document.getElementById('studentFormTitle'),
+    studentFormHint: document.getElementById('studentFormHint'),
     closeCreateStudentButton: document.getElementById('closeCreateStudentButton'),
     cancelCreateStudentButton: document.getElementById('cancelCreateStudentButton'),
     submitCreateStudentButton: document.getElementById('submitCreateStudentButton'),
     createLegalNameInput: document.getElementById('createLegalNameInput'),
     createDisplayNameInput: document.getElementById('createDisplayNameInput'),
     createGradeInput: document.getElementById('createGradeInput'),
+    createStudentStatusSelect: document.getElementById('createStudentStatusSelect'),
     createParentNameInput: document.getElementById('createParentNameInput'),
     createParentPhoneInput: document.getElementById('createParentPhoneInput'),
     createAvatarUrlInput: document.getElementById('createAvatarUrlInput'),
@@ -338,7 +363,12 @@ if (authContext) {
           <td>${escapeHtml(student.parent_phone || '-')}</td>
           <td><span class="student-status-badge is-${escapeHtml(student.status || 'normal')}">${escapeHtml(buildStatusLabel(student.status))}</span></td>
           <td>${escapeHtml(formatDateTime(student.created_at))}</td>
-          <td><button class="inline-button" type="button" data-view-student="${escapeHtml(student.id)}">查看</button></td>
+          <td>
+            <div class="students-table-actions">
+              <button class="ghost-button" type="button" data-edit-student="${escapeHtml(student.id)}">编辑</button>
+              <button class="inline-button" type="button" data-view-student="${escapeHtml(student.id)}">查看</button>
+            </div>
+          </td>
         </tr>
       `;
     }).join('');
@@ -346,21 +376,23 @@ if (authContext) {
 
   function renderDetail(student) {
     if (!student) {
+      elements.editStudentFromDetailButton.hidden = true;
       elements.studentDetailContent.innerHTML = '<div class="empty-state">未找到学生详情。</div>';
       return;
     }
 
+    elements.editStudentFromDetailButton.hidden = false;
     elements.studentDetailContent.innerHTML = `
       <div class="students-detail-hero">
         ${createAvatarHtml(student, 'large')}
         <div>
           <h3>${escapeHtml(getStudentDisplayName(student))}</h3>
-          <p>${escapeHtml(student.student_code || '未生成学号')} · ${escapeHtml(buildStatusLabel(student.status))}</p>
+          <p>${escapeHtml(student.student_code || '未生成学号')} ? ${escapeHtml(buildStatusLabel(student.status))}</p>
         </div>
       </div>
       <div class="students-detail-grid">
         <div><span>正式姓名</span><strong>${escapeHtml(student.legal_name || '-')}</strong></div>
-        <div><span>展示昵称</span><strong>${escapeHtml(student.display_name || '-')}</strong></div>
+        <div><span>显示名称</span><strong>${escapeHtml(student.display_name || '-')}</strong></div>
         <div><span>年级</span><strong>${escapeHtml(student.grade || '-')}</strong></div>
         <div><span>家长姓名</span><strong>${escapeHtml(student.parent_name || '-')}</strong></div>
         <div><span>家长手机号</span><strong>${escapeHtml(student.parent_phone || '-')}</strong></div>
@@ -387,17 +419,19 @@ if (authContext) {
     elements.manualDuplicateBox.hidden = false;
     elements.manualDuplicateBox.dataset.level = assessment.level;
     elements.manualDuplicateBox.innerHTML = `
-      <strong>${assessment.level === 'high' ? '检测到高疑似重复' : '检测到中疑似重复'}</strong>
-      <p>仅提醒，不会阻止继续保存，也不会自动合并学生。</p>
+      <strong>${assessment.level === 'high' ? '检测到高度疑似重复' : '检测到中度疑似重复'}</strong>
+      <p>只做提醒，不会自动合并学生主档。</p>
       <ul>${messages}</ul>
     `;
   }
 
   function getManualDraft() {
     return {
+      id: normalizeText(elements.editingStudentIdInput.value),
       legal_name: elements.createLegalNameInput.value,
       display_name: elements.createDisplayNameInput.value,
       grade: elements.createGradeInput.value,
+      status: elements.createStudentStatusSelect.value,
       parent_name: elements.createParentNameInput.value,
       parent_phone: elements.createParentPhoneInput.value,
       avatar_url: elements.createAvatarUrlInput.value,
@@ -434,10 +468,61 @@ if (authContext) {
     }, 260);
   }
 
-  function resetCreateStudentForm() {
-    elements.createStudentForm.reset();
+  function syncStudentFormMeta() {
+    const isEditing = Boolean(elements.editingStudentIdInput.value);
+    elements.studentFormTitle.textContent = isEditing ? '编辑学生主档' : '新增学生主档';
+    elements.studentFormHint.textContent = isEditing
+      ? '这里维护学生正式资料。老师端只允许调整班级关系，不允许改学生主档。'
+      : '只有管理员可以创建学生主档。老师端只处理班级关系，不处理学生正式资料。';
+    elements.submitCreateStudentButton.textContent = isEditing ? '保存学生修改' : '保存学生主档';
+  }
+
+  function prefillStudentForm(student) {
+    if (!student) {
+      resetCreateStudentForm();
+      return;
+    }
+
+    elements.editingStudentIdInput.value = student.id || '';
+    elements.createLegalNameInput.value = student.legal_name || '';
+    elements.createDisplayNameInput.value = student.display_name || '';
+    elements.createGradeInput.value = student.grade || '';
+    elements.createStudentStatusSelect.value = student.status || 'normal';
+    elements.createParentNameInput.value = student.parent_name || '';
+    elements.createParentPhoneInput.value = student.parent_phone || '';
+    elements.createAvatarUrlInput.value = student.avatar_url || '';
+    elements.createNotesInput.value = student.notes || '';
     state.manualDuplicateAssessment = null;
     renderManualDuplicateBox();
+    syncStudentFormMeta();
+  }
+
+  function openCreateStudentDialog() {
+    resetCreateStudentForm();
+    openDialog(elements.createStudentDialog);
+  }
+
+  function openEditStudentDialog(studentId) {
+    const student = state.students.find(function (item) {
+      return item.id === studentId;
+    }) || null;
+
+    if (!student) {
+      showNotice('未找到可编辑的学生主档。', 'error');
+      return;
+    }
+
+    prefillStudentForm(student);
+    openDialog(elements.createStudentDialog);
+  }
+
+  function resetCreateStudentForm() {
+    elements.createStudentForm.reset();
+    elements.editingStudentIdInput.value = '';
+    elements.createStudentStatusSelect.value = 'normal';
+    state.manualDuplicateAssessment = null;
+    renderManualDuplicateBox();
+    syncStudentFormMeta();
   }
 
   function resetImportState() {
@@ -496,13 +581,14 @@ if (authContext) {
     if (!isSupabaseConfigured) {
       renderCampusOptions();
       renderSummary();
-      showInlineNotice('缺少 Supabase 配置，请先在 .env 中填写 SUPABASE_URL 和 SUPABASE_ANON_KEY。', 'error');
+      showInlineNotice('缺少 Supabase 配置，请先在 .env 中填写 VITE_SUPABASE_URL 和 VITE_SUPABASE_ANON_KEY。', 'error');
       elements.studentsTableBody.innerHTML = '<tr><td colspan="8"><div class="empty-state">缺少 Supabase 配置，学生主档无法读取。</div></td></tr>';
       return;
     }
 
     state.isLoadingStudents = true;
     renderStudentsTable();
+    const selectedId = state.selectedStudent?.id || '';
 
     try {
       state.students = await fetchStudentsList({
@@ -510,14 +596,21 @@ if (authContext) {
         status: state.status,
         limit: 300
       });
+      state.selectedStudent = selectedId
+        ? (state.students.find(function (student) { return student.id === selectedId; }) || null)
+        : null;
       showInlineNotice('', 'info');
     } catch (error) {
       state.students = [];
+      state.selectedStudent = null;
       showInlineNotice(`学生列表读取失败：${error.message}`, 'error');
     } finally {
       state.isLoadingStudents = false;
       renderSummary();
       renderStudentsTable();
+      if (elements.studentDetailDialog.open) {
+        renderDetail(state.selectedStudent);
+      }
     }
   }
 
@@ -525,6 +618,7 @@ if (authContext) {
     renderCampusOptions();
     renderSummary();
     renderStudentsTable();
+    renderDetail(null);
     resetImportState();
 
     if (!isSupabaseConfigured) {
@@ -555,28 +649,32 @@ if (authContext) {
       return;
     }
 
+    const isEditing = Boolean(draft.id);
+    const duplicateAssessment = state.manualDuplicateAssessment;
     state.isSaving = true;
     elements.submitCreateStudentButton.disabled = true;
-    elements.submitCreateStudentButton.textContent = '保存中...';
-    const duplicateAssessment = state.manualDuplicateAssessment;
+    elements.submitCreateStudentButton.textContent = isEditing ? '保存中...' : '创建中...';
 
     try {
-      const [insertedStudent] = await createStudents([buildStudentInsertRow(draft, 0)]);
+      const savedStudent = isEditing
+        ? await updateStudent(draft.id, buildStudentUpdateRow(draft))
+        : (await createStudents([buildStudentInsertRow(draft, 0)]))[0];
       closeDialog(elements.createStudentDialog);
       resetCreateStudentForm();
+      state.selectedStudent = savedStudent || null;
       await loadStudents();
 
       const duplicateMessages = duplicateAssessment
         ? duplicateAssessment.highMessages.concat(duplicateAssessment.mediumMessages)
         : [];
-      const duplicateText = duplicateMessages.length ? ` 已提示疑似重复：${duplicateMessages[0]}` : '';
-      showNotice(`学生主档已创建：${insertedStudent.display_name || insertedStudent.legal_name}。${duplicateText}`, duplicateMessages.length ? 'info' : 'success');
+      const duplicateHint = duplicateMessages.length ? ` 已提醒疑似重复：${duplicateMessages[0]}` : '';
+      showNotice(`学生主档已${isEditing ? '更新' : '创建'}：${savedStudent.display_name || savedStudent.legal_name || legalName}。${duplicateHint}`, duplicateMessages.length ? 'info' : 'success');
     } catch (error) {
-      showNotice(`新增学生失败：${error.message}`, 'error');
+      showNotice(`保存学生主档失败：${error.message}`, 'error');
     } finally {
       state.isSaving = false;
       elements.submitCreateStudentButton.disabled = false;
-      elements.submitCreateStudentButton.textContent = '保存学生主档';
+      syncStudentFormMeta();
     }
   }
 
@@ -707,6 +805,12 @@ if (authContext) {
   });
 
   elements.studentsTableBody.addEventListener('click', function (event) {
+    const editButton = event.target.closest('[data-edit-student]');
+    if (editButton) {
+      openEditStudentDialog(editButton.dataset.editStudent);
+      return;
+    }
+
     const button = event.target.closest('[data-view-student]');
     if (!button) {
       return;
@@ -719,17 +823,16 @@ if (authContext) {
     openDialog(elements.studentDetailDialog);
   });
 
-  elements.openCreateStudentButton.addEventListener('click', function () {
-    resetCreateStudentForm();
-    openDialog(elements.createStudentDialog);
-  });
+  elements.openCreateStudentButton.addEventListener('click', openCreateStudentDialog);
 
   elements.closeCreateStudentButton.addEventListener('click', function () {
     closeDialog(elements.createStudentDialog);
+    resetCreateStudentForm();
   });
 
   elements.cancelCreateStudentButton.addEventListener('click', function () {
     closeDialog(elements.createStudentDialog);
+    resetCreateStudentForm();
   });
 
   elements.createStudentForm.addEventListener('submit', handleCreateStudentSubmit);
@@ -761,6 +864,14 @@ if (authContext) {
 
   elements.closeStudentDetailButton.addEventListener('click', function () {
     closeDialog(elements.studentDetailDialog);
+  });
+
+  elements.editStudentFromDetailButton.addEventListener('click', function () {
+    if (!state.selectedStudent) {
+      return;
+    }
+    closeDialog(elements.studentDetailDialog);
+    openEditStudentDialog(state.selectedStudent.id);
   });
 
   elements.downloadTemplateButton.addEventListener('click', function () {
