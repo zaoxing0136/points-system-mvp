@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="plant-tulip-sprite-title">
+  <title id="plant-tulip-sprite-title">郁香花灵</title>
+  
+  <defs>
+    <linearGradient id="plant-tulip-sprite-bg" x1="24" y1="12" x2="222" y2="244" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFF1EA" />
+      <stop offset="1" stop-color="#FFB9A1" />
+    </linearGradient>
+    <radialGradient id="plant-tulip-sprite-halo" cx="46%" cy="34%" r="72%">
+      <stop offset="0" stop-color="#FFF8F1" stop-opacity="0.95" />
+      <stop offset="1" stop-color="#FFF8F1" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="url(#plant-tulip-sprite-bg)" />
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="#ffffff" fill-opacity="0.10" />
+  <circle cx="70" cy="54" r="28" fill="#ffffff" fill-opacity="0.26" />
+  <circle cx="196" cy="58" r="18" fill="#ffffff" fill-opacity="0.16" />
+  <circle cx="208" cy="190" r="22" fill="#FF8F62" fill-opacity="0.10" />
+  <circle cx="46" cy="168" r="10" fill="#FF8F62" fill-opacity="0.14" />
+  <path d="M32 188 C58 166 100 168 126 186 C150 202 188 206 224 188 L224 232 L32 232 Z" fill="#ffffff" fill-opacity="0.14" />
+  <circle cx="128" cy="106" r="74" fill="url(#plant-tulip-sprite-halo)" />
+  <ellipse cx="128" cy="210" rx="58" ry="14" fill="#102030" fill-opacity="0.10" />
+  
+    <g>
+      
+      <path d="M 128 64 C 108 80, 102 110, 108 132 C 120 124, 126 116, 128 104 C 130 116, 136 124, 148 132 C 154 110, 148 80, 128 64 Z" fill="#F1888C" />
+      <path d="M 102 88 C 84 94, 74 110, 78 134 C 92 128, 102 116, 108 100 Z" fill="#F1888C" fill-opacity="0.82" />
+      <path d="M 154 88 C 172 94, 182 110, 178 134 C 164 128, 154 116, 148 100 Z" fill="#F1888C" fill-opacity="0.82" />
+      <circle cx="128" cy="122" r="34" fill="#FFF5EC" />
+      <path d="M 84 210 C 88 178, 104 156, 128 156 C 152 156, 168 178, 172 210 Z" fill="#F9C2A2" />
+      <path d="M 92 174 C 106 160, 116 160, 128 172 C 140 160, 150 160, 164 174" fill="none" stroke="#FF8F62" stroke-width="8" stroke-linecap="round" />
+      
+    <circle cx="100" cy="136" r="9" fill="#F7A5B2" fill-opacity="0.26" />
+    <circle cx="156" cy="136" r="9" fill="#F7A5B2" fill-opacity="0.26" />
+    
+    <circle cx="110" cy="118" r="4.6" fill="#31495C" />
+    <circle cx="146" cy="118" r="4.6" fill="#31495C" />
+    <ellipse cx="128" cy="129" rx="3.6" ry="2.8" fill="#31495C" fill-opacity="0.52" />
+    <path d="M 114 138 C 122 146, 134 146, 142 138" fill="none" stroke="#31495C" stroke-width="4" stroke-linecap="round" />
+    </g>
+</svg>

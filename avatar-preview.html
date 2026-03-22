@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>头像预览</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #254056;
+        --muted: #6a7b8f;
+        --panel: rgba(255, 255, 255, 0.9);
+        --line: rgba(37, 64, 86, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: 'Trebuchet MS', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(255, 226, 185, 0.9), transparent 32%),
+          radial-gradient(circle at top right, rgba(209, 228, 255, 0.9), transparent 28%),
+          linear-gradient(180deg, #f8fbff 0%, #f5f1ff 100%);
+      }
+
+      .shell {
+        width: min(1180px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 32px 0 56px;
+      }
+
+      .hero {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        padding: 28px;
+        box-shadow: 0 18px 48px rgba(52, 78, 103, 0.08);
+        backdrop-filter: blur(12px);
+      }
+
+      .hero h1 {
+        margin: 0;
+        font-size: clamp(28px, 5vw, 42px);
+        line-height: 1.04;
+      }
+
+      .hero p {
+        margin: 12px 0 0;
+        max-width: 760px;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.7;
+      }
+
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .meta span {
+        padding: 9px 14px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.76);
+        border: 1px solid rgba(37, 64, 86, 0.08);
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .section {
+        margin-top: 24px;
+        background: rgba(255, 255, 255, 0.78);
+        border: 1px solid var(--line);
+        border-radius: 26px;
+        padding: 22px;
+        box-shadow: 0 16px 38px rgba(52, 78, 103, 0.06);
+        backdrop-filter: blur(10px);
+      }
+
+      .section-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .section-head h2 {
+        margin: 0;
+        font-size: 22px;
+      }
+
+      .section-head span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+        gap: 14px;
+      }
+
+      .card {
+        border-radius: 22px;
+        padding: 14px 12px 12px;
+        background: rgba(255, 255, 255, 0.84);
+        border: 1px solid rgba(37, 64, 86, 0.06);
+        text-align: center;
+        transition: transform 180ms ease, box-shadow 180ms ease;
+      }
+
+      .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 14px 28px rgba(52, 78, 103, 0.12);
+      }
+
+      .card img {
+        width: 84px;
+        height: 84px;
+        display: block;
+        margin: 0 auto 10px;
+        border-radius: 22px;
+      }
+
+      .card strong {
+        display: block;
+        font-size: 14px;
+        line-height: 1.35;
+      }
+
+      .card small {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      @media (max-width: 640px) {
+        .shell {
+          width: min(100vw - 20px, 1180px);
+          padding-top: 18px;
+          padding-bottom: 30px;
+        }
+
+        .hero,
+        .section {
+          border-radius: 22px;
+          padding: 18px;
+        }
+
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 12px;
+        }
+      }
+    
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <h1>儿童教育产品统一头像库</h1>
+        <p>这页直接展示当前项目内置的主头像库。角色按统一 SVG 系统生成，不依赖外部大图，适合小尺寸头像位，也方便长期维护。</p>
+        <div class="meta" id="previewMeta"><span>实现方式：程序化 SVG</span><span>角色总数：48</span><span>分类数：5</span><span>当前模式：纯静态双击预览</span></div>
+      </section>
+      <section class="section">
+        <div class="section-head">
+          <h2>动物伙伴</h2>
+          <span>12 个角色</span>
+        </div>
+        <div class="grid">
+        <article class="card">
+          <img src="./assets/avatars/main/animals/animal-cocoa-bear.svg" alt="可可小熊" loading="lazy" />
+          <strong>可可小熊</strong>
+          <small>animal-cocoa-bear</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/animals/animal-sun-lion.svg" alt="晴晴小狮" loading="lazy" />
+          <strong>晴晴小狮</strong>
+          <small>animal-sun-lion</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/animals/animal-mint-bunny.svg" alt="薄荷小兔" loading="lazy" />
+          <strong>薄荷小兔</strong>
+          <small>animal-mint-bunny</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/animals/animal-coral-fox.svg" alt="珊瑚小狐" loading="lazy" />
+          <strong>珊瑚小狐</strong>
+          <small>animal-coral-fox</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/animals/animal-cloud-panda.svg" alt="云朵熊猫" loading="lazy" />
+          <strong>云朵熊猫</strong>
+          <small>animal-cloud-panda</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/animals/animal-ocean-whale.svg" alt="泡泡小鲸" loading="lazy" />
+          <strong>泡泡小鲸</strong>
+          <small>animal-ocean-whale</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/animals/animal-plum-owl.svg" alt="暮暮小鸮" loading="lazy" />
+          <strong>暮暮小鸮</strong>
+          <small>animal-plum-owl</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/animals/animal-hazel-squirrel.svg" alt="榛榛松鼠" loading="lazy" />
+          <strong>榛榛松鼠</strong>
+          <small>animal-hazel-squirrel</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/animals/animal-moss-turtle.svg" alt="苔苔小龟" loading="lazy" />
+          <strong>苔苔小龟</strong>
+          <small>animal-moss-turtle</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/animals/animal-snow-seal.svg" alt="雪团海豹" loading="lazy" />
+          <strong>雪团海豹</strong>
+          <small>animal-snow-seal</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/animals/animal-amber-tiger.svg" alt="琥珀小虎" loading="lazy" />
+          <strong>琥珀小虎</strong>
+          <small>animal-amber-tiger</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/animals/animal-dusk-cat.svg" alt="暮色小猫" loading="lazy" />
+          <strong>暮色小猫</strong>
+          <small>animal-dusk-cat</small>
+        </article>
+        </div>
+      </section>
+      <section class="section">
+        <div class="section-head">
+          <h2>花灵与植物</h2>
+          <span>8 个角色</span>
+        </div>
+        <div class="grid">
+        <article class="card">
+          <img src="./assets/avatars/main/plant_sprites/plant-peach-blossom.svg" alt="桃桃花灵" loading="lazy" />
+          <strong>桃桃花灵</strong>
+          <small>plant-peach-blossom</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/plant_sprites/plant-tulip-sprite.svg" alt="郁香花灵" loading="lazy" />
+          <strong>郁香花灵</strong>
+          <small>plant-tulip-sprite</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/plant_sprites/plant-sunflower-sprite.svg" alt="向阳花灵" loading="lazy" />
+          <strong>向阳花灵</strong>
+          <small>plant-sunflower-sprite</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/plant_sprites/plant-clover-sprite.svg" alt="四叶草灵" loading="lazy" />
+          <strong>四叶草灵</strong>
+          <small>plant-clover-sprite</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/plant_sprites/plant-mushroom-elf.svg" alt="蘑菇茸茸" loading="lazy" />
+          <strong>蘑菇茸茸</strong>
+          <small>plant-mushroom-elf</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/plant_sprites/plant-lily-guardian.svg" alt="铃兰守护" loading="lazy" />
+          <strong>铃兰守护</strong>
+          <small>plant-lily-guardian</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/plant_sprites/plant-lotus-dream.svg" alt="莲莲梦灵" loading="lazy" />
+          <strong>莲莲梦灵</strong>
+          <small>plant-lotus-dream</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/plant_sprites/plant-sprout-sprite.svg" alt="小芽灵灵" loading="lazy" />
+          <strong>小芽灵灵</strong>
+          <small>plant-sprout-sprite</small>
+        </article>
+        </div>
+      </section>
+      <section class="section">
+        <div class="section-head">
+          <h2>蔬果伙伴</h2>
+          <span>8 个角色</span>
+        </div>
+        <div class="grid">
+        <article class="card">
+          <img src="./assets/avatars/main/produce_pals/produce-apple-buddy.svg" alt="苹果咚咚" loading="lazy" />
+          <strong>苹果咚咚</strong>
+          <small>produce-apple-buddy</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/produce_pals/produce-strawberry-buddy.svg" alt="草莓泡泡" loading="lazy" />
+          <strong>草莓泡泡</strong>
+          <small>produce-strawberry-buddy</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/produce_pals/produce-peach-buddy.svg" alt="蜜桃软软" loading="lazy" />
+          <strong>蜜桃软软</strong>
+          <small>produce-peach-buddy</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/produce_pals/produce-pear-buddy.svg" alt="雪梨青青" loading="lazy" />
+          <strong>雪梨青青</strong>
+          <small>produce-pear-buddy</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/produce_pals/produce-carrot-buddy.svg" alt="胡萝卜跳跳" loading="lazy" />
+          <strong>胡萝卜跳跳</strong>
+          <small>produce-carrot-buddy</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/produce_pals/produce-pumpkin-buddy.svg" alt="南瓜圆圆" loading="lazy" />
+          <strong>南瓜圆圆</strong>
+          <small>produce-pumpkin-buddy</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/produce_pals/produce-corn-buddy.svg" alt="玉米闪闪" loading="lazy" />
+          <strong>玉米闪闪</strong>
+          <small>produce-corn-buddy</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/produce_pals/produce-broccoli-buddy.svg" alt="西兰花森森" loading="lazy" />
+          <strong>西兰花森森</strong>
+          <small>produce-broccoli-buddy</small>
+        </article>
+        </div>
+      </section>
+      <section class="section">
+        <div class="section-head">
+          <h2>云月星元素</h2>
+          <span>8 个角色</span>
+        </div>
+        <div class="grid">
+        <article class="card">
+          <img src="./assets/avatars/main/sky_friends/sky-cloud-friend.svg" alt="云朵绵绵" loading="lazy" />
+          <strong>云朵绵绵</strong>
+          <small>sky-cloud-friend</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/sky_friends/sky-moon-friend.svg" alt="月亮柔柔" loading="lazy" />
+          <strong>月亮柔柔</strong>
+          <small>sky-moon-friend</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/sky_friends/sky-star-friend.svg" alt="星星闪闪" loading="lazy" />
+          <strong>星星闪闪</strong>
+          <small>sky-star-friend</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/sky_friends/sky-rainbow-friend.svg" alt="彩虹弯弯" loading="lazy" />
+          <strong>彩虹弯弯</strong>
+          <small>sky-rainbow-friend</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/sky_friends/sky-raindrop-friend.svg" alt="雨滴叮咚" loading="lazy" />
+          <strong>雨滴叮咚</strong>
+          <small>sky-raindrop-friend</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/sky_friends/sky-sun-friend.svg" alt="晴空暖暖" loading="lazy" />
+          <strong>晴空暖暖</strong>
+          <small>sky-sun-friend</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/sky_friends/sky-snow-friend.svg" alt="雪花晶晶" loading="lazy" />
+          <strong>雪花晶晶</strong>
+          <small>sky-snow-friend</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/sky_friends/sky-comet-friend.svg" alt="彗星飞飞" loading="lazy" />
+          <strong>彗星飞飞</strong>
+          <small>sky-comet-friend</small>
+        </article>
+        </div>
+      </section>
+      <section class="section">
+        <div class="section-head">
+          <h2>小守护者</h2>
+          <span>12 个角色</span>
+        </div>
+        <div class="grid">
+        <article class="card">
+          <img src="./assets/avatars/main/little_guardians/guard-scarf-guardian.svg" alt="围巾守护者" loading="lazy" />
+          <strong>围巾守护者</strong>
+          <small>guard-scarf-guardian</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/little_guardians/guard-lantern-guardian.svg" alt="灯灯守护者" loading="lazy" />
+          <strong>灯灯守护者</strong>
+          <small>guard-lantern-guardian</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/little_guardians/guard-leaf-ranger.svg" alt="叶子小巡游" loading="lazy" />
+          <strong>叶子小巡游</strong>
+          <small>guard-leaf-ranger</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/little_guardians/guard-star-ranger.svg" alt="星光小巡游" loading="lazy" />
+          <strong>星光小巡游</strong>
+          <small>guard-star-ranger</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/little_guardians/guard-shell-explorer.svg" alt="贝壳探险家" loading="lazy" />
+          <strong>贝壳探险家</strong>
+          <small>guard-shell-explorer</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/little_guardians/guard-compass-explorer.svg" alt="罗盘探险家" loading="lazy" />
+          <strong>罗盘探险家</strong>
+          <small>guard-compass-explorer</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/little_guardians/guard-cape-guardian.svg" alt="披风守护者" loading="lazy" />
+          <strong>披风守护者</strong>
+          <small>guard-cape-guardian</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/little_guardians/guard-ribbon-elf.svg" alt="丝带小精灵" loading="lazy" />
+          <strong>丝带小精灵</strong>
+          <small>guard-ribbon-elf</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/little_guardians/guard-acorn-elf.svg" alt="松果小精灵" loading="lazy" />
+          <strong>松果小精灵</strong>
+          <small>guard-acorn-elf</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/little_guardians/guard-snow-elf.svg" alt="雪绒小精灵" loading="lazy" />
+          <strong>雪绒小精灵</strong>
+          <small>guard-snow-elf</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/little_guardians/guard-moon-elf.svg" alt="月芽小精灵" loading="lazy" />
+          <strong>月芽小精灵</strong>
+          <small>guard-moon-elf</small>
+        </article>
+        <article class="card">
+          <img src="./assets/avatars/main/little_guardians/guard-dawn-explorer.svg" alt="晨光探险家" loading="lazy" />
+          <strong>晨光探险家</strong>
+          <small>guard-dawn-explorer</small>
+        </article>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

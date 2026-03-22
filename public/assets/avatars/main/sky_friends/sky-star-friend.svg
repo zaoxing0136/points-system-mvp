@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="sky-star-friend-title">
+  <title id="sky-star-friend-title">星星闪闪</title>
+  
+  <defs>
+    <linearGradient id="sky-star-friend-bg" x1="24" y1="12" x2="222" y2="244" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFF7CF" />
+      <stop offset="1" stop-color="#FFE07A" />
+    </linearGradient>
+    <radialGradient id="sky-star-friend-halo" cx="46%" cy="34%" r="72%">
+      <stop offset="0" stop-color="#FFFCE9" stop-opacity="0.95" />
+      <stop offset="1" stop-color="#FFFCE9" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="url(#sky-star-friend-bg)" />
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="#ffffff" fill-opacity="0.10" />
+  <circle cx="70" cy="54" r="28" fill="#ffffff" fill-opacity="0.26" />
+  <circle cx="196" cy="58" r="18" fill="#ffffff" fill-opacity="0.16" />
+  <circle cx="208" cy="190" r="22" fill="#8B8BFF" fill-opacity="0.10" />
+  <circle cx="46" cy="168" r="10" fill="#8B8BFF" fill-opacity="0.14" />
+  <path d="M32 188 C58 166 100 168 126 186 C150 202 188 206 224 188 L224 232 L32 232 Z" fill="#ffffff" fill-opacity="0.14" />
+  <circle cx="128" cy="106" r="74" fill="url(#sky-star-friend-halo)" />
+  <ellipse cx="128" cy="210" rx="58" ry="14" fill="#102030" fill-opacity="0.10" />
+  
+    <g>
+      <path d="M 128 68 L 142.1 100.6 L 177.5 103.9 L 150.8 127.4 L 158.6 162.1 L 128 144 L 97.4 162.1 L 105.2 127.4 L 78.5 103.9 L 113.9 100.6 Z" fill="#FFD45B" />
+      
+    <circle cx="100" cy="142" r="9" fill="#F7A5B2" fill-opacity="0.26" />
+    <circle cx="156" cy="142" r="9" fill="#F7A5B2" fill-opacity="0.26" />
+    
+    <circle cx="110" cy="124" r="4.6" fill="#31495C" />
+    <circle cx="146" cy="124" r="4.6" fill="#31495C" />
+    <ellipse cx="128" cy="135" rx="3.6" ry="2.8" fill="#31495C" fill-opacity="0.52" />
+    <path d="M 114 144 C 122 152, 134 152, 142 144" fill="none" stroke="#31495C" stroke-width="4" stroke-linecap="round" />
+    </g>
+</svg>

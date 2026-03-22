@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="sky-comet-friend-title">
+  <title id="sky-comet-friend-title">彗星飞飞</title>
+  
+  <defs>
+    <linearGradient id="sky-comet-friend-bg" x1="24" y1="12" x2="222" y2="244" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F1EEFF" />
+      <stop offset="1" stop-color="#C9C0FF" />
+    </linearGradient>
+    <radialGradient id="sky-comet-friend-halo" cx="46%" cy="34%" r="72%">
+      <stop offset="0" stop-color="#FBFAFF" stop-opacity="0.95" />
+      <stop offset="1" stop-color="#FBFAFF" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="url(#sky-comet-friend-bg)" />
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="#ffffff" fill-opacity="0.10" />
+  <circle cx="70" cy="54" r="28" fill="#ffffff" fill-opacity="0.26" />
+  <circle cx="196" cy="58" r="18" fill="#ffffff" fill-opacity="0.16" />
+  <circle cx="208" cy="190" r="22" fill="#7B89F2" fill-opacity="0.10" />
+  <circle cx="46" cy="168" r="10" fill="#7B89F2" fill-opacity="0.14" />
+  <path d="M32 188 C58 166 100 168 126 186 C150 202 188 206 224 188 L224 232 L32 232 Z" fill="#ffffff" fill-opacity="0.14" />
+  <circle cx="128" cy="106" r="74" fill="url(#sky-comet-friend-halo)" />
+  <ellipse cx="128" cy="210" rx="58" ry="14" fill="#102030" fill-opacity="0.10" />
+  
+    <g>
+      
+      <path d="M 86 154 C 116 132, 146 112, 176 78" fill="none" stroke="#7B89F2" stroke-width="18" stroke-linecap="round" opacity="0.24" />
+      <path d="M 98 156 C 120 138, 146 118, 172 88" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" opacity="0.28" />
+      <path d="M 148 76 L 157.4 97.1 L 180.3 99.5 L 163.2 114.9 L 168 137.5 L 148 126 L 128 137.5 L 132.8 114.9 L 115.7 99.5 L 138.6 97.1 Z" fill="#FFE48E" />
+      
+    <circle cx="126" cy="132" r="9" fill="#F7A5B2" fill-opacity="0.26" />
+    <circle cx="170" cy="132" r="9" fill="#F7A5B2" fill-opacity="0.26" />
+    
+      <circle cx="134" cy="114" r="5.8" fill="#31495C" />
+      <circle cx="162" cy="114" r="5.8" fill="#31495C" />
+    <ellipse cx="148" cy="125" rx="3.6" ry="2.8" fill="#31495C" fill-opacity="0.52" />
+    <circle cx="148" cy="136" r="5.8" fill="none" stroke="#31495C" stroke-width="3.6" />
+    </g>
+</svg>

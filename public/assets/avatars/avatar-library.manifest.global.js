@@ -1,4 +1,4 @@
-{
+window.__AVATAR_MANIFEST__ = {
   "version": 2,
   "implementation": "svg",
   "collection": "child-education-avatars-2026-spring",
@@ -978,4 +978,4 @@
       "sort_order": 12
     }
   ]
-}
+};

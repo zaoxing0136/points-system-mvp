@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="guard-star-ranger-title">
+  <title id="guard-star-ranger-title">星光小巡游</title>
+  
+  <defs>
+    <linearGradient id="guard-star-ranger-bg" x1="24" y1="12" x2="222" y2="244" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F3EEFF" />
+      <stop offset="1" stop-color="#D2C2FF" />
+    </linearGradient>
+    <radialGradient id="guard-star-ranger-halo" cx="46%" cy="34%" r="72%">
+      <stop offset="0" stop-color="#FBF9FF" stop-opacity="0.95" />
+      <stop offset="1" stop-color="#FBF9FF" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="url(#guard-star-ranger-bg)" />
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="#ffffff" fill-opacity="0.10" />
+  <circle cx="70" cy="54" r="28" fill="#ffffff" fill-opacity="0.26" />
+  <circle cx="196" cy="58" r="18" fill="#ffffff" fill-opacity="0.16" />
+  <circle cx="208" cy="190" r="22" fill="#FF92B6" fill-opacity="0.10" />
+  <circle cx="46" cy="168" r="10" fill="#FF92B6" fill-opacity="0.14" />
+  <path d="M32 188 C58 166 100 168 126 186 C150 202 188 206 224 188 L224 232 L32 232 Z" fill="#ffffff" fill-opacity="0.14" />
+  <circle cx="128" cy="106" r="74" fill="url(#guard-star-ranger-halo)" />
+  <ellipse cx="128" cy="210" rx="58" ry="14" fill="#102030" fill-opacity="0.10" />
+  
+    <g>
+      <path d="M 74 214 C 78 174, 98 146, 128 146 C 158 146, 178 174, 182 214 Z" fill="#B39EF1" />
+      <path d="M 92 156 C 106 148, 150 148, 164 156 L 156 176 C 144 172, 112 172, 100 176 Z" fill="#FF92B6" fill-opacity="0.92" />
+      
+      <path d="M 86 96 H 170" stroke="#9A83E6" stroke-width="14" stroke-linecap="round" />
+      <path d="M 128 64 L 132.7 73.5 L 143.2 75.1 L 135.6 82.5 L 137.4 92.9 L 128 88 L 118.6 92.9 L 120.4 82.5 L 112.8 75.1 L 123.3 73.5 Z" fill="#FF92B6" />
+      <circle cx="128" cy="112" r="38" fill="#F7D3BB" />
+      <path d="M 96 108 C 96 84, 110 72, 128 72 C 146 72, 160 84, 160 108 L 160 92 C 154 84, 144 80, 128 80 C 112 80, 102 84, 96 92 Z" fill="#5D4A58" />
+      
+    <circle cx="100" cy="130" r="9" fill="#F7B0B7" fill-opacity="0.26" />
+    <circle cx="156" cy="130" r="9" fill="#F7B0B7" fill-opacity="0.26" />
+    
+    <circle cx="110" cy="112" r="4.6" fill="#31495C" />
+    <circle cx="146" cy="112" r="4.6" fill="#31495C" />
+    <ellipse cx="128" cy="123" rx="3.6" ry="2.8" fill="#31495C" fill-opacity="0.52" />
+    <path d="M 114 132 C 122 140, 134 140, 142 132" fill="none" stroke="#31495C" stroke-width="4" stroke-linecap="round" />
+      <path d="M 156 146 L 159.5 153.1 L 167.4 154.3 L 161.7 159.9 L 163.1 167.7 L 156 164 L 148.9 167.7 L 150.3 159.9 L 144.6 154.3 L 152.5 153.1 Z" fill="#FF92B6" />
+    </g>
+</svg>

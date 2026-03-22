@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="animal-dusk-cat-title">
+  <title id="animal-dusk-cat-title">暮色小猫</title>
+  
+  <defs>
+    <linearGradient id="animal-dusk-cat-bg" x1="24" y1="12" x2="222" y2="244" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F4EEFF" />
+      <stop offset="1" stop-color="#C6B6FF" />
+    </linearGradient>
+    <radialGradient id="animal-dusk-cat-halo" cx="46%" cy="34%" r="72%">
+      <stop offset="0" stop-color="#FCF9FF" stop-opacity="0.95" />
+      <stop offset="1" stop-color="#FCF9FF" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="url(#animal-dusk-cat-bg)" />
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="#ffffff" fill-opacity="0.10" />
+  <circle cx="70" cy="54" r="28" fill="#ffffff" fill-opacity="0.26" />
+  <circle cx="196" cy="58" r="18" fill="#ffffff" fill-opacity="0.16" />
+  <circle cx="208" cy="190" r="22" fill="#FF90BA" fill-opacity="0.10" />
+  <circle cx="46" cy="168" r="10" fill="#FF90BA" fill-opacity="0.14" />
+  <path d="M32 188 C58 166 100 168 126 186 C150 202 188 206 224 188 L224 232 L32 232 Z" fill="#ffffff" fill-opacity="0.14" />
+  <circle cx="128" cy="106" r="74" fill="url(#animal-dusk-cat-halo)" />
+  <ellipse cx="128" cy="210" rx="58" ry="14" fill="#102030" fill-opacity="0.10" />
+  
+    <g>
+      
+      
+    <path d="M 76 214 C 78 174, 98 148, 128 148 C 158 148, 178 174, 180 214 Z" fill="#A39BEA" />
+    <path d="M 92 160 C 110 150, 146 150, 164 160 L 158 180 C 144 174, 112 174, 98 180 Z" fill="#FF90BA" fill-opacity="0.95" />
+      
+      <path d="M 82 94 L 96 54 L 118 86 Z" fill="#7B78D2" />
+      <path d="M 97 83 L 101 65 L 111 82 Z" fill="#FFF4F8" />
+      <path d="M 174 94 L 160 54 L 138 86 Z" fill="#7B78D2" />
+      <path d="M 159 83 L 155 65 L 145 82 Z" fill="#FFF4F8" />
+      <circle cx="128" cy="112" r="48" fill="#7B78D2" />
+      
+      <path d="M 92 126 C 104 144, 152 144, 164 126 C 160 150, 146 164, 128 164 C 110 164, 96 150, 92 126 Z" fill="#FFF4F8" />
+      
+    <circle cx="100" cy="130" r="9" fill="#F7A5B2" fill-opacity="0.26" />
+    <circle cx="156" cy="130" r="9" fill="#F7A5B2" fill-opacity="0.26" />
+    
+    <circle cx="110" cy="112" r="4.6" fill="#31495C" />
+    <circle cx="146" cy="112" r="4.6" fill="#31495C" />
+    <ellipse cx="128" cy="123" rx="3.6" ry="2.8" fill="#31495C" fill-opacity="0.52" />
+    <path d="M 114 132 C 122 140, 134 140, 142 132" fill="none" stroke="#31495C" stroke-width="4" stroke-linecap="round" />
+      
+      <path d="M 100 138 H 82" stroke="#31495C" stroke-width="3" stroke-linecap="round" opacity="0.52" />
+      <path d="M 100 144 H 84" stroke="#31495C" stroke-width="3" stroke-linecap="round" opacity="0.52" />
+      <path d="M 156 138 H 174" stroke="#31495C" stroke-width="3" stroke-linecap="round" opacity="0.52" />
+      <path d="M 156 144 H 172" stroke="#31495C" stroke-width="3" stroke-linecap="round" opacity="0.52" />
+    </g>
+</svg>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="plant-peach-blossom-title">
+  <title id="plant-peach-blossom-title">桃桃花灵</title>
+  
+  <defs>
+    <linearGradient id="plant-peach-blossom-bg" x1="24" y1="12" x2="222" y2="244" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFF0F3" />
+      <stop offset="1" stop-color="#FFC9D8" />
+    </linearGradient>
+    <radialGradient id="plant-peach-blossom-halo" cx="46%" cy="34%" r="72%">
+      <stop offset="0" stop-color="#FFF8FA" stop-opacity="0.95" />
+      <stop offset="1" stop-color="#FFF8FA" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="url(#plant-peach-blossom-bg)" />
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="#ffffff" fill-opacity="0.10" />
+  <circle cx="70" cy="54" r="28" fill="#ffffff" fill-opacity="0.26" />
+  <circle cx="196" cy="58" r="18" fill="#ffffff" fill-opacity="0.16" />
+  <circle cx="208" cy="190" r="22" fill="#F786A6" fill-opacity="0.10" />
+  <circle cx="46" cy="168" r="10" fill="#F786A6" fill-opacity="0.14" />
+  <path d="M32 188 C58 166 100 168 126 186 C150 202 188 206 224 188 L224 232 L32 232 Z" fill="#ffffff" fill-opacity="0.14" />
+  <circle cx="128" cy="106" r="74" fill="url(#plant-peach-blossom-halo)" />
+  <ellipse cx="128" cy="210" rx="58" ry="14" fill="#102030" fill-opacity="0.10" />
+  
+    <g>
+      
+      <ellipse cx="182" cy="110" rx="15" ry="30" fill="#F4A7BC" opacity="0.96" transform="rotate(90 182 110)" /><ellipse cx="166.2" cy="148.2" rx="15" ry="30" fill="#F4A7BC" opacity="0.96" transform="rotate(135 166.2 148.2)" /><ellipse cx="128" cy="164" rx="15" ry="30" fill="#F4A7BC" opacity="0.96" transform="rotate(180 128 164)" /><ellipse cx="89.8" cy="148.2" rx="15" ry="30" fill="#F4A7BC" opacity="0.96" transform="rotate(225 89.8 148.2)" /><ellipse cx="74" cy="110" rx="15" ry="30" fill="#F4A7BC" opacity="0.96" transform="rotate(270 74 110)" /><ellipse cx="89.8" cy="71.8" rx="15" ry="30" fill="#F4A7BC" opacity="0.96" transform="rotate(315 89.8 71.8)" /><ellipse cx="128" cy="56" rx="15" ry="30" fill="#F4A7BC" opacity="0.96" transform="rotate(360 128 56)" /><ellipse cx="166.2" cy="71.8" rx="15" ry="30" fill="#F4A7BC" opacity="0.96" transform="rotate(405 166.2 71.8)" />
+      <circle cx="128" cy="114" r="40" fill="#FFF4E9" />
+      <path d="M 82 210 C 86 176, 104 154, 128 154 C 152 154, 170 176, 174 210 Z" fill="#FFD6E0" />
+      <path d="M 98 170 C 110 154, 118 152, 128 164 C 138 152, 146 154, 158 170" fill="none" stroke="#F786A6" stroke-width="8" stroke-linecap="round" />
+      
+    <circle cx="100" cy="136" r="9" fill="#F7A5B2" fill-opacity="0.26" />
+    <circle cx="156" cy="136" r="9" fill="#F7A5B2" fill-opacity="0.26" />
+    
+    <circle cx="110" cy="118" r="4.6" fill="#31495C" />
+    <circle cx="146" cy="118" r="4.6" fill="#31495C" />
+    <ellipse cx="128" cy="129" rx="3.6" ry="2.8" fill="#31495C" fill-opacity="0.52" />
+    <path d="M 114 138 C 122 146, 134 146, 142 138" fill="none" stroke="#31495C" stroke-width="4" stroke-linecap="round" />
+    </g>
+</svg>

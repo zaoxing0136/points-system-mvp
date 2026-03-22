@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="produce-broccoli-buddy-title">
+  <title id="produce-broccoli-buddy-title">西兰花森森</title>
+  
+  <defs>
+    <linearGradient id="produce-broccoli-buddy-bg" x1="24" y1="12" x2="222" y2="244" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ECFFD8" />
+      <stop offset="1" stop-color="#A9E287" />
+    </linearGradient>
+    <radialGradient id="produce-broccoli-buddy-halo" cx="46%" cy="34%" r="72%">
+      <stop offset="0" stop-color="#FBFFF2" stop-opacity="0.95" />
+      <stop offset="1" stop-color="#FBFFF2" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="url(#produce-broccoli-buddy-bg)" />
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="#ffffff" fill-opacity="0.10" />
+  <circle cx="70" cy="54" r="28" fill="#ffffff" fill-opacity="0.26" />
+  <circle cx="196" cy="58" r="18" fill="#ffffff" fill-opacity="0.16" />
+  <circle cx="208" cy="190" r="22" fill="#3EBA7B" fill-opacity="0.10" />
+  <circle cx="46" cy="168" r="10" fill="#3EBA7B" fill-opacity="0.14" />
+  <path d="M32 188 C58 166 100 168 126 186 C150 202 188 206 224 188 L224 232 L32 232 Z" fill="#ffffff" fill-opacity="0.14" />
+  <circle cx="128" cy="106" r="74" fill="url(#produce-broccoli-buddy-halo)" />
+  <ellipse cx="128" cy="210" rx="58" ry="14" fill="#102030" fill-opacity="0.10" />
+  
+    <g>
+      
+      <circle cx="102" cy="104" r="24" fill="#61B86E" />
+      <circle cx="128" cy="90" r="30" fill="#61B86E" />
+      <circle cx="154" cy="104" r="24" fill="#61B86E" />
+      <circle cx="128" cy="118" r="28" fill="#61B86E" />
+      <rect x="112" y="126" width="32" height="64" rx="16" fill="#FFF5E1" />
+      
+    <circle cx="100" cy="152" r="9" fill="#F7A5B2" fill-opacity="0.26" />
+    <circle cx="156" cy="152" r="9" fill="#F7A5B2" fill-opacity="0.26" />
+    
+    <circle cx="110" cy="134" r="4.6" fill="#31495C" />
+    <circle cx="146" cy="134" r="4.6" fill="#31495C" />
+    <ellipse cx="128" cy="145" rx="3.6" ry="2.8" fill="#31495C" fill-opacity="0.52" />
+    <path d="M 114 154 C 122 162, 134 162, 142 154" fill="none" stroke="#31495C" stroke-width="4" stroke-linecap="round" />
+    </g>
+</svg>

@@ -2,7 +2,7 @@
 import path from 'node:path';
 import process from 'node:process';
 import { createClient } from '@supabase/supabase-js';
-import { AVATAR_LIBRARY } from '../assets/avatar-library.js';
+import { AVATAR_CATEGORIES } from '../assets/avatar-library.js';
 
 const cwd = process.cwd();
 const ENV_FILES = ['.env.local', '.env'];
@@ -243,9 +243,9 @@ function buildAGroupStudents() {
   };
 
   return boyProfiles.map(function (profile, index) {
-    return buildRow(profile, index, 'male', AVATAR_LIBRARY.A.boy, 0xca01);
+    return buildRow(profile, index, 'male', AVATAR_CATEGORIES.animals, 0xca01);
   }).concat(girlProfiles.map(function (profile, index) {
-    return buildRow(profile, index, 'female', AVATAR_LIBRARY.A.girl, 0xca02);
+    return buildRow(profile, index, 'female', AVATAR_CATEGORIES.little_guardians, 0xca02);
   }));
 }
 

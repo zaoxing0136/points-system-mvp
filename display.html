@@ -5,7 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>大屏展示页</title>
     <link rel="stylesheet" href="./assets/styles.css" />
-    <script type="module" src="./assets/display.js"></script>
+    <script>
+      if (window.location.protocol === 'file:') {
+        document.write('<script src="./assets/avatars/avatar-library.manifest.global.js"><\\/script>');
+        document.write('<script src="./assets/file-preview-runtime.js"><\\/script>');
+        document.write('<script src="./assets/display-file-preview.global.js"><\\/script>');
+      }
+    </script>
+    <script type="module">
+      if (window.location.protocol !== 'file:') {
+        import('./assets/display.js');
+      }
+    </script>
   </head>
   <body class="display-body display-dopamine-body">
     <main class="display-shell display-dopamine-shell">
@@ -68,3 +79,6 @@
     </main>
   </body>
 </html>
+
+
+

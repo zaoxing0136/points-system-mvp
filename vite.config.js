@@ -68,7 +68,8 @@ export default defineConfig(function ({ mode }) {
           display: resolve(__dirname, 'display.html'),
           admin: resolve(__dirname, 'admin.html'),
           students: resolve(__dirname, 'students.html'),
-          classes: resolve(__dirname, 'classes.html')
+          classes: resolve(__dirname, 'classes.html'),
+          avatarPreview: resolve(__dirname, 'avatar-preview.html')
         }
       }
     }

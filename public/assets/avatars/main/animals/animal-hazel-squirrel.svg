@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="animal-hazel-squirrel-title">
+  <title id="animal-hazel-squirrel-title">榛榛松鼠</title>
+  
+  <defs>
+    <linearGradient id="animal-hazel-squirrel-bg" x1="24" y1="12" x2="222" y2="244" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFF2E0" />
+      <stop offset="1" stop-color="#D9AE87" />
+    </linearGradient>
+    <radialGradient id="animal-hazel-squirrel-halo" cx="46%" cy="34%" r="72%">
+      <stop offset="0" stop-color="#FFF9EF" stop-opacity="0.95" />
+      <stop offset="1" stop-color="#FFF9EF" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="url(#animal-hazel-squirrel-bg)" />
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="#ffffff" fill-opacity="0.10" />
+  <circle cx="70" cy="54" r="28" fill="#ffffff" fill-opacity="0.26" />
+  <circle cx="196" cy="58" r="18" fill="#ffffff" fill-opacity="0.16" />
+  <circle cx="208" cy="190" r="22" fill="#F2A65A" fill-opacity="0.10" />
+  <circle cx="46" cy="168" r="10" fill="#F2A65A" fill-opacity="0.14" />
+  <path d="M32 188 C58 166 100 168 126 186 C150 202 188 206 224 188 L224 232 L32 232 Z" fill="#ffffff" fill-opacity="0.14" />
+  <circle cx="128" cy="106" r="74" fill="url(#animal-hazel-squirrel-halo)" />
+  <ellipse cx="128" cy="210" rx="58" ry="14" fill="#102030" fill-opacity="0.10" />
+  
+    <g>
+      
+      <path d="M 176 164 C 208 144, 212 108, 190 92 C 176 82, 154 86, 150 104 C 148 116, 154 126, 166 130 C 150 130, 138 140, 138 158 C 138 170, 146 182, 160 188 Z" fill="#F2A65A" fill-opacity="0.78" />
+      
+    <path d="M 76 214 C 78 174, 98 148, 128 148 C 158 148, 178 174, 180 214 Z" fill="#D39871" />
+    <path d="M 92 160 C 110 150, 146 150, 164 160 L 158 180 C 144 174, 112 174, 98 180 Z" fill="#F2A65A" fill-opacity="0.95" />
+      
+    <circle cx="92" cy="72" r="18" fill="#B77F57" />
+    <circle cx="92" cy="72" r="8" fill="#FFF1E5" />
+    <circle cx="164" cy="72" r="18" fill="#B77F57" />
+    <circle cx="164" cy="72" r="8" fill="#FFF1E5" />
+      <circle cx="128" cy="112" r="48" fill="#B77F57" />
+      <ellipse cx="128" cy="134" rx="24" ry="18" fill="#FFF1E5" />
+      
+    <circle cx="100" cy="130" r="9" fill="#F7A5B2" fill-opacity="0.26" />
+    <circle cx="156" cy="130" r="9" fill="#F7A5B2" fill-opacity="0.26" />
+    
+    <circle cx="110" cy="112" r="4.6" fill="#31495C" />
+    <circle cx="146" cy="112" r="4.6" fill="#31495C" />
+    <ellipse cx="128" cy="123" rx="3.6" ry="2.8" fill="#31495C" fill-opacity="0.52" />
+    <path d="M 114 132 C 122 140, 134 140, 142 132" fill="none" stroke="#31495C" stroke-width="4" stroke-linecap="round" />
+      
+    </g>
+</svg>

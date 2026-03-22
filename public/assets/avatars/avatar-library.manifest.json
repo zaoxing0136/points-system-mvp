@@ -1,740 +1,981 @@
 {
-  "library": {
-    "A": {
-      "boy": [
-        {
-          "code": "A_boy_001_小熊团子",
-          "name": "小熊团子",
-          "age_group": "A",
-          "gender_group": "boy",
-          "image_path": "/assets/avatars/A/boy/A_boy_001_小熊团子.svg",
-          "visual_type": "动物",
-          "symbol": "🐻",
-          "accent_symbol": "🍪",
-          "palette": [
-            "#fff1de",
-            "#ffd5b2",
-            "#ffb58d"
-          ]
-        },
-        {
-          "code": "A_boy_002_小狮布布",
-          "name": "小狮布布",
-          "age_group": "A",
-          "gender_group": "boy",
-          "image_path": "/assets/avatars/A/boy/A_boy_002_小狮布布.svg",
-          "visual_type": "动物",
-          "symbol": "🦁",
-          "accent_symbol": "☀️",
-          "palette": [
-            "#fff0bf",
-            "#ffd68d",
-            "#ffb45f"
-          ]
-        },
-        {
-          "code": "A_boy_003_小龙果果",
-          "name": "小龙果果",
-          "age_group": "A",
-          "gender_group": "boy",
-          "image_path": "/assets/avatars/A/boy/A_boy_003_小龙果果.svg",
-          "visual_type": "动物",
-          "symbol": "🦖",
-          "accent_symbol": "✨",
-          "palette": [
-            "#ecffbf",
-            "#b6f08a",
-            "#84d97a"
-          ]
-        },
-        {
-          "code": "A_boy_004_小狐跳跳",
-          "name": "小狐跳跳",
-          "age_group": "A",
-          "gender_group": "boy",
-          "image_path": "/assets/avatars/A/boy/A_boy_004_小狐跳跳.svg",
-          "visual_type": "动物",
-          "symbol": "🦊",
-          "accent_symbol": "🍃",
-          "palette": [
-            "#fff0dc",
-            "#ffc593",
-            "#ff9b6b"
-          ]
-        },
-        {
-          "code": "A_boy_005_小羊绵绵",
-          "name": "小羊绵绵",
-          "age_group": "A",
-          "gender_group": "boy",
-          "image_path": "/assets/avatars/A/boy/A_boy_005_小羊绵绵.svg",
-          "visual_type": "动物",
-          "symbol": "🐑",
-          "accent_symbol": "☁️",
-          "palette": [
-            "#fff9ea",
-            "#ffe3c8",
-            "#ffd1b3"
-          ]
-        },
-        {
-          "code": "A_boy_006_小狗豆豆",
-          "name": "小狗豆豆",
-          "age_group": "A",
-          "gender_group": "boy",
-          "image_path": "/assets/avatars/A/boy/A_boy_006_小狗豆豆.svg",
-          "visual_type": "动物",
-          "symbol": "🐶",
-          "accent_symbol": "🦴",
-          "palette": [
-            "#fff0dd",
-            "#ffd4b3",
-            "#ffb38d"
-          ]
-        },
-        {
-          "code": "A_boy_007_苹果碰碰",
-          "name": "苹果碰碰",
-          "age_group": "A",
-          "gender_group": "boy",
-          "image_path": "/assets/avatars/A/boy/A_boy_007_苹果碰碰.svg",
-          "visual_type": "水果",
-          "symbol": "🍎",
-          "accent_symbol": "🍃",
-          "palette": [
-            "#ffe7dc",
-            "#ffb59f",
-            "#ff8c78"
-          ]
-        },
-        {
-          "code": "A_boy_008_玉米壮壮",
-          "name": "玉米壮壮",
-          "age_group": "A",
-          "gender_group": "boy",
-          "image_path": "/assets/avatars/A/boy/A_boy_008_玉米壮壮.svg",
-          "visual_type": "蔬菜",
-          "symbol": "🌽",
-          "accent_symbol": "🌿",
-          "palette": [
-            "#fff3c9",
-            "#ffe17f",
-            "#ffcb57"
-          ]
-        },
-        {
-          "code": "A_boy_009_南瓜球球",
-          "name": "南瓜球球",
-          "age_group": "A",
-          "gender_group": "boy",
-          "image_path": "/assets/avatars/A/boy/A_boy_009_南瓜球球.svg",
-          "visual_type": "蔬菜",
-          "symbol": "🎃",
-          "accent_symbol": "🍂",
-          "palette": [
-            "#ffe7cc",
-            "#ffc67c",
-            "#ff9d56"
-          ]
-        },
-        {
-          "code": "A_boy_010_小芽芽",
-          "name": "小芽芽",
-          "age_group": "A",
-          "gender_group": "boy",
-          "image_path": "/assets/avatars/A/boy/A_boy_010_小芽芽.svg",
-          "visual_type": "植物",
-          "symbol": "🌱",
-          "accent_symbol": "✨",
-          "palette": [
-            "#f0ffd6",
-            "#c8f29e",
-            "#8fdc87"
-          ]
-        },
-        {
-          "code": "A_boy_011_云团团",
-          "name": "云团团",
-          "age_group": "A",
-          "gender_group": "boy",
-          "image_path": "/assets/avatars/A/boy/A_boy_011_云团团.svg",
-          "visual_type": "天气",
-          "symbol": "☁️",
-          "accent_symbol": "💫",
-          "palette": [
-            "#f4f4ff",
-            "#d8e6ff",
-            "#bdd2ff"
-          ]
-        },
-        {
-          "code": "A_boy_012_星星闪闪",
-          "name": "星星闪闪",
-          "age_group": "A",
-          "gender_group": "boy",
-          "image_path": "/assets/avatars/A/boy/A_boy_012_星星闪闪.svg",
-          "visual_type": "星星",
-          "symbol": "⭐",
-          "accent_symbol": "👑",
-          "palette": [
-            "#fff9c8",
-            "#ffe886",
-            "#ffd35e"
-          ]
-        }
-      ],
-      "girl": [
-        {
-          "code": "A_girl_001_小兔莓莓",
-          "name": "小兔莓莓",
-          "age_group": "A",
-          "gender_group": "girl",
-          "image_path": "/assets/avatars/A/girl/A_girl_001_小兔莓莓.svg",
-          "visual_type": "动物",
-          "symbol": "🐰",
-          "accent_symbol": "🍓",
-          "palette": [
-            "#fff5e7",
-            "#ffd8f0",
-            "#ffc5d7"
-          ]
-        },
-        {
-          "code": "A_girl_002_小鹿糖糖",
-          "name": "小鹿糖糖",
-          "age_group": "A",
-          "gender_group": "girl",
-          "image_path": "/assets/avatars/A/girl/A_girl_002_小鹿糖糖.svg",
-          "visual_type": "动物",
-          "symbol": "🦌",
-          "accent_symbol": "🌼",
-          "palette": [
-            "#fff1de",
-            "#ffd9be",
-            "#ffc2a7"
-          ]
-        },
-        {
-          "code": "A_girl_003_小桃泡泡",
-          "name": "小桃泡泡",
-          "age_group": "A",
-          "gender_group": "girl",
-          "image_path": "/assets/avatars/A/girl/A_girl_003_小桃泡泡.svg",
-          "visual_type": "水果",
-          "symbol": "🍑",
-          "accent_symbol": "✨",
-          "palette": [
-            "#ffeef1",
-            "#ffd2db",
-            "#ffb9c9"
-          ]
-        },
-        {
-          "code": "A_girl_004_草莓甜甜",
-          "name": "草莓甜甜",
-          "age_group": "A",
-          "gender_group": "girl",
-          "image_path": "/assets/avatars/A/girl/A_girl_004_草莓甜甜.svg",
-          "visual_type": "水果",
-          "symbol": "🍓",
-          "accent_symbol": "🌸",
-          "palette": [
-            "#fff0f3",
-            "#ffcddd",
-            "#ffb2c7"
-          ]
-        },
-        {
-          "code": "A_girl_005_小猫蜜蜜",
-          "name": "小猫蜜蜜",
-          "age_group": "A",
-          "gender_group": "girl",
-          "image_path": "/assets/avatars/A/girl/A_girl_005_小猫蜜蜜.svg",
-          "visual_type": "动物",
-          "symbol": "🐱",
-          "accent_symbol": "🌷",
-          "palette": [
-            "#fff7ef",
-            "#ffe0cf",
-            "#ffd2c2"
-          ]
-        },
-        {
-          "code": "A_girl_006_花花灵灵",
-          "name": "花花灵灵",
-          "age_group": "A",
-          "gender_group": "girl",
-          "image_path": "/assets/avatars/A/girl/A_girl_006_花花灵灵.svg",
-          "visual_type": "精灵",
-          "symbol": "🧚",
-          "accent_symbol": "🌸",
-          "palette": [
-            "#fff3ff",
-            "#e6d8ff",
-            "#cfe9af"
-          ]
-        },
-        {
-          "code": "A_girl_007_小蘑菇朵朵",
-          "name": "小蘑菇朵朵",
-          "age_group": "A",
-          "gender_group": "girl",
-          "image_path": "/assets/avatars/A/girl/A_girl_007_小蘑菇朵朵.svg",
-          "visual_type": "植物",
-          "symbol": "🍄",
-          "accent_symbol": "✨",
-          "palette": [
-            "#fff4df",
-            "#ffd1d4",
-            "#dff4c8"
-          ]
-        },
-        {
-          "code": "A_girl_008_樱桃啵啵",
-          "name": "樱桃啵啵",
-          "age_group": "A",
-          "gender_group": "girl",
-          "image_path": "/assets/avatars/A/girl/A_girl_008_樱桃啵啵.svg",
-          "visual_type": "水果",
-          "symbol": "🍒",
-          "accent_symbol": "💖",
-          "palette": [
-            "#fff8d7",
-            "#ffd7df",
-            "#ffc1ca"
-          ]
-        },
-        {
-          "code": "A_girl_009_小月亮柔柔",
-          "name": "小月亮柔柔",
-          "age_group": "A",
-          "gender_group": "girl",
-          "image_path": "/assets/avatars/A/girl/A_girl_009_小月亮柔柔.svg",
-          "visual_type": "天气",
-          "symbol": "🌙",
-          "accent_symbol": "⭐",
-          "palette": [
-            "#f0ebff",
-            "#d9d1ff",
-            "#bed8ff"
-          ]
-        },
-        {
-          "code": "A_girl_010_小云朵棉棉",
-          "name": "小云朵棉棉",
-          "age_group": "A",
-          "gender_group": "girl",
-          "image_path": "/assets/avatars/A/girl/A_girl_010_小云朵棉棉.svg",
-          "visual_type": "天气",
-          "symbol": "☁️",
-          "accent_symbol": "🌈",
-          "palette": [
-            "#f6f4ff",
-            "#dff3ff",
-            "#d5ddff"
-          ]
-        },
-        {
-          "code": "A_girl_011_花鹿露露",
-          "name": "花鹿露露",
-          "age_group": "A",
-          "gender_group": "girl",
-          "image_path": "/assets/avatars/A/girl/A_girl_011_花鹿露露.svg",
-          "visual_type": "动物",
-          "symbol": "🦌",
-          "accent_symbol": "🌷",
-          "palette": [
-            "#fff7df",
-            "#ffe4b8",
-            "#ffd0c2"
-          ]
-        },
-        {
-          "code": "A_girl_012_葡萄啾啾",
-          "name": "葡萄啾啾",
-          "age_group": "A",
-          "gender_group": "girl",
-          "image_path": "/assets/avatars/A/girl/A_girl_012_葡萄啾啾.svg",
-          "visual_type": "水果",
-          "symbol": "🍇",
-          "accent_symbol": "✨",
-          "palette": [
-            "#f5ebff",
-            "#e1d0ff",
-            "#d0b7ff"
-          ]
-        }
-      ]
-    },
-    "B": {
-      "boy": [],
-      "girl": []
-    },
-    "C": {
-      "boy": [],
-      "girl": []
-    }
+  "version": 2,
+  "implementation": "svg",
+  "collection": "child-education-avatars-2026-spring",
+  "generated_at": "2026-03-22T22:26:31.251Z",
+  "count": 48,
+  "categories": {
+    "animals": [
+      {
+        "code": "animal-cocoa-bear",
+        "name": "可可小熊",
+        "family": "animal",
+        "motif": "bear",
+        "category_key": "animals",
+        "category_name": "动物伙伴",
+        "image_path": "/assets/avatars/main/animals/animal-cocoa-bear.svg",
+        "sort_order": 1
+      },
+      {
+        "code": "animal-sun-lion",
+        "name": "晴晴小狮",
+        "family": "animal",
+        "motif": "lion",
+        "category_key": "animals",
+        "category_name": "动物伙伴",
+        "image_path": "/assets/avatars/main/animals/animal-sun-lion.svg",
+        "sort_order": 2
+      },
+      {
+        "code": "animal-mint-bunny",
+        "name": "薄荷小兔",
+        "family": "animal",
+        "motif": "bunny",
+        "category_key": "animals",
+        "category_name": "动物伙伴",
+        "image_path": "/assets/avatars/main/animals/animal-mint-bunny.svg",
+        "sort_order": 3
+      },
+      {
+        "code": "animal-coral-fox",
+        "name": "珊瑚小狐",
+        "family": "animal",
+        "motif": "fox",
+        "category_key": "animals",
+        "category_name": "动物伙伴",
+        "image_path": "/assets/avatars/main/animals/animal-coral-fox.svg",
+        "sort_order": 4
+      },
+      {
+        "code": "animal-cloud-panda",
+        "name": "云朵熊猫",
+        "family": "animal",
+        "motif": "panda",
+        "category_key": "animals",
+        "category_name": "动物伙伴",
+        "image_path": "/assets/avatars/main/animals/animal-cloud-panda.svg",
+        "sort_order": 5
+      },
+      {
+        "code": "animal-ocean-whale",
+        "name": "泡泡小鲸",
+        "family": "animal",
+        "motif": "whale",
+        "category_key": "animals",
+        "category_name": "动物伙伴",
+        "image_path": "/assets/avatars/main/animals/animal-ocean-whale.svg",
+        "sort_order": 6
+      },
+      {
+        "code": "animal-plum-owl",
+        "name": "暮暮小鸮",
+        "family": "animal",
+        "motif": "owl",
+        "category_key": "animals",
+        "category_name": "动物伙伴",
+        "image_path": "/assets/avatars/main/animals/animal-plum-owl.svg",
+        "sort_order": 7
+      },
+      {
+        "code": "animal-hazel-squirrel",
+        "name": "榛榛松鼠",
+        "family": "animal",
+        "motif": "squirrel",
+        "category_key": "animals",
+        "category_name": "动物伙伴",
+        "image_path": "/assets/avatars/main/animals/animal-hazel-squirrel.svg",
+        "sort_order": 8
+      },
+      {
+        "code": "animal-moss-turtle",
+        "name": "苔苔小龟",
+        "family": "animal",
+        "motif": "turtle",
+        "category_key": "animals",
+        "category_name": "动物伙伴",
+        "image_path": "/assets/avatars/main/animals/animal-moss-turtle.svg",
+        "sort_order": 9
+      },
+      {
+        "code": "animal-snow-seal",
+        "name": "雪团海豹",
+        "family": "animal",
+        "motif": "seal",
+        "category_key": "animals",
+        "category_name": "动物伙伴",
+        "image_path": "/assets/avatars/main/animals/animal-snow-seal.svg",
+        "sort_order": 10
+      },
+      {
+        "code": "animal-amber-tiger",
+        "name": "琥珀小虎",
+        "family": "animal",
+        "motif": "tiger",
+        "category_key": "animals",
+        "category_name": "动物伙伴",
+        "image_path": "/assets/avatars/main/animals/animal-amber-tiger.svg",
+        "sort_order": 11
+      },
+      {
+        "code": "animal-dusk-cat",
+        "name": "暮色小猫",
+        "family": "animal",
+        "motif": "cat",
+        "category_key": "animals",
+        "category_name": "动物伙伴",
+        "image_path": "/assets/avatars/main/animals/animal-dusk-cat.svg",
+        "sort_order": 12
+      }
+    ],
+    "plant_sprites": [
+      {
+        "code": "plant-peach-blossom",
+        "name": "桃桃花灵",
+        "family": "plant",
+        "motif": "blossom",
+        "category_key": "plant_sprites",
+        "category_name": "花灵与植物",
+        "image_path": "/assets/avatars/main/plant_sprites/plant-peach-blossom.svg",
+        "sort_order": 1
+      },
+      {
+        "code": "plant-tulip-sprite",
+        "name": "郁香花灵",
+        "family": "plant",
+        "motif": "tulip",
+        "category_key": "plant_sprites",
+        "category_name": "花灵与植物",
+        "image_path": "/assets/avatars/main/plant_sprites/plant-tulip-sprite.svg",
+        "sort_order": 2
+      },
+      {
+        "code": "plant-sunflower-sprite",
+        "name": "向阳花灵",
+        "family": "plant",
+        "motif": "sunflower",
+        "category_key": "plant_sprites",
+        "category_name": "花灵与植物",
+        "image_path": "/assets/avatars/main/plant_sprites/plant-sunflower-sprite.svg",
+        "sort_order": 3
+      },
+      {
+        "code": "plant-clover-sprite",
+        "name": "四叶草灵",
+        "family": "plant",
+        "motif": "clover",
+        "category_key": "plant_sprites",
+        "category_name": "花灵与植物",
+        "image_path": "/assets/avatars/main/plant_sprites/plant-clover-sprite.svg",
+        "sort_order": 4
+      },
+      {
+        "code": "plant-mushroom-elf",
+        "name": "蘑菇茸茸",
+        "family": "plant",
+        "motif": "mushroom",
+        "category_key": "plant_sprites",
+        "category_name": "花灵与植物",
+        "image_path": "/assets/avatars/main/plant_sprites/plant-mushroom-elf.svg",
+        "sort_order": 5
+      },
+      {
+        "code": "plant-lily-guardian",
+        "name": "铃兰守护",
+        "family": "plant",
+        "motif": "lily",
+        "category_key": "plant_sprites",
+        "category_name": "花灵与植物",
+        "image_path": "/assets/avatars/main/plant_sprites/plant-lily-guardian.svg",
+        "sort_order": 6
+      },
+      {
+        "code": "plant-lotus-dream",
+        "name": "莲莲梦灵",
+        "family": "plant",
+        "motif": "lotus",
+        "category_key": "plant_sprites",
+        "category_name": "花灵与植物",
+        "image_path": "/assets/avatars/main/plant_sprites/plant-lotus-dream.svg",
+        "sort_order": 7
+      },
+      {
+        "code": "plant-sprout-sprite",
+        "name": "小芽灵灵",
+        "family": "plant",
+        "motif": "sprout",
+        "category_key": "plant_sprites",
+        "category_name": "花灵与植物",
+        "image_path": "/assets/avatars/main/plant_sprites/plant-sprout-sprite.svg",
+        "sort_order": 8
+      }
+    ],
+    "produce_pals": [
+      {
+        "code": "produce-apple-buddy",
+        "name": "苹果咚咚",
+        "family": "produce",
+        "motif": "apple",
+        "category_key": "produce_pals",
+        "category_name": "蔬果伙伴",
+        "image_path": "/assets/avatars/main/produce_pals/produce-apple-buddy.svg",
+        "sort_order": 1
+      },
+      {
+        "code": "produce-strawberry-buddy",
+        "name": "草莓泡泡",
+        "family": "produce",
+        "motif": "strawberry",
+        "category_key": "produce_pals",
+        "category_name": "蔬果伙伴",
+        "image_path": "/assets/avatars/main/produce_pals/produce-strawberry-buddy.svg",
+        "sort_order": 2
+      },
+      {
+        "code": "produce-peach-buddy",
+        "name": "蜜桃软软",
+        "family": "produce",
+        "motif": "peach",
+        "category_key": "produce_pals",
+        "category_name": "蔬果伙伴",
+        "image_path": "/assets/avatars/main/produce_pals/produce-peach-buddy.svg",
+        "sort_order": 3
+      },
+      {
+        "code": "produce-pear-buddy",
+        "name": "雪梨青青",
+        "family": "produce",
+        "motif": "pear",
+        "category_key": "produce_pals",
+        "category_name": "蔬果伙伴",
+        "image_path": "/assets/avatars/main/produce_pals/produce-pear-buddy.svg",
+        "sort_order": 4
+      },
+      {
+        "code": "produce-carrot-buddy",
+        "name": "胡萝卜跳跳",
+        "family": "produce",
+        "motif": "carrot",
+        "category_key": "produce_pals",
+        "category_name": "蔬果伙伴",
+        "image_path": "/assets/avatars/main/produce_pals/produce-carrot-buddy.svg",
+        "sort_order": 5
+      },
+      {
+        "code": "produce-pumpkin-buddy",
+        "name": "南瓜圆圆",
+        "family": "produce",
+        "motif": "pumpkin",
+        "category_key": "produce_pals",
+        "category_name": "蔬果伙伴",
+        "image_path": "/assets/avatars/main/produce_pals/produce-pumpkin-buddy.svg",
+        "sort_order": 6
+      },
+      {
+        "code": "produce-corn-buddy",
+        "name": "玉米闪闪",
+        "family": "produce",
+        "motif": "corn",
+        "category_key": "produce_pals",
+        "category_name": "蔬果伙伴",
+        "image_path": "/assets/avatars/main/produce_pals/produce-corn-buddy.svg",
+        "sort_order": 7
+      },
+      {
+        "code": "produce-broccoli-buddy",
+        "name": "西兰花森森",
+        "family": "produce",
+        "motif": "broccoli",
+        "category_key": "produce_pals",
+        "category_name": "蔬果伙伴",
+        "image_path": "/assets/avatars/main/produce_pals/produce-broccoli-buddy.svg",
+        "sort_order": 8
+      }
+    ],
+    "sky_friends": [
+      {
+        "code": "sky-cloud-friend",
+        "name": "云朵绵绵",
+        "family": "sky",
+        "motif": "cloud",
+        "category_key": "sky_friends",
+        "category_name": "云月星元素",
+        "image_path": "/assets/avatars/main/sky_friends/sky-cloud-friend.svg",
+        "sort_order": 1
+      },
+      {
+        "code": "sky-moon-friend",
+        "name": "月亮柔柔",
+        "family": "sky",
+        "motif": "moon",
+        "category_key": "sky_friends",
+        "category_name": "云月星元素",
+        "image_path": "/assets/avatars/main/sky_friends/sky-moon-friend.svg",
+        "sort_order": 2
+      },
+      {
+        "code": "sky-star-friend",
+        "name": "星星闪闪",
+        "family": "sky",
+        "motif": "star",
+        "category_key": "sky_friends",
+        "category_name": "云月星元素",
+        "image_path": "/assets/avatars/main/sky_friends/sky-star-friend.svg",
+        "sort_order": 3
+      },
+      {
+        "code": "sky-rainbow-friend",
+        "name": "彩虹弯弯",
+        "family": "sky",
+        "motif": "rainbow",
+        "category_key": "sky_friends",
+        "category_name": "云月星元素",
+        "image_path": "/assets/avatars/main/sky_friends/sky-rainbow-friend.svg",
+        "sort_order": 4
+      },
+      {
+        "code": "sky-raindrop-friend",
+        "name": "雨滴叮咚",
+        "family": "sky",
+        "motif": "raindrop",
+        "category_key": "sky_friends",
+        "category_name": "云月星元素",
+        "image_path": "/assets/avatars/main/sky_friends/sky-raindrop-friend.svg",
+        "sort_order": 5
+      },
+      {
+        "code": "sky-sun-friend",
+        "name": "晴空暖暖",
+        "family": "sky",
+        "motif": "sun",
+        "category_key": "sky_friends",
+        "category_name": "云月星元素",
+        "image_path": "/assets/avatars/main/sky_friends/sky-sun-friend.svg",
+        "sort_order": 6
+      },
+      {
+        "code": "sky-snow-friend",
+        "name": "雪花晶晶",
+        "family": "sky",
+        "motif": "snow",
+        "category_key": "sky_friends",
+        "category_name": "云月星元素",
+        "image_path": "/assets/avatars/main/sky_friends/sky-snow-friend.svg",
+        "sort_order": 7
+      },
+      {
+        "code": "sky-comet-friend",
+        "name": "彗星飞飞",
+        "family": "sky",
+        "motif": "comet",
+        "category_key": "sky_friends",
+        "category_name": "云月星元素",
+        "image_path": "/assets/avatars/main/sky_friends/sky-comet-friend.svg",
+        "sort_order": 8
+      }
+    ],
+    "little_guardians": [
+      {
+        "code": "guard-scarf-guardian",
+        "name": "围巾守护者",
+        "family": "guardian",
+        "motif": "scarf",
+        "category_key": "little_guardians",
+        "category_name": "小守护者",
+        "image_path": "/assets/avatars/main/little_guardians/guard-scarf-guardian.svg",
+        "sort_order": 1
+      },
+      {
+        "code": "guard-lantern-guardian",
+        "name": "灯灯守护者",
+        "family": "guardian",
+        "motif": "lantern",
+        "category_key": "little_guardians",
+        "category_name": "小守护者",
+        "image_path": "/assets/avatars/main/little_guardians/guard-lantern-guardian.svg",
+        "sort_order": 2
+      },
+      {
+        "code": "guard-leaf-ranger",
+        "name": "叶子小巡游",
+        "family": "guardian",
+        "motif": "leaf-ranger",
+        "category_key": "little_guardians",
+        "category_name": "小守护者",
+        "image_path": "/assets/avatars/main/little_guardians/guard-leaf-ranger.svg",
+        "sort_order": 3
+      },
+      {
+        "code": "guard-star-ranger",
+        "name": "星光小巡游",
+        "family": "guardian",
+        "motif": "star-ranger",
+        "category_key": "little_guardians",
+        "category_name": "小守护者",
+        "image_path": "/assets/avatars/main/little_guardians/guard-star-ranger.svg",
+        "sort_order": 4
+      },
+      {
+        "code": "guard-shell-explorer",
+        "name": "贝壳探险家",
+        "family": "guardian",
+        "motif": "shell-explorer",
+        "category_key": "little_guardians",
+        "category_name": "小守护者",
+        "image_path": "/assets/avatars/main/little_guardians/guard-shell-explorer.svg",
+        "sort_order": 5
+      },
+      {
+        "code": "guard-compass-explorer",
+        "name": "罗盘探险家",
+        "family": "guardian",
+        "motif": "compass-explorer",
+        "category_key": "little_guardians",
+        "category_name": "小守护者",
+        "image_path": "/assets/avatars/main/little_guardians/guard-compass-explorer.svg",
+        "sort_order": 6
+      },
+      {
+        "code": "guard-cape-guardian",
+        "name": "披风守护者",
+        "family": "guardian",
+        "motif": "cape",
+        "category_key": "little_guardians",
+        "category_name": "小守护者",
+        "image_path": "/assets/avatars/main/little_guardians/guard-cape-guardian.svg",
+        "sort_order": 7
+      },
+      {
+        "code": "guard-ribbon-elf",
+        "name": "丝带小精灵",
+        "family": "guardian",
+        "motif": "ribbon-elf",
+        "category_key": "little_guardians",
+        "category_name": "小守护者",
+        "image_path": "/assets/avatars/main/little_guardians/guard-ribbon-elf.svg",
+        "sort_order": 8
+      },
+      {
+        "code": "guard-acorn-elf",
+        "name": "松果小精灵",
+        "family": "guardian",
+        "motif": "acorn-elf",
+        "category_key": "little_guardians",
+        "category_name": "小守护者",
+        "image_path": "/assets/avatars/main/little_guardians/guard-acorn-elf.svg",
+        "sort_order": 9
+      },
+      {
+        "code": "guard-snow-elf",
+        "name": "雪绒小精灵",
+        "family": "guardian",
+        "motif": "snow-elf",
+        "category_key": "little_guardians",
+        "category_name": "小守护者",
+        "image_path": "/assets/avatars/main/little_guardians/guard-snow-elf.svg",
+        "sort_order": 10
+      },
+      {
+        "code": "guard-moon-elf",
+        "name": "月芽小精灵",
+        "family": "guardian",
+        "motif": "moon-elf",
+        "category_key": "little_guardians",
+        "category_name": "小守护者",
+        "image_path": "/assets/avatars/main/little_guardians/guard-moon-elf.svg",
+        "sort_order": 11
+      },
+      {
+        "code": "guard-dawn-explorer",
+        "name": "晨光探险家",
+        "family": "guardian",
+        "motif": "dawn-explorer",
+        "category_key": "little_guardians",
+        "category_name": "小守护者",
+        "image_path": "/assets/avatars/main/little_guardians/guard-dawn-explorer.svg",
+        "sort_order": 12
+      }
+    ]
   },
   "list": [
     {
-      "code": "A_boy_001_小熊团子",
-      "name": "小熊团子",
-      "age_group": "A",
-      "gender_group": "boy",
-      "image_path": "/assets/avatars/A/boy/A_boy_001_小熊团子.svg",
-      "visual_type": "动物",
-      "symbol": "🐻",
-      "accent_symbol": "🍪",
-      "palette": [
-        "#fff1de",
-        "#ffd5b2",
-        "#ffb58d"
-      ]
+      "code": "animal-cocoa-bear",
+      "name": "可可小熊",
+      "family": "animal",
+      "motif": "bear",
+      "category_key": "animals",
+      "category_name": "动物伙伴",
+      "image_path": "/assets/avatars/main/animals/animal-cocoa-bear.svg",
+      "sort_order": 1
     },
     {
-      "code": "A_boy_002_小狮布布",
-      "name": "小狮布布",
-      "age_group": "A",
-      "gender_group": "boy",
-      "image_path": "/assets/avatars/A/boy/A_boy_002_小狮布布.svg",
-      "visual_type": "动物",
-      "symbol": "🦁",
-      "accent_symbol": "☀️",
-      "palette": [
-        "#fff0bf",
-        "#ffd68d",
-        "#ffb45f"
-      ]
+      "code": "animal-sun-lion",
+      "name": "晴晴小狮",
+      "family": "animal",
+      "motif": "lion",
+      "category_key": "animals",
+      "category_name": "动物伙伴",
+      "image_path": "/assets/avatars/main/animals/animal-sun-lion.svg",
+      "sort_order": 2
     },
     {
-      "code": "A_boy_003_小龙果果",
-      "name": "小龙果果",
-      "age_group": "A",
-      "gender_group": "boy",
-      "image_path": "/assets/avatars/A/boy/A_boy_003_小龙果果.svg",
-      "visual_type": "动物",
-      "symbol": "🦖",
-      "accent_symbol": "✨",
-      "palette": [
-        "#ecffbf",
-        "#b6f08a",
-        "#84d97a"
-      ]
+      "code": "animal-mint-bunny",
+      "name": "薄荷小兔",
+      "family": "animal",
+      "motif": "bunny",
+      "category_key": "animals",
+      "category_name": "动物伙伴",
+      "image_path": "/assets/avatars/main/animals/animal-mint-bunny.svg",
+      "sort_order": 3
     },
     {
-      "code": "A_boy_004_小狐跳跳",
-      "name": "小狐跳跳",
-      "age_group": "A",
-      "gender_group": "boy",
-      "image_path": "/assets/avatars/A/boy/A_boy_004_小狐跳跳.svg",
-      "visual_type": "动物",
-      "symbol": "🦊",
-      "accent_symbol": "🍃",
-      "palette": [
-        "#fff0dc",
-        "#ffc593",
-        "#ff9b6b"
-      ]
+      "code": "animal-coral-fox",
+      "name": "珊瑚小狐",
+      "family": "animal",
+      "motif": "fox",
+      "category_key": "animals",
+      "category_name": "动物伙伴",
+      "image_path": "/assets/avatars/main/animals/animal-coral-fox.svg",
+      "sort_order": 4
     },
     {
-      "code": "A_boy_005_小羊绵绵",
-      "name": "小羊绵绵",
-      "age_group": "A",
-      "gender_group": "boy",
-      "image_path": "/assets/avatars/A/boy/A_boy_005_小羊绵绵.svg",
-      "visual_type": "动物",
-      "symbol": "🐑",
-      "accent_symbol": "☁️",
-      "palette": [
-        "#fff9ea",
-        "#ffe3c8",
-        "#ffd1b3"
-      ]
+      "code": "animal-cloud-panda",
+      "name": "云朵熊猫",
+      "family": "animal",
+      "motif": "panda",
+      "category_key": "animals",
+      "category_name": "动物伙伴",
+      "image_path": "/assets/avatars/main/animals/animal-cloud-panda.svg",
+      "sort_order": 5
     },
     {
-      "code": "A_boy_006_小狗豆豆",
-      "name": "小狗豆豆",
-      "age_group": "A",
-      "gender_group": "boy",
-      "image_path": "/assets/avatars/A/boy/A_boy_006_小狗豆豆.svg",
-      "visual_type": "动物",
-      "symbol": "🐶",
-      "accent_symbol": "🦴",
-      "palette": [
-        "#fff0dd",
-        "#ffd4b3",
-        "#ffb38d"
-      ]
+      "code": "animal-ocean-whale",
+      "name": "泡泡小鲸",
+      "family": "animal",
+      "motif": "whale",
+      "category_key": "animals",
+      "category_name": "动物伙伴",
+      "image_path": "/assets/avatars/main/animals/animal-ocean-whale.svg",
+      "sort_order": 6
     },
     {
-      "code": "A_boy_007_苹果碰碰",
-      "name": "苹果碰碰",
-      "age_group": "A",
-      "gender_group": "boy",
-      "image_path": "/assets/avatars/A/boy/A_boy_007_苹果碰碰.svg",
-      "visual_type": "水果",
-      "symbol": "🍎",
-      "accent_symbol": "🍃",
-      "palette": [
-        "#ffe7dc",
-        "#ffb59f",
-        "#ff8c78"
-      ]
+      "code": "animal-plum-owl",
+      "name": "暮暮小鸮",
+      "family": "animal",
+      "motif": "owl",
+      "category_key": "animals",
+      "category_name": "动物伙伴",
+      "image_path": "/assets/avatars/main/animals/animal-plum-owl.svg",
+      "sort_order": 7
     },
     {
-      "code": "A_boy_008_玉米壮壮",
-      "name": "玉米壮壮",
-      "age_group": "A",
-      "gender_group": "boy",
-      "image_path": "/assets/avatars/A/boy/A_boy_008_玉米壮壮.svg",
-      "visual_type": "蔬菜",
-      "symbol": "🌽",
-      "accent_symbol": "🌿",
-      "palette": [
-        "#fff3c9",
-        "#ffe17f",
-        "#ffcb57"
-      ]
+      "code": "animal-hazel-squirrel",
+      "name": "榛榛松鼠",
+      "family": "animal",
+      "motif": "squirrel",
+      "category_key": "animals",
+      "category_name": "动物伙伴",
+      "image_path": "/assets/avatars/main/animals/animal-hazel-squirrel.svg",
+      "sort_order": 8
     },
     {
-      "code": "A_boy_009_南瓜球球",
-      "name": "南瓜球球",
-      "age_group": "A",
-      "gender_group": "boy",
-      "image_path": "/assets/avatars/A/boy/A_boy_009_南瓜球球.svg",
-      "visual_type": "蔬菜",
-      "symbol": "🎃",
-      "accent_symbol": "🍂",
-      "palette": [
-        "#ffe7cc",
-        "#ffc67c",
-        "#ff9d56"
-      ]
+      "code": "animal-moss-turtle",
+      "name": "苔苔小龟",
+      "family": "animal",
+      "motif": "turtle",
+      "category_key": "animals",
+      "category_name": "动物伙伴",
+      "image_path": "/assets/avatars/main/animals/animal-moss-turtle.svg",
+      "sort_order": 9
     },
     {
-      "code": "A_boy_010_小芽芽",
-      "name": "小芽芽",
-      "age_group": "A",
-      "gender_group": "boy",
-      "image_path": "/assets/avatars/A/boy/A_boy_010_小芽芽.svg",
-      "visual_type": "植物",
-      "symbol": "🌱",
-      "accent_symbol": "✨",
-      "palette": [
-        "#f0ffd6",
-        "#c8f29e",
-        "#8fdc87"
-      ]
+      "code": "animal-snow-seal",
+      "name": "雪团海豹",
+      "family": "animal",
+      "motif": "seal",
+      "category_key": "animals",
+      "category_name": "动物伙伴",
+      "image_path": "/assets/avatars/main/animals/animal-snow-seal.svg",
+      "sort_order": 10
     },
     {
-      "code": "A_boy_011_云团团",
-      "name": "云团团",
-      "age_group": "A",
-      "gender_group": "boy",
-      "image_path": "/assets/avatars/A/boy/A_boy_011_云团团.svg",
-      "visual_type": "天气",
-      "symbol": "☁️",
-      "accent_symbol": "💫",
-      "palette": [
-        "#f4f4ff",
-        "#d8e6ff",
-        "#bdd2ff"
-      ]
+      "code": "animal-amber-tiger",
+      "name": "琥珀小虎",
+      "family": "animal",
+      "motif": "tiger",
+      "category_key": "animals",
+      "category_name": "动物伙伴",
+      "image_path": "/assets/avatars/main/animals/animal-amber-tiger.svg",
+      "sort_order": 11
     },
     {
-      "code": "A_boy_012_星星闪闪",
+      "code": "animal-dusk-cat",
+      "name": "暮色小猫",
+      "family": "animal",
+      "motif": "cat",
+      "category_key": "animals",
+      "category_name": "动物伙伴",
+      "image_path": "/assets/avatars/main/animals/animal-dusk-cat.svg",
+      "sort_order": 12
+    },
+    {
+      "code": "plant-peach-blossom",
+      "name": "桃桃花灵",
+      "family": "plant",
+      "motif": "blossom",
+      "category_key": "plant_sprites",
+      "category_name": "花灵与植物",
+      "image_path": "/assets/avatars/main/plant_sprites/plant-peach-blossom.svg",
+      "sort_order": 1
+    },
+    {
+      "code": "plant-tulip-sprite",
+      "name": "郁香花灵",
+      "family": "plant",
+      "motif": "tulip",
+      "category_key": "plant_sprites",
+      "category_name": "花灵与植物",
+      "image_path": "/assets/avatars/main/plant_sprites/plant-tulip-sprite.svg",
+      "sort_order": 2
+    },
+    {
+      "code": "plant-sunflower-sprite",
+      "name": "向阳花灵",
+      "family": "plant",
+      "motif": "sunflower",
+      "category_key": "plant_sprites",
+      "category_name": "花灵与植物",
+      "image_path": "/assets/avatars/main/plant_sprites/plant-sunflower-sprite.svg",
+      "sort_order": 3
+    },
+    {
+      "code": "plant-clover-sprite",
+      "name": "四叶草灵",
+      "family": "plant",
+      "motif": "clover",
+      "category_key": "plant_sprites",
+      "category_name": "花灵与植物",
+      "image_path": "/assets/avatars/main/plant_sprites/plant-clover-sprite.svg",
+      "sort_order": 4
+    },
+    {
+      "code": "plant-mushroom-elf",
+      "name": "蘑菇茸茸",
+      "family": "plant",
+      "motif": "mushroom",
+      "category_key": "plant_sprites",
+      "category_name": "花灵与植物",
+      "image_path": "/assets/avatars/main/plant_sprites/plant-mushroom-elf.svg",
+      "sort_order": 5
+    },
+    {
+      "code": "plant-lily-guardian",
+      "name": "铃兰守护",
+      "family": "plant",
+      "motif": "lily",
+      "category_key": "plant_sprites",
+      "category_name": "花灵与植物",
+      "image_path": "/assets/avatars/main/plant_sprites/plant-lily-guardian.svg",
+      "sort_order": 6
+    },
+    {
+      "code": "plant-lotus-dream",
+      "name": "莲莲梦灵",
+      "family": "plant",
+      "motif": "lotus",
+      "category_key": "plant_sprites",
+      "category_name": "花灵与植物",
+      "image_path": "/assets/avatars/main/plant_sprites/plant-lotus-dream.svg",
+      "sort_order": 7
+    },
+    {
+      "code": "plant-sprout-sprite",
+      "name": "小芽灵灵",
+      "family": "plant",
+      "motif": "sprout",
+      "category_key": "plant_sprites",
+      "category_name": "花灵与植物",
+      "image_path": "/assets/avatars/main/plant_sprites/plant-sprout-sprite.svg",
+      "sort_order": 8
+    },
+    {
+      "code": "produce-apple-buddy",
+      "name": "苹果咚咚",
+      "family": "produce",
+      "motif": "apple",
+      "category_key": "produce_pals",
+      "category_name": "蔬果伙伴",
+      "image_path": "/assets/avatars/main/produce_pals/produce-apple-buddy.svg",
+      "sort_order": 1
+    },
+    {
+      "code": "produce-strawberry-buddy",
+      "name": "草莓泡泡",
+      "family": "produce",
+      "motif": "strawberry",
+      "category_key": "produce_pals",
+      "category_name": "蔬果伙伴",
+      "image_path": "/assets/avatars/main/produce_pals/produce-strawberry-buddy.svg",
+      "sort_order": 2
+    },
+    {
+      "code": "produce-peach-buddy",
+      "name": "蜜桃软软",
+      "family": "produce",
+      "motif": "peach",
+      "category_key": "produce_pals",
+      "category_name": "蔬果伙伴",
+      "image_path": "/assets/avatars/main/produce_pals/produce-peach-buddy.svg",
+      "sort_order": 3
+    },
+    {
+      "code": "produce-pear-buddy",
+      "name": "雪梨青青",
+      "family": "produce",
+      "motif": "pear",
+      "category_key": "produce_pals",
+      "category_name": "蔬果伙伴",
+      "image_path": "/assets/avatars/main/produce_pals/produce-pear-buddy.svg",
+      "sort_order": 4
+    },
+    {
+      "code": "produce-carrot-buddy",
+      "name": "胡萝卜跳跳",
+      "family": "produce",
+      "motif": "carrot",
+      "category_key": "produce_pals",
+      "category_name": "蔬果伙伴",
+      "image_path": "/assets/avatars/main/produce_pals/produce-carrot-buddy.svg",
+      "sort_order": 5
+    },
+    {
+      "code": "produce-pumpkin-buddy",
+      "name": "南瓜圆圆",
+      "family": "produce",
+      "motif": "pumpkin",
+      "category_key": "produce_pals",
+      "category_name": "蔬果伙伴",
+      "image_path": "/assets/avatars/main/produce_pals/produce-pumpkin-buddy.svg",
+      "sort_order": 6
+    },
+    {
+      "code": "produce-corn-buddy",
+      "name": "玉米闪闪",
+      "family": "produce",
+      "motif": "corn",
+      "category_key": "produce_pals",
+      "category_name": "蔬果伙伴",
+      "image_path": "/assets/avatars/main/produce_pals/produce-corn-buddy.svg",
+      "sort_order": 7
+    },
+    {
+      "code": "produce-broccoli-buddy",
+      "name": "西兰花森森",
+      "family": "produce",
+      "motif": "broccoli",
+      "category_key": "produce_pals",
+      "category_name": "蔬果伙伴",
+      "image_path": "/assets/avatars/main/produce_pals/produce-broccoli-buddy.svg",
+      "sort_order": 8
+    },
+    {
+      "code": "sky-cloud-friend",
+      "name": "云朵绵绵",
+      "family": "sky",
+      "motif": "cloud",
+      "category_key": "sky_friends",
+      "category_name": "云月星元素",
+      "image_path": "/assets/avatars/main/sky_friends/sky-cloud-friend.svg",
+      "sort_order": 1
+    },
+    {
+      "code": "sky-moon-friend",
+      "name": "月亮柔柔",
+      "family": "sky",
+      "motif": "moon",
+      "category_key": "sky_friends",
+      "category_name": "云月星元素",
+      "image_path": "/assets/avatars/main/sky_friends/sky-moon-friend.svg",
+      "sort_order": 2
+    },
+    {
+      "code": "sky-star-friend",
       "name": "星星闪闪",
-      "age_group": "A",
-      "gender_group": "boy",
-      "image_path": "/assets/avatars/A/boy/A_boy_012_星星闪闪.svg",
-      "visual_type": "星星",
-      "symbol": "⭐",
-      "accent_symbol": "👑",
-      "palette": [
-        "#fff9c8",
-        "#ffe886",
-        "#ffd35e"
-      ]
+      "family": "sky",
+      "motif": "star",
+      "category_key": "sky_friends",
+      "category_name": "云月星元素",
+      "image_path": "/assets/avatars/main/sky_friends/sky-star-friend.svg",
+      "sort_order": 3
     },
     {
-      "code": "A_girl_001_小兔莓莓",
-      "name": "小兔莓莓",
-      "age_group": "A",
-      "gender_group": "girl",
-      "image_path": "/assets/avatars/A/girl/A_girl_001_小兔莓莓.svg",
-      "visual_type": "动物",
-      "symbol": "🐰",
-      "accent_symbol": "🍓",
-      "palette": [
-        "#fff5e7",
-        "#ffd8f0",
-        "#ffc5d7"
-      ]
+      "code": "sky-rainbow-friend",
+      "name": "彩虹弯弯",
+      "family": "sky",
+      "motif": "rainbow",
+      "category_key": "sky_friends",
+      "category_name": "云月星元素",
+      "image_path": "/assets/avatars/main/sky_friends/sky-rainbow-friend.svg",
+      "sort_order": 4
     },
     {
-      "code": "A_girl_002_小鹿糖糖",
-      "name": "小鹿糖糖",
-      "age_group": "A",
-      "gender_group": "girl",
-      "image_path": "/assets/avatars/A/girl/A_girl_002_小鹿糖糖.svg",
-      "visual_type": "动物",
-      "symbol": "🦌",
-      "accent_symbol": "🌼",
-      "palette": [
-        "#fff1de",
-        "#ffd9be",
-        "#ffc2a7"
-      ]
+      "code": "sky-raindrop-friend",
+      "name": "雨滴叮咚",
+      "family": "sky",
+      "motif": "raindrop",
+      "category_key": "sky_friends",
+      "category_name": "云月星元素",
+      "image_path": "/assets/avatars/main/sky_friends/sky-raindrop-friend.svg",
+      "sort_order": 5
     },
     {
-      "code": "A_girl_003_小桃泡泡",
-      "name": "小桃泡泡",
-      "age_group": "A",
-      "gender_group": "girl",
-      "image_path": "/assets/avatars/A/girl/A_girl_003_小桃泡泡.svg",
-      "visual_type": "水果",
-      "symbol": "🍑",
-      "accent_symbol": "✨",
-      "palette": [
-        "#ffeef1",
-        "#ffd2db",
-        "#ffb9c9"
-      ]
+      "code": "sky-sun-friend",
+      "name": "晴空暖暖",
+      "family": "sky",
+      "motif": "sun",
+      "category_key": "sky_friends",
+      "category_name": "云月星元素",
+      "image_path": "/assets/avatars/main/sky_friends/sky-sun-friend.svg",
+      "sort_order": 6
     },
     {
-      "code": "A_girl_004_草莓甜甜",
-      "name": "草莓甜甜",
-      "age_group": "A",
-      "gender_group": "girl",
-      "image_path": "/assets/avatars/A/girl/A_girl_004_草莓甜甜.svg",
-      "visual_type": "水果",
-      "symbol": "🍓",
-      "accent_symbol": "🌸",
-      "palette": [
-        "#fff0f3",
-        "#ffcddd",
-        "#ffb2c7"
-      ]
+      "code": "sky-snow-friend",
+      "name": "雪花晶晶",
+      "family": "sky",
+      "motif": "snow",
+      "category_key": "sky_friends",
+      "category_name": "云月星元素",
+      "image_path": "/assets/avatars/main/sky_friends/sky-snow-friend.svg",
+      "sort_order": 7
     },
     {
-      "code": "A_girl_005_小猫蜜蜜",
-      "name": "小猫蜜蜜",
-      "age_group": "A",
-      "gender_group": "girl",
-      "image_path": "/assets/avatars/A/girl/A_girl_005_小猫蜜蜜.svg",
-      "visual_type": "动物",
-      "symbol": "🐱",
-      "accent_symbol": "🌷",
-      "palette": [
-        "#fff7ef",
-        "#ffe0cf",
-        "#ffd2c2"
-      ]
+      "code": "sky-comet-friend",
+      "name": "彗星飞飞",
+      "family": "sky",
+      "motif": "comet",
+      "category_key": "sky_friends",
+      "category_name": "云月星元素",
+      "image_path": "/assets/avatars/main/sky_friends/sky-comet-friend.svg",
+      "sort_order": 8
     },
     {
-      "code": "A_girl_006_花花灵灵",
-      "name": "花花灵灵",
-      "age_group": "A",
-      "gender_group": "girl",
-      "image_path": "/assets/avatars/A/girl/A_girl_006_花花灵灵.svg",
-      "visual_type": "精灵",
-      "symbol": "🧚",
-      "accent_symbol": "🌸",
-      "palette": [
-        "#fff3ff",
-        "#e6d8ff",
-        "#cfe9af"
-      ]
+      "code": "guard-scarf-guardian",
+      "name": "围巾守护者",
+      "family": "guardian",
+      "motif": "scarf",
+      "category_key": "little_guardians",
+      "category_name": "小守护者",
+      "image_path": "/assets/avatars/main/little_guardians/guard-scarf-guardian.svg",
+      "sort_order": 1
     },
     {
-      "code": "A_girl_007_小蘑菇朵朵",
-      "name": "小蘑菇朵朵",
-      "age_group": "A",
-      "gender_group": "girl",
-      "image_path": "/assets/avatars/A/girl/A_girl_007_小蘑菇朵朵.svg",
-      "visual_type": "植物",
-      "symbol": "🍄",
-      "accent_symbol": "✨",
-      "palette": [
-        "#fff4df",
-        "#ffd1d4",
-        "#dff4c8"
-      ]
+      "code": "guard-lantern-guardian",
+      "name": "灯灯守护者",
+      "family": "guardian",
+      "motif": "lantern",
+      "category_key": "little_guardians",
+      "category_name": "小守护者",
+      "image_path": "/assets/avatars/main/little_guardians/guard-lantern-guardian.svg",
+      "sort_order": 2
     },
     {
-      "code": "A_girl_008_樱桃啵啵",
-      "name": "樱桃啵啵",
-      "age_group": "A",
-      "gender_group": "girl",
-      "image_path": "/assets/avatars/A/girl/A_girl_008_樱桃啵啵.svg",
-      "visual_type": "水果",
-      "symbol": "🍒",
-      "accent_symbol": "💖",
-      "palette": [
-        "#fff8d7",
-        "#ffd7df",
-        "#ffc1ca"
-      ]
+      "code": "guard-leaf-ranger",
+      "name": "叶子小巡游",
+      "family": "guardian",
+      "motif": "leaf-ranger",
+      "category_key": "little_guardians",
+      "category_name": "小守护者",
+      "image_path": "/assets/avatars/main/little_guardians/guard-leaf-ranger.svg",
+      "sort_order": 3
     },
     {
-      "code": "A_girl_009_小月亮柔柔",
-      "name": "小月亮柔柔",
-      "age_group": "A",
-      "gender_group": "girl",
-      "image_path": "/assets/avatars/A/girl/A_girl_009_小月亮柔柔.svg",
-      "visual_type": "天气",
-      "symbol": "🌙",
-      "accent_symbol": "⭐",
-      "palette": [
-        "#f0ebff",
-        "#d9d1ff",
-        "#bed8ff"
-      ]
+      "code": "guard-star-ranger",
+      "name": "星光小巡游",
+      "family": "guardian",
+      "motif": "star-ranger",
+      "category_key": "little_guardians",
+      "category_name": "小守护者",
+      "image_path": "/assets/avatars/main/little_guardians/guard-star-ranger.svg",
+      "sort_order": 4
     },
     {
-      "code": "A_girl_010_小云朵棉棉",
-      "name": "小云朵棉棉",
-      "age_group": "A",
-      "gender_group": "girl",
-      "image_path": "/assets/avatars/A/girl/A_girl_010_小云朵棉棉.svg",
-      "visual_type": "天气",
-      "symbol": "☁️",
-      "accent_symbol": "🌈",
-      "palette": [
-        "#f6f4ff",
-        "#dff3ff",
-        "#d5ddff"
-      ]
+      "code": "guard-shell-explorer",
+      "name": "贝壳探险家",
+      "family": "guardian",
+      "motif": "shell-explorer",
+      "category_key": "little_guardians",
+      "category_name": "小守护者",
+      "image_path": "/assets/avatars/main/little_guardians/guard-shell-explorer.svg",
+      "sort_order": 5
     },
     {
-      "code": "A_girl_011_花鹿露露",
-      "name": "花鹿露露",
-      "age_group": "A",
-      "gender_group": "girl",
-      "image_path": "/assets/avatars/A/girl/A_girl_011_花鹿露露.svg",
-      "visual_type": "动物",
-      "symbol": "🦌",
-      "accent_symbol": "🌷",
-      "palette": [
-        "#fff7df",
-        "#ffe4b8",
-        "#ffd0c2"
-      ]
+      "code": "guard-compass-explorer",
+      "name": "罗盘探险家",
+      "family": "guardian",
+      "motif": "compass-explorer",
+      "category_key": "little_guardians",
+      "category_name": "小守护者",
+      "image_path": "/assets/avatars/main/little_guardians/guard-compass-explorer.svg",
+      "sort_order": 6
     },
     {
-      "code": "A_girl_012_葡萄啾啾",
-      "name": "葡萄啾啾",
-      "age_group": "A",
-      "gender_group": "girl",
-      "image_path": "/assets/avatars/A/girl/A_girl_012_葡萄啾啾.svg",
-      "visual_type": "水果",
-      "symbol": "🍇",
-      "accent_symbol": "✨",
-      "palette": [
-        "#f5ebff",
-        "#e1d0ff",
-        "#d0b7ff"
-      ]
+      "code": "guard-cape-guardian",
+      "name": "披风守护者",
+      "family": "guardian",
+      "motif": "cape",
+      "category_key": "little_guardians",
+      "category_name": "小守护者",
+      "image_path": "/assets/avatars/main/little_guardians/guard-cape-guardian.svg",
+      "sort_order": 7
+    },
+    {
+      "code": "guard-ribbon-elf",
+      "name": "丝带小精灵",
+      "family": "guardian",
+      "motif": "ribbon-elf",
+      "category_key": "little_guardians",
+      "category_name": "小守护者",
+      "image_path": "/assets/avatars/main/little_guardians/guard-ribbon-elf.svg",
+      "sort_order": 8
+    },
+    {
+      "code": "guard-acorn-elf",
+      "name": "松果小精灵",
+      "family": "guardian",
+      "motif": "acorn-elf",
+      "category_key": "little_guardians",
+      "category_name": "小守护者",
+      "image_path": "/assets/avatars/main/little_guardians/guard-acorn-elf.svg",
+      "sort_order": 9
+    },
+    {
+      "code": "guard-snow-elf",
+      "name": "雪绒小精灵",
+      "family": "guardian",
+      "motif": "snow-elf",
+      "category_key": "little_guardians",
+      "category_name": "小守护者",
+      "image_path": "/assets/avatars/main/little_guardians/guard-snow-elf.svg",
+      "sort_order": 10
+    },
+    {
+      "code": "guard-moon-elf",
+      "name": "月芽小精灵",
+      "family": "guardian",
+      "motif": "moon-elf",
+      "category_key": "little_guardians",
+      "category_name": "小守护者",
+      "image_path": "/assets/avatars/main/little_guardians/guard-moon-elf.svg",
+      "sort_order": 11
+    },
+    {
+      "code": "guard-dawn-explorer",
+      "name": "晨光探险家",
+      "family": "guardian",
+      "motif": "dawn-explorer",
+      "category_key": "little_guardians",
+      "category_name": "小守护者",
+      "image_path": "/assets/avatars/main/little_guardians/guard-dawn-explorer.svg",
+      "sort_order": 12
     }
   ]
 }

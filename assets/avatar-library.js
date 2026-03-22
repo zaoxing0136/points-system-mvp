@@ -1,85 +1,110 @@
-﻿import avatarData from './avatars/avatar-library.manifest.json';
+﻿import avatarData from './avatars/avatar-library.manifest.js';
 
-const EMPTY_LIBRARY = {
-  A: { boy: [], girl: [] },
-  B: { boy: [], girl: [] },
-  C: { boy: [], girl: [] }
-};
+const EMPTY_LIBRARY = {};
+const FILE_PROTOCOL = 'file:';
 
-export const AVATAR_LIBRARY = avatarData?.library || EMPTY_LIBRARY;
+export const AVATAR_CATEGORIES = avatarData?.categories || EMPTY_LIBRARY;
+export const AVATAR_LIBRARY = AVATAR_CATEGORIES;
 export const AVATAR_LIBRARY_LIST = avatarData?.list || [];
+export const AVATAR_CATEGORY_KEYS = Object.keys(AVATAR_CATEGORIES);
 
-const GRADE_GROUP_RULES = [
-  { group: 'A', pattern: /(中班|大班|一年级|二年级)/u },
-  { group: 'B', pattern: /(三年级|四年级)/u },
-  { group: 'C', pattern: /(五年级|六年级|初一|初二|初三)/u }
-];
+function normalizeText(value) {
+  return String(value || '').trim();
+}
 
-const GENDER_MAP = {
-  male: 'boy',
-  boy: 'boy',
-  '男': 'boy',
-  '男生': 'boy',
-  female: 'girl',
-  girl: 'girl',
-  '女': 'girl',
-  '女生': 'girl'
-};
+function normalizeImagePath(pathname) {
+  const value = normalizeText(pathname).replace(/\\/g, '/');
+  if (!value) {
+    return '';
+  }
+
+  if (/^(https?:\/\/|data:image\/|blob:|file:\/\/)/iu.test(value)) {
+    const fileModeMatch = value.match(/\/assets\/avatars\/.+$/iu);
+    return fileModeMatch ? fileModeMatch[0] : value;
+  }
+
+  if (/^\.\.?\/assets\//iu.test(value)) {
+    return `/${value.replace(/^\.\.?\//u, '')}`;
+  }
+
+  if (/^assets\//iu.test(value)) {
+    return `/${value}`;
+  }
+
+  return value.startsWith('/') ? value : `/${value.replace(/^\/+/, '')}`;
+}
+
+export function resolveAvatarAssetUrl(pathname) {
+  const normalized = normalizeImagePath(pathname);
+  if (!normalized) {
+    return '';
+  }
+  if (!normalized.startsWith('/')) {
+    return normalized;
+  }
+  if (typeof window !== 'undefined' && window.location?.protocol === FILE_PROTOCOL) {
+    return `.${normalized}`;
+  }
+  return normalized;
+}
 
 function hashText(text) {
   return Array.from(String(text || '')).reduce(function (total, character) {
-    return total + character.charCodeAt(0);
-  }, 0);
+    return total * 33 + character.charCodeAt(0);
+  }, 5381);
+}
+
+export function buildAvatarSeed(student) {
+  return student?.avatar_seed
+    || student?.avatar_code
+    || student?.id
+    || student?.student_id
+    || student?.student_code
+    || student?.parent_phone
+    || student?.display_name
+    || student?.legal_name
+    || 'student-avatar';
 }
 
 export function getAvatarEntryByCode(code) {
+  const target = normalizeText(code);
+  if (!target) {
+    return null;
+  }
+
   return AVATAR_LIBRARY_LIST.find(function (entry) {
-    return entry.code === code;
+    return entry.code === target;
   }) || null;
 }
 
-export function getStudentAgeGroup(student) {
-  const explicit = String(student?.avatar_age_group || '').trim().toUpperCase();
-  if (explicit && AVATAR_LIBRARY[explicit]) {
-    return explicit;
+export function getAvatarEntryByPath(pathname) {
+  const target = normalizeImagePath(pathname);
+  if (!target) {
+    return null;
   }
 
-  const grade = String(student?.grade || '').trim();
-  const matchedRule = GRADE_GROUP_RULES.find(function (rule) {
-    return rule.pattern.test(grade);
+  return AVATAR_LIBRARY_LIST.find(function (entry) {
+    return normalizeImagePath(entry.image_path) === target;
+  }) || null;
+}
+
+export function isManagedAvatarUrl(pathname) {
+  return /^\/assets\/avatars\//iu.test(normalizeImagePath(pathname));
+}
+
+function getCategoryEntries(categoryKey) {
+  return AVATAR_CATEGORIES[categoryKey] || [];
+}
+
+function getCategoryOrder(seed) {
+  if (!AVATAR_CATEGORY_KEYS.length) {
+    return [];
+  }
+
+  const startIndex = Math.abs(hashText(`category:${seed}`)) % AVATAR_CATEGORY_KEYS.length;
+  return AVATAR_CATEGORY_KEYS.map(function (_, offset) {
+    return AVATAR_CATEGORY_KEYS[(startIndex + offset) % AVATAR_CATEGORY_KEYS.length];
   });
-
-  return matchedRule ? matchedRule.group : null;
-}
-
-export function getStudentGenderGroup(student) {
-  const explicit = String(student?.avatar_gender_group || '').trim().toLowerCase();
-  if (explicit === 'boy' || explicit === 'girl') {
-    return explicit;
-  }
-
-  return GENDER_MAP[String(student?.gender || '').trim().toLowerCase()] || null;
-}
-
-function getLibraryCandidates(student) {
-  const ageGroup = getStudentAgeGroup(student);
-  const genderGroup = getStudentGenderGroup(student);
-
-  if (ageGroup && genderGroup && AVATAR_LIBRARY[ageGroup]?.[genderGroup]?.length) {
-    return AVATAR_LIBRARY[ageGroup][genderGroup];
-  }
-
-  if (ageGroup) {
-    const merged = [
-      ...(AVATAR_LIBRARY[ageGroup]?.boy || []),
-      ...(AVATAR_LIBRARY[ageGroup]?.girl || [])
-    ];
-    if (merged.length) {
-      return merged;
-    }
-  }
-
-  return [];
 }
 
 export function getLibraryAvatarForStudent(student) {
@@ -90,11 +115,26 @@ export function getLibraryAvatarForStudent(student) {
     }
   }
 
-  const candidates = getLibraryCandidates(student);
-  if (!candidates.length) {
+  const managedAvatarEntry = getAvatarEntryByPath(student?.avatar_url);
+  if (managedAvatarEntry) {
+    return managedAvatarEntry;
+  }
+
+  if (!AVATAR_LIBRARY_LIST.length) {
     return null;
   }
 
-  const seed = student?.avatar_seed || student?.id || student?.student_id || student?.student_code || student?.display_name || student?.legal_name || 'avatar';
-  return candidates[hashText(seed) % candidates.length];
+  const seed = buildAvatarSeed(student);
+  const orderedCategories = getCategoryOrder(seed);
+
+  if (orderedCategories.length) {
+    const primaryCategory = orderedCategories[0];
+    const primaryEntries = getCategoryEntries(primaryCategory);
+    if (primaryEntries.length) {
+      const primaryIndex = Math.abs(hashText(`entry:${seed}`)) % primaryEntries.length;
+      return primaryEntries[primaryIndex];
+    }
+  }
+
+  return AVATAR_LIBRARY_LIST[Math.abs(hashText(`entry:${seed}`)) % AVATAR_LIBRARY_LIST.length];
 }

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="animal-sun-lion-title">
+  <title id="animal-sun-lion-title">晴晴小狮</title>
+  
+  <defs>
+    <linearGradient id="animal-sun-lion-bg" x1="24" y1="12" x2="222" y2="244" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFF5C9" />
+      <stop offset="1" stop-color="#FFC86B" />
+    </linearGradient>
+    <radialGradient id="animal-sun-lion-halo" cx="46%" cy="34%" r="72%">
+      <stop offset="0" stop-color="#FFF9E9" stop-opacity="0.95" />
+      <stop offset="1" stop-color="#FFF9E9" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="url(#animal-sun-lion-bg)" />
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="#ffffff" fill-opacity="0.10" />
+  <circle cx="70" cy="54" r="28" fill="#ffffff" fill-opacity="0.26" />
+  <circle cx="196" cy="58" r="18" fill="#ffffff" fill-opacity="0.16" />
+  <circle cx="208" cy="190" r="22" fill="#FF8D48" fill-opacity="0.10" />
+  <circle cx="46" cy="168" r="10" fill="#FF8D48" fill-opacity="0.14" />
+  <path d="M32 188 C58 166 100 168 126 186 C150 202 188 206 224 188 L224 232 L32 232 Z" fill="#ffffff" fill-opacity="0.14" />
+  <circle cx="128" cy="106" r="74" fill="url(#animal-sun-lion-halo)" />
+  <ellipse cx="128" cy="210" rx="58" ry="14" fill="#102030" fill-opacity="0.10" />
+  
+    <g>
+      <ellipse cx="182" cy="106" rx="16" ry="30" fill="#F3C06D" opacity="0.95" transform="rotate(90 182 106)" /><ellipse cx="171.7" cy="137.7" rx="16" ry="30" fill="#F3C06D" opacity="0.95" transform="rotate(126 171.7 137.7)" /><ellipse cx="144.7" cy="157.4" rx="16" ry="30" fill="#F3C06D" opacity="0.95" transform="rotate(162 144.7 157.4)" /><ellipse cx="111.3" cy="157.4" rx="16" ry="30" fill="#F3C06D" opacity="0.95" transform="rotate(198 111.3 157.4)" /><ellipse cx="84.3" cy="137.7" rx="16" ry="30" fill="#F3C06D" opacity="0.95" transform="rotate(234 84.3 137.7)" /><ellipse cx="74" cy="106" rx="16" ry="30" fill="#F3C06D" opacity="0.95" transform="rotate(270 74 106)" /><ellipse cx="84.3" cy="74.3" rx="16" ry="30" fill="#F3C06D" opacity="0.95" transform="rotate(306 84.3 74.3)" /><ellipse cx="111.3" cy="54.6" rx="16" ry="30" fill="#F3C06D" opacity="0.95" transform="rotate(342 111.3 54.6)" /><ellipse cx="144.7" cy="54.6" rx="16" ry="30" fill="#F3C06D" opacity="0.95" transform="rotate(378 144.7 54.6)" /><ellipse cx="171.7" cy="74.3" rx="16" ry="30" fill="#F3C06D" opacity="0.95" transform="rotate(414 171.7 74.3)" />
+      
+    <path d="M 76 214 C 78 174, 98 148, 128 148 C 158 148, 178 174, 180 214 Z" fill="#F3C06D" />
+    <path d="M 92 160 C 110 150, 146 150, 164 160 L 158 180 C 144 174, 112 174, 98 180 Z" fill="#FF8D48" fill-opacity="0.95" />
+      
+      <circle cx="92" cy="76" r="15" fill="#D99542" />
+      <circle cx="164" cy="76" r="15" fill="#D99542" />
+      <circle cx="92" cy="76" r="7" fill="#FFF0C8" />
+      <circle cx="164" cy="76" r="7" fill="#FFF0C8" />
+      <circle cx="128" cy="112" r="48" fill="#D99542" />
+      <ellipse cx="128" cy="134" rx="24" ry="18" fill="#FFF0C8" />
+      
+    <circle cx="100" cy="130" r="9" fill="#F7A5B2" fill-opacity="0.26" />
+    <circle cx="156" cy="130" r="9" fill="#F7A5B2" fill-opacity="0.26" />
+    
+    <circle cx="110" cy="112" r="4.6" fill="#31495C" />
+    <circle cx="146" cy="112" r="4.6" fill="#31495C" />
+    <ellipse cx="128" cy="123" rx="3.6" ry="2.8" fill="#31495C" fill-opacity="0.52" />
+    
+      <path d="M 111 131 C 121 142, 135 142, 145 131" fill="#ffffff" stroke="#31495C" stroke-width="4" stroke-linejoin="round" />
+      <path d="M 128 133 L 128 140" stroke="#31495C" stroke-width="3" stroke-linecap="round" />
+      
+    </g>
+</svg>

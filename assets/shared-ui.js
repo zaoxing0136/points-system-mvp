@@ -1,5 +1,5 @@
 ﻿import { DEFAULT_LEVEL_TIERS } from './default-config.js';
-import { getLibraryAvatarForStudent } from './avatar-library.js';
+import { getAvatarEntryByPath, getLibraryAvatarForStudent, isManagedAvatarUrl, resolveAvatarAssetUrl } from './avatar-library.js';
 
 export const LEVEL_TIERS = DEFAULT_LEVEL_TIERS.map(function (tier) {
   return { name: tier.level_name, threshold: tier.threshold };
@@ -196,19 +196,29 @@ function getLegacyPresetAvatar(student) {
 }
 
 function getAvatarAssignment(student) {
-  if (isImageAvatar(student?.avatar_url)) {
+  const rawAvatarUrl = String(student?.avatar_url || '').trim();
+
+  if (isImageAvatar(rawAvatarUrl) && !isManagedAvatarUrl(rawAvatarUrl)) {
     return {
       kind: 'image',
-      src: String(student.avatar_url).trim()
+      src: rawAvatarUrl
     };
   }
 
-  const libraryAvatar = getLibraryAvatarForStudent(student);
+  const managedAvatar = getAvatarEntryByPath(rawAvatarUrl);
+  const libraryAvatar = managedAvatar || getLibraryAvatarForStudent(student);
   if (libraryAvatar?.image_path) {
     return {
       kind: 'library',
       src: libraryAvatar.image_path,
       key: libraryAvatar.code
+    };
+  }
+
+  if (isImageAvatar(rawAvatarUrl)) {
+    return {
+      kind: 'image',
+      src: rawAvatarUrl
     };
   }
 
@@ -233,9 +243,10 @@ export function createAvatarHtml(student, extraClass = '') {
     .join(' ');
 
   if (assignment.kind !== 'legacy') {
+    const imageSrc = resolveAvatarAssetUrl(assignment.src);
     return `
       <span class="${className}">
-        <img src="${escapeHtml(encodeURI(assignment.src))}" alt="${escapeHtml(getStudentDisplayName(student))}" loading="lazy" />
+        <img src="${escapeHtml(encodeURI(imageSrc))}" alt="${escapeHtml(getStudentDisplayName(student))}" loading="lazy" />
       </span>
     `.trim();
   }
@@ -266,6 +277,7 @@ export function groupRulesByCategory(rules) {
 export function computeBadgePlaceholder(totalPoints, progress7d) {
   return Math.max(1, Math.min(8, Math.floor((totalPoints + progress7d) / 240) + 1));
 }
+
 
 
 
