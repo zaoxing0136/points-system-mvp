@@ -1,0 +1,72 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>登录页</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+    <script type="module" src="./assets/login.js"></script>
+  </head>
+  <body class="auth-body">
+    <main class="page-shell auth-shell">
+      <section class="auth-panel surface-card">
+        <div class="auth-hero">
+          <p class="eyebrow">Account Access</p>
+          <h1>积分系统登录</h1>
+          <p class="auth-copy">使用管理员分配的账号名和密码登录。老师首次登录后需要修改密码。</p>
+        </div>
+
+        <div id="loginNotice" class="notice-bar" hidden></div>
+
+        <section id="loginCard" class="auth-card">
+          <div class="section-head auth-section-head">
+            <div>
+              <p class="eyebrow">Sign In</p>
+              <h2>账号登录</h2>
+            </div>
+            <p class="section-tip">支持拼音首字母账号，例如 `cls`、`xls`、`sls`、`admin`。</p>
+          </div>
+
+          <form id="loginForm" class="auth-form">
+            <label class="field-group">
+              <span>账号</span>
+              <input id="loginAccountInput" type="text" autocomplete="username" placeholder="例如：cls / xls / sls / admin" required />
+            </label>
+            <label class="field-group">
+              <span>密码</span>
+              <input id="loginPasswordInput" type="password" autocomplete="current-password" placeholder="请输入密码" required />
+            </label>
+            <button id="loginSubmitButton" class="primary-button auth-submit" type="submit">登录</button>
+          </form>
+
+          <div class="auth-footnote">
+            <span>老师初始密码由管理员统一设置，默认可用 `666666`。</span>
+            <a class="inline-link" href="./display.html">直接打开大屏</a>
+          </div>
+        </section>
+
+        <section id="changePasswordCard" class="auth-card" hidden>
+          <div class="section-head auth-section-head">
+            <div>
+              <p class="eyebrow">Password Update</p>
+              <h2>首次登录请修改密码</h2>
+            </div>
+            <p id="changePasswordHint" class="section-tip">修改完成后再进入系统。</p>
+          </div>
+
+          <form id="changePasswordForm" class="auth-form">
+            <label class="field-group">
+              <span>新密码</span>
+              <input id="newPasswordInput" type="password" minlength="6" autocomplete="new-password" placeholder="至少 6 位" required />
+            </label>
+            <label class="field-group">
+              <span>确认新密码</span>
+              <input id="confirmPasswordInput" type="password" minlength="6" autocomplete="new-password" placeholder="再次输入新密码" required />
+            </label>
+            <button id="changePasswordButton" class="primary-button auth-submit" type="submit">保存新密码</button>
+          </form>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

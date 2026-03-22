@@ -1,0 +1,740 @@
+{
+  "library": {
+    "A": {
+      "boy": [
+        {
+          "code": "A_boy_001_小熊团子",
+          "name": "小熊团子",
+          "age_group": "A",
+          "gender_group": "boy",
+          "image_path": "/assets/avatars/A/boy/A_boy_001_小熊团子.svg",
+          "visual_type": "动物",
+          "symbol": "🐻",
+          "accent_symbol": "🍪",
+          "palette": [
+            "#fff1de",
+            "#ffd5b2",
+            "#ffb58d"
+          ]
+        },
+        {
+          "code": "A_boy_002_小狮布布",
+          "name": "小狮布布",
+          "age_group": "A",
+          "gender_group": "boy",
+          "image_path": "/assets/avatars/A/boy/A_boy_002_小狮布布.svg",
+          "visual_type": "动物",
+          "symbol": "🦁",
+          "accent_symbol": "☀️",
+          "palette": [
+            "#fff0bf",
+            "#ffd68d",
+            "#ffb45f"
+          ]
+        },
+        {
+          "code": "A_boy_003_小龙果果",
+          "name": "小龙果果",
+          "age_group": "A",
+          "gender_group": "boy",
+          "image_path": "/assets/avatars/A/boy/A_boy_003_小龙果果.svg",
+          "visual_type": "动物",
+          "symbol": "🦖",
+          "accent_symbol": "✨",
+          "palette": [
+            "#ecffbf",
+            "#b6f08a",
+            "#84d97a"
+          ]
+        },
+        {
+          "code": "A_boy_004_小狐跳跳",
+          "name": "小狐跳跳",
+          "age_group": "A",
+          "gender_group": "boy",
+          "image_path": "/assets/avatars/A/boy/A_boy_004_小狐跳跳.svg",
+          "visual_type": "动物",
+          "symbol": "🦊",
+          "accent_symbol": "🍃",
+          "palette": [
+            "#fff0dc",
+            "#ffc593",
+            "#ff9b6b"
+          ]
+        },
+        {
+          "code": "A_boy_005_小羊绵绵",
+          "name": "小羊绵绵",
+          "age_group": "A",
+          "gender_group": "boy",
+          "image_path": "/assets/avatars/A/boy/A_boy_005_小羊绵绵.svg",
+          "visual_type": "动物",
+          "symbol": "🐑",
+          "accent_symbol": "☁️",
+          "palette": [
+            "#fff9ea",
+            "#ffe3c8",
+            "#ffd1b3"
+          ]
+        },
+        {
+          "code": "A_boy_006_小狗豆豆",
+          "name": "小狗豆豆",
+          "age_group": "A",
+          "gender_group": "boy",
+          "image_path": "/assets/avatars/A/boy/A_boy_006_小狗豆豆.svg",
+          "visual_type": "动物",
+          "symbol": "🐶",
+          "accent_symbol": "🦴",
+          "palette": [
+            "#fff0dd",
+            "#ffd4b3",
+            "#ffb38d"
+          ]
+        },
+        {
+          "code": "A_boy_007_苹果碰碰",
+          "name": "苹果碰碰",
+          "age_group": "A",
+          "gender_group": "boy",
+          "image_path": "/assets/avatars/A/boy/A_boy_007_苹果碰碰.svg",
+          "visual_type": "水果",
+          "symbol": "🍎",
+          "accent_symbol": "🍃",
+          "palette": [
+            "#ffe7dc",
+            "#ffb59f",
+            "#ff8c78"
+          ]
+        },
+        {
+          "code": "A_boy_008_玉米壮壮",
+          "name": "玉米壮壮",
+          "age_group": "A",
+          "gender_group": "boy",
+          "image_path": "/assets/avatars/A/boy/A_boy_008_玉米壮壮.svg",
+          "visual_type": "蔬菜",
+          "symbol": "🌽",
+          "accent_symbol": "🌿",
+          "palette": [
+            "#fff3c9",
+            "#ffe17f",
+            "#ffcb57"
+          ]
+        },
+        {
+          "code": "A_boy_009_南瓜球球",
+          "name": "南瓜球球",
+          "age_group": "A",
+          "gender_group": "boy",
+          "image_path": "/assets/avatars/A/boy/A_boy_009_南瓜球球.svg",
+          "visual_type": "蔬菜",
+          "symbol": "🎃",
+          "accent_symbol": "🍂",
+          "palette": [
+            "#ffe7cc",
+            "#ffc67c",
+            "#ff9d56"
+          ]
+        },
+        {
+          "code": "A_boy_010_小芽芽",
+          "name": "小芽芽",
+          "age_group": "A",
+          "gender_group": "boy",
+          "image_path": "/assets/avatars/A/boy/A_boy_010_小芽芽.svg",
+          "visual_type": "植物",
+          "symbol": "🌱",
+          "accent_symbol": "✨",
+          "palette": [
+            "#f0ffd6",
+            "#c8f29e",
+            "#8fdc87"
+          ]
+        },
+        {
+          "code": "A_boy_011_云团团",
+          "name": "云团团",
+          "age_group": "A",
+          "gender_group": "boy",
+          "image_path": "/assets/avatars/A/boy/A_boy_011_云团团.svg",
+          "visual_type": "天气",
+          "symbol": "☁️",
+          "accent_symbol": "💫",
+          "palette": [
+            "#f4f4ff",
+            "#d8e6ff",
+            "#bdd2ff"
+          ]
+        },
+        {
+          "code": "A_boy_012_星星闪闪",
+          "name": "星星闪闪",
+          "age_group": "A",
+          "gender_group": "boy",
+          "image_path": "/assets/avatars/A/boy/A_boy_012_星星闪闪.svg",
+          "visual_type": "星星",
+          "symbol": "⭐",
+          "accent_symbol": "👑",
+          "palette": [
+            "#fff9c8",
+            "#ffe886",
+            "#ffd35e"
+          ]
+        }
+      ],
+      "girl": [
+        {
+          "code": "A_girl_001_小兔莓莓",
+          "name": "小兔莓莓",
+          "age_group": "A",
+          "gender_group": "girl",
+          "image_path": "/assets/avatars/A/girl/A_girl_001_小兔莓莓.svg",
+          "visual_type": "动物",
+          "symbol": "🐰",
+          "accent_symbol": "🍓",
+          "palette": [
+            "#fff5e7",
+            "#ffd8f0",
+            "#ffc5d7"
+          ]
+        },
+        {
+          "code": "A_girl_002_小鹿糖糖",
+          "name": "小鹿糖糖",
+          "age_group": "A",
+          "gender_group": "girl",
+          "image_path": "/assets/avatars/A/girl/A_girl_002_小鹿糖糖.svg",
+          "visual_type": "动物",
+          "symbol": "🦌",
+          "accent_symbol": "🌼",
+          "palette": [
+            "#fff1de",
+            "#ffd9be",
+            "#ffc2a7"
+          ]
+        },
+        {
+          "code": "A_girl_003_小桃泡泡",
+          "name": "小桃泡泡",
+          "age_group": "A",
+          "gender_group": "girl",
+          "image_path": "/assets/avatars/A/girl/A_girl_003_小桃泡泡.svg",
+          "visual_type": "水果",
+          "symbol": "🍑",
+          "accent_symbol": "✨",
+          "palette": [
+            "#ffeef1",
+            "#ffd2db",
+            "#ffb9c9"
+          ]
+        },
+        {
+          "code": "A_girl_004_草莓甜甜",
+          "name": "草莓甜甜",
+          "age_group": "A",
+          "gender_group": "girl",
+          "image_path": "/assets/avatars/A/girl/A_girl_004_草莓甜甜.svg",
+          "visual_type": "水果",
+          "symbol": "🍓",
+          "accent_symbol": "🌸",
+          "palette": [
+            "#fff0f3",
+            "#ffcddd",
+            "#ffb2c7"
+          ]
+        },
+        {
+          "code": "A_girl_005_小猫蜜蜜",
+          "name": "小猫蜜蜜",
+          "age_group": "A",
+          "gender_group": "girl",
+          "image_path": "/assets/avatars/A/girl/A_girl_005_小猫蜜蜜.svg",
+          "visual_type": "动物",
+          "symbol": "🐱",
+          "accent_symbol": "🌷",
+          "palette": [
+            "#fff7ef",
+            "#ffe0cf",
+            "#ffd2c2"
+          ]
+        },
+        {
+          "code": "A_girl_006_花花灵灵",
+          "name": "花花灵灵",
+          "age_group": "A",
+          "gender_group": "girl",
+          "image_path": "/assets/avatars/A/girl/A_girl_006_花花灵灵.svg",
+          "visual_type": "精灵",
+          "symbol": "🧚",
+          "accent_symbol": "🌸",
+          "palette": [
+            "#fff3ff",
+            "#e6d8ff",
+            "#cfe9af"
+          ]
+        },
+        {
+          "code": "A_girl_007_小蘑菇朵朵",
+          "name": "小蘑菇朵朵",
+          "age_group": "A",
+          "gender_group": "girl",
+          "image_path": "/assets/avatars/A/girl/A_girl_007_小蘑菇朵朵.svg",
+          "visual_type": "植物",
+          "symbol": "🍄",
+          "accent_symbol": "✨",
+          "palette": [
+            "#fff4df",
+            "#ffd1d4",
+            "#dff4c8"
+          ]
+        },
+        {
+          "code": "A_girl_008_樱桃啵啵",
+          "name": "樱桃啵啵",
+          "age_group": "A",
+          "gender_group": "girl",
+          "image_path": "/assets/avatars/A/girl/A_girl_008_樱桃啵啵.svg",
+          "visual_type": "水果",
+          "symbol": "🍒",
+          "accent_symbol": "💖",
+          "palette": [
+            "#fff8d7",
+            "#ffd7df",
+            "#ffc1ca"
+          ]
+        },
+        {
+          "code": "A_girl_009_小月亮柔柔",
+          "name": "小月亮柔柔",
+          "age_group": "A",
+          "gender_group": "girl",
+          "image_path": "/assets/avatars/A/girl/A_girl_009_小月亮柔柔.svg",
+          "visual_type": "天气",
+          "symbol": "🌙",
+          "accent_symbol": "⭐",
+          "palette": [
+            "#f0ebff",
+            "#d9d1ff",
+            "#bed8ff"
+          ]
+        },
+        {
+          "code": "A_girl_010_小云朵棉棉",
+          "name": "小云朵棉棉",
+          "age_group": "A",
+          "gender_group": "girl",
+          "image_path": "/assets/avatars/A/girl/A_girl_010_小云朵棉棉.svg",
+          "visual_type": "天气",
+          "symbol": "☁️",
+          "accent_symbol": "🌈",
+          "palette": [
+            "#f6f4ff",
+            "#dff3ff",
+            "#d5ddff"
+          ]
+        },
+        {
+          "code": "A_girl_011_花鹿露露",
+          "name": "花鹿露露",
+          "age_group": "A",
+          "gender_group": "girl",
+          "image_path": "/assets/avatars/A/girl/A_girl_011_花鹿露露.svg",
+          "visual_type": "动物",
+          "symbol": "🦌",
+          "accent_symbol": "🌷",
+          "palette": [
+            "#fff7df",
+            "#ffe4b8",
+            "#ffd0c2"
+          ]
+        },
+        {
+          "code": "A_girl_012_葡萄啾啾",
+          "name": "葡萄啾啾",
+          "age_group": "A",
+          "gender_group": "girl",
+          "image_path": "/assets/avatars/A/girl/A_girl_012_葡萄啾啾.svg",
+          "visual_type": "水果",
+          "symbol": "🍇",
+          "accent_symbol": "✨",
+          "palette": [
+            "#f5ebff",
+            "#e1d0ff",
+            "#d0b7ff"
+          ]
+        }
+      ]
+    },
+    "B": {
+      "boy": [],
+      "girl": []
+    },
+    "C": {
+      "boy": [],
+      "girl": []
+    }
+  },
+  "list": [
+    {
+      "code": "A_boy_001_小熊团子",
+      "name": "小熊团子",
+      "age_group": "A",
+      "gender_group": "boy",
+      "image_path": "/assets/avatars/A/boy/A_boy_001_小熊团子.svg",
+      "visual_type": "动物",
+      "symbol": "🐻",
+      "accent_symbol": "🍪",
+      "palette": [
+        "#fff1de",
+        "#ffd5b2",
+        "#ffb58d"
+      ]
+    },
+    {
+      "code": "A_boy_002_小狮布布",
+      "name": "小狮布布",
+      "age_group": "A",
+      "gender_group": "boy",
+      "image_path": "/assets/avatars/A/boy/A_boy_002_小狮布布.svg",
+      "visual_type": "动物",
+      "symbol": "🦁",
+      "accent_symbol": "☀️",
+      "palette": [
+        "#fff0bf",
+        "#ffd68d",
+        "#ffb45f"
+      ]
+    },
+    {
+      "code": "A_boy_003_小龙果果",
+      "name": "小龙果果",
+      "age_group": "A",
+      "gender_group": "boy",
+      "image_path": "/assets/avatars/A/boy/A_boy_003_小龙果果.svg",
+      "visual_type": "动物",
+      "symbol": "🦖",
+      "accent_symbol": "✨",
+      "palette": [
+        "#ecffbf",
+        "#b6f08a",
+        "#84d97a"
+      ]
+    },
+    {
+      "code": "A_boy_004_小狐跳跳",
+      "name": "小狐跳跳",
+      "age_group": "A",
+      "gender_group": "boy",
+      "image_path": "/assets/avatars/A/boy/A_boy_004_小狐跳跳.svg",
+      "visual_type": "动物",
+      "symbol": "🦊",
+      "accent_symbol": "🍃",
+      "palette": [
+        "#fff0dc",
+        "#ffc593",
+        "#ff9b6b"
+      ]
+    },
+    {
+      "code": "A_boy_005_小羊绵绵",
+      "name": "小羊绵绵",
+      "age_group": "A",
+      "gender_group": "boy",
+      "image_path": "/assets/avatars/A/boy/A_boy_005_小羊绵绵.svg",
+      "visual_type": "动物",
+      "symbol": "🐑",
+      "accent_symbol": "☁️",
+      "palette": [
+        "#fff9ea",
+        "#ffe3c8",
+        "#ffd1b3"
+      ]
+    },
+    {
+      "code": "A_boy_006_小狗豆豆",
+      "name": "小狗豆豆",
+      "age_group": "A",
+      "gender_group": "boy",
+      "image_path": "/assets/avatars/A/boy/A_boy_006_小狗豆豆.svg",
+      "visual_type": "动物",
+      "symbol": "🐶",
+      "accent_symbol": "🦴",
+      "palette": [
+        "#fff0dd",
+        "#ffd4b3",
+        "#ffb38d"
+      ]
+    },
+    {
+      "code": "A_boy_007_苹果碰碰",
+      "name": "苹果碰碰",
+      "age_group": "A",
+      "gender_group": "boy",
+      "image_path": "/assets/avatars/A/boy/A_boy_007_苹果碰碰.svg",
+      "visual_type": "水果",
+      "symbol": "🍎",
+      "accent_symbol": "🍃",
+      "palette": [
+        "#ffe7dc",
+        "#ffb59f",
+        "#ff8c78"
+      ]
+    },
+    {
+      "code": "A_boy_008_玉米壮壮",
+      "name": "玉米壮壮",
+      "age_group": "A",
+      "gender_group": "boy",
+      "image_path": "/assets/avatars/A/boy/A_boy_008_玉米壮壮.svg",
+      "visual_type": "蔬菜",
+      "symbol": "🌽",
+      "accent_symbol": "🌿",
+      "palette": [
+        "#fff3c9",
+        "#ffe17f",
+        "#ffcb57"
+      ]
+    },
+    {
+      "code": "A_boy_009_南瓜球球",
+      "name": "南瓜球球",
+      "age_group": "A",
+      "gender_group": "boy",
+      "image_path": "/assets/avatars/A/boy/A_boy_009_南瓜球球.svg",
+      "visual_type": "蔬菜",
+      "symbol": "🎃",
+      "accent_symbol": "🍂",
+      "palette": [
+        "#ffe7cc",
+        "#ffc67c",
+        "#ff9d56"
+      ]
+    },
+    {
+      "code": "A_boy_010_小芽芽",
+      "name": "小芽芽",
+      "age_group": "A",
+      "gender_group": "boy",
+      "image_path": "/assets/avatars/A/boy/A_boy_010_小芽芽.svg",
+      "visual_type": "植物",
+      "symbol": "🌱",
+      "accent_symbol": "✨",
+      "palette": [
+        "#f0ffd6",
+        "#c8f29e",
+        "#8fdc87"
+      ]
+    },
+    {
+      "code": "A_boy_011_云团团",
+      "name": "云团团",
+      "age_group": "A",
+      "gender_group": "boy",
+      "image_path": "/assets/avatars/A/boy/A_boy_011_云团团.svg",
+      "visual_type": "天气",
+      "symbol": "☁️",
+      "accent_symbol": "💫",
+      "palette": [
+        "#f4f4ff",
+        "#d8e6ff",
+        "#bdd2ff"
+      ]
+    },
+    {
+      "code": "A_boy_012_星星闪闪",
+      "name": "星星闪闪",
+      "age_group": "A",
+      "gender_group": "boy",
+      "image_path": "/assets/avatars/A/boy/A_boy_012_星星闪闪.svg",
+      "visual_type": "星星",
+      "symbol": "⭐",
+      "accent_symbol": "👑",
+      "palette": [
+        "#fff9c8",
+        "#ffe886",
+        "#ffd35e"
+      ]
+    },
+    {
+      "code": "A_girl_001_小兔莓莓",
+      "name": "小兔莓莓",
+      "age_group": "A",
+      "gender_group": "girl",
+      "image_path": "/assets/avatars/A/girl/A_girl_001_小兔莓莓.svg",
+      "visual_type": "动物",
+      "symbol": "🐰",
+      "accent_symbol": "🍓",
+      "palette": [
+        "#fff5e7",
+        "#ffd8f0",
+        "#ffc5d7"
+      ]
+    },
+    {
+      "code": "A_girl_002_小鹿糖糖",
+      "name": "小鹿糖糖",
+      "age_group": "A",
+      "gender_group": "girl",
+      "image_path": "/assets/avatars/A/girl/A_girl_002_小鹿糖糖.svg",
+      "visual_type": "动物",
+      "symbol": "🦌",
+      "accent_symbol": "🌼",
+      "palette": [
+        "#fff1de",
+        "#ffd9be",
+        "#ffc2a7"
+      ]
+    },
+    {
+      "code": "A_girl_003_小桃泡泡",
+      "name": "小桃泡泡",
+      "age_group": "A",
+      "gender_group": "girl",
+      "image_path": "/assets/avatars/A/girl/A_girl_003_小桃泡泡.svg",
+      "visual_type": "水果",
+      "symbol": "🍑",
+      "accent_symbol": "✨",
+      "palette": [
+        "#ffeef1",
+        "#ffd2db",
+        "#ffb9c9"
+      ]
+    },
+    {
+      "code": "A_girl_004_草莓甜甜",
+      "name": "草莓甜甜",
+      "age_group": "A",
+      "gender_group": "girl",
+      "image_path": "/assets/avatars/A/girl/A_girl_004_草莓甜甜.svg",
+      "visual_type": "水果",
+      "symbol": "🍓",
+      "accent_symbol": "🌸",
+      "palette": [
+        "#fff0f3",
+        "#ffcddd",
+        "#ffb2c7"
+      ]
+    },
+    {
+      "code": "A_girl_005_小猫蜜蜜",
+      "name": "小猫蜜蜜",
+      "age_group": "A",
+      "gender_group": "girl",
+      "image_path": "/assets/avatars/A/girl/A_girl_005_小猫蜜蜜.svg",
+      "visual_type": "动物",
+      "symbol": "🐱",
+      "accent_symbol": "🌷",
+      "palette": [
+        "#fff7ef",
+        "#ffe0cf",
+        "#ffd2c2"
+      ]
+    },
+    {
+      "code": "A_girl_006_花花灵灵",
+      "name": "花花灵灵",
+      "age_group": "A",
+      "gender_group": "girl",
+      "image_path": "/assets/avatars/A/girl/A_girl_006_花花灵灵.svg",
+      "visual_type": "精灵",
+      "symbol": "🧚",
+      "accent_symbol": "🌸",
+      "palette": [
+        "#fff3ff",
+        "#e6d8ff",
+        "#cfe9af"
+      ]
+    },
+    {
+      "code": "A_girl_007_小蘑菇朵朵",
+      "name": "小蘑菇朵朵",
+      "age_group": "A",
+      "gender_group": "girl",
+      "image_path": "/assets/avatars/A/girl/A_girl_007_小蘑菇朵朵.svg",
+      "visual_type": "植物",
+      "symbol": "🍄",
+      "accent_symbol": "✨",
+      "palette": [
+        "#fff4df",
+        "#ffd1d4",
+        "#dff4c8"
+      ]
+    },
+    {
+      "code": "A_girl_008_樱桃啵啵",
+      "name": "樱桃啵啵",
+      "age_group": "A",
+      "gender_group": "girl",
+      "image_path": "/assets/avatars/A/girl/A_girl_008_樱桃啵啵.svg",
+      "visual_type": "水果",
+      "symbol": "🍒",
+      "accent_symbol": "💖",
+      "palette": [
+        "#fff8d7",
+        "#ffd7df",
+        "#ffc1ca"
+      ]
+    },
+    {
+      "code": "A_girl_009_小月亮柔柔",
+      "name": "小月亮柔柔",
+      "age_group": "A",
+      "gender_group": "girl",
+      "image_path": "/assets/avatars/A/girl/A_girl_009_小月亮柔柔.svg",
+      "visual_type": "天气",
+      "symbol": "🌙",
+      "accent_symbol": "⭐",
+      "palette": [
+        "#f0ebff",
+        "#d9d1ff",
+        "#bed8ff"
+      ]
+    },
+    {
+      "code": "A_girl_010_小云朵棉棉",
+      "name": "小云朵棉棉",
+      "age_group": "A",
+      "gender_group": "girl",
+      "image_path": "/assets/avatars/A/girl/A_girl_010_小云朵棉棉.svg",
+      "visual_type": "天气",
+      "symbol": "☁️",
+      "accent_symbol": "🌈",
+      "palette": [
+        "#f6f4ff",
+        "#dff3ff",
+        "#d5ddff"
+      ]
+    },
+    {
+      "code": "A_girl_011_花鹿露露",
+      "name": "花鹿露露",
+      "age_group": "A",
+      "gender_group": "girl",
+      "image_path": "/assets/avatars/A/girl/A_girl_011_花鹿露露.svg",
+      "visual_type": "动物",
+      "symbol": "🦌",
+      "accent_symbol": "🌷",
+      "palette": [
+        "#fff7df",
+        "#ffe4b8",
+        "#ffd0c2"
+      ]
+    },
+    {
+      "code": "A_girl_012_葡萄啾啾",
+      "name": "葡萄啾啾",
+      "age_group": "A",
+      "gender_group": "girl",
+      "image_path": "/assets/avatars/A/girl/A_girl_012_葡萄啾啾.svg",
+      "visual_type": "水果",
+      "symbol": "🍇",
+      "accent_symbol": "✨",
+      "palette": [
+        "#f5ebff",
+        "#e1d0ff",
+        "#d0b7ff"
+      ]
+    }
+  ]
+}

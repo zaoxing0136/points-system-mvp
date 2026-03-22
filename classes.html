@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>班级管理 / 搜索加人</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+    <script type="module" src="./assets/classes.js"></script>
+  </head>
+  <body class="admin-body">
+    <main class="page-shell admin-shell classes-shell">
+      <header class="admin-header surface-card">
+        <div>
+          <p class="eyebrow">Class Registry</p>
+          <h1>班级管理 / 搜索加人</h1>
+        </div>
+        <div class="header-actions">
+          <button id="openCreateClassButton" class="primary-button" type="button">新建班级</button>
+          <a class="inline-link" href="./teacher.html">老师页</a>
+          <a class="inline-link" href="./students.html">学生管理</a>
+          <a class="inline-link" href="./index.html">返回首页</a>
+        </div>
+      </header>
+
+      <section class="surface-card admin-section">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Class Directory</p>
+            <h2>班级列表</h2>
+          </div>
+          <p class="section-tip">真实读取 `classes`、`campuses`、`subjects`、`teachers` 和 `class_students`，用于班级创建和搜索加人。</p>
+        </div>
+
+        <form id="classesSearchForm" class="students-search-form">
+          <input id="classesSearchInput" type="search" placeholder="搜索班级名称" />
+          <button class="ghost-button" type="submit">搜索</button>
+          <button id="clearClassesSearchButton" class="inline-button" type="button">清空</button>
+        </form>
+
+        <div class="classes-filter-grid">
+          <label class="students-filter-label">
+            <span>校区筛选</span>
+            <select id="classesCampusFilter"></select>
+          </label>
+          <label class="students-filter-label">
+            <span>学科筛选</span>
+            <select id="classesSubjectFilter"></select>
+          </label>
+        </div>
+
+        <div class="students-summary-grid">
+          <div class="metric-chip">
+            <strong id="classesTotalCount">0</strong>
+            <span>当前列表班级数</span>
+          </div>
+          <div class="metric-chip">
+            <strong id="classesSelectedCount">0</strong>
+            <span>当前班级人数</span>
+          </div>
+          <div class="metric-chip">
+            <strong id="classesFilterSummary">全部班级</strong>
+            <span>当前筛选条件</span>
+          </div>
+        </div>
+
+        <div id="classesInlineNotice" class="teacher-inline-notice" hidden></div>
+      </section>
+
+      <section class="classes-workspace">
+        <section class="surface-card admin-section classes-list-panel">
+          <div class="table-wrap">
+            <table class="editable-table classes-table">
+              <thead>
+                <tr>
+                  <th>班级名称</th>
+                  <th>校区</th>
+                  <th>学科</th>
+                  <th>老师</th>
+                  <th>状态</th>
+                  <th>人数</th>
+                  <th>创建时间</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="classesTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <aside class="surface-card admin-section classes-detail-panel">
+          <div id="classDetailEmpty" class="classes-detail-empty">
+            <p class="eyebrow">Class Detail</p>
+            <h2>先选一个班级</h2>
+            <p>查看班级基本信息、当前学生名单，并从学生主档里搜索学生加入班级。</p>
+          </div>
+
+          <div id="classDetailContent" class="classes-detail-content" hidden>
+            <section class="classes-detail-section">
+              <div class="section-head">
+                <div>
+                  <p class="eyebrow">Class Info</p>
+                  <h2 id="classDetailTitle">班级详情</h2>
+                </div>
+                <p id="classDetailMeta" class="section-tip">-</p>
+              </div>
+              <div id="classDetailGrid" class="classes-detail-grid"></div>
+            </section>
+
+            <section class="classes-detail-section">
+              <div class="section-head">
+                <div>
+                  <p class="eyebrow">Class Students</p>
+                  <h2>当前班级学生</h2>
+                </div>
+                <p id="classRosterSummary" class="section-tip">-</p>
+              </div>
+              <div class="table-wrap">
+                <table class="editable-table class-roster-table">
+                  <thead>
+                    <tr>
+                      <th>展示昵称</th>
+                      <th>正式姓名</th>
+                      <th>年级</th>
+                      <th>状态</th>
+                      <th>加入时间</th>
+                    </tr>
+                  </thead>
+                  <tbody id="classRosterBody"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="classes-detail-section">
+              <div class="section-head">
+                <div>
+                  <p class="eyebrow">Add Existing Student</p>
+                  <h2>搜索并加入班级</h2>
+                </div>
+                <p id="classStudentSearchHint" class="teacher-search-hint">默认展示最近导入的学生主档。</p>
+              </div>
+              <form id="classStudentSearchForm" class="teacher-search-form">
+                <input id="classStudentSearchInput" type="search" placeholder="搜索昵称 / 姓名 / 学号 / 家长手机号尾号" />
+                <button class="primary-button" type="submit">搜索学生</button>
+              </form>
+              <div id="classStudentSearchResults" class="teacher-search-results"></div>
+            </section>
+          </div>
+        </aside>
+      </section>
+
+      <div id="classesNotice" class="notice-bar" hidden></div>
+    </main>
+
+    <dialog id="createClassDialog" class="teacher-dialog">
+      <form id="createClassForm" class="teacher-dialog-form">
+        <div class="teacher-dialog-head">
+          <div>
+            <p class="eyebrow">Create Class</p>
+            <h2>新建班级</h2>
+          </div>
+          <button id="closeCreateClassButton" class="icon-button" type="button" aria-label="关闭">×</button>
+        </div>
+        <label class="field-group">
+          <span>班级名称 *</span>
+          <input id="createClassNameInput" name="class_name" type="text" placeholder="例如：周六启航编程班" required />
+        </label>
+        <div class="filters-grid teacher-dialog-grid">
+          <label class="field-group">
+            <span>所属校区 *</span>
+            <select id="createClassCampusSelect" name="campus_id" required></select>
+          </label>
+          <label class="field-group">
+            <span>学科 *</span>
+            <select id="createClassSubjectSelect" name="subject_id" required></select>
+          </label>
+        </div>
+        <div class="filters-grid teacher-dialog-grid">
+          <label class="field-group">
+            <span>授课老师</span>
+            <select id="createClassTeacherSelect" name="teacher_id"></select>
+          </label>
+          <label class="field-group">
+            <span>班级类型</span>
+            <select id="createClassTypeSelect" name="class_type">
+              <option value="regular">regular</option>
+              <option value="intensive">intensive</option>
+              <option value="trial">trial</option>
+              <option value="camp">camp</option>
+            </select>
+          </label>
+        </div>
+        <div class="filters-grid teacher-dialog-grid">
+          <label class="field-group">
+            <span>班级状态</span>
+            <select id="createClassStatusSelect" name="status">
+              <option value="active">active</option>
+              <option value="draft">draft</option>
+              <option value="archived">archived</option>
+            </select>
+          </label>
+          <label class="field-group">
+            <span>上课时间</span>
+            <input id="createClassScheduleInput" name="schedule_text" type="text" placeholder="例如：周六 10:00-11:30" />
+          </label>
+        </div>
+        <div class="teacher-search-hint">授课老师当前可留空。如果数据库还未执行 `supabase/004_classes_teacher_nullable.sql`，请先执行后再保存空老师班级。</div>
+        <div class="teacher-dialog-actions">
+          <button class="primary-button" type="submit">创建班级</button>
+          <button id="cancelCreateClassButton" class="ghost-button" type="button">取消</button>
+        </div>
+      </form>
+    </dialog>
+  </body>
+</html>

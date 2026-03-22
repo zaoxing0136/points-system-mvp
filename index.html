@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>积分管理系统 MVP</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+    <script type="module" src="./assets/home.js"></script>
+  </head>
+  <body class="home-body">
+    <main class="page-shell home-shell">
+      <section class="hero-card">
+        <p class="eyebrow">Multi-Campus Points MVP</p>
+        <h1>多校区学生积分管理系统</h1>
+        <p class="hero-copy">
+          当前版本已升级为 Supabase MVP。老师页、榜单页、学生主档页、班级管理页和管理配置页都已接入真实数据库，并新增最小登录与角色体系。
+        </p>
+        <div class="hero-actions">
+          <a class="primary-button" href="./teacher.html">打开老师加分页</a>
+          <a class="ghost-button" href="./display.html">打开大屏展示页</a>
+          <a class="ghost-button" href="./admin.html">打开管理配置页</a>
+          <a class="ghost-button" href="./students.html">打开学生管理页</a>
+          <a class="ghost-button" href="./classes.html">打开班级管理页</a>
+        </div>
+      </section>
+
+      <section class="nav-grid">
+        <a class="nav-card" href="./teacher.html">
+          <span class="nav-icon">T</span>
+          <div>
+            <h2>teacher.html</h2>
+            <p>响应式老师控制台，支持班级创建、学生加入和真实积分流水写入。</p>
+          </div>
+        </a>
+        <a class="nav-card" href="./display.html">
+          <span class="nav-icon">D</span>
+          <div>
+            <h2>display.html</h2>
+            <p>大屏三榜单展示，真实读取总分榜与进步榜，徽章榜当前为占位数据。</p>
+          </div>
+        </a>
+        <a class="nav-card" href="./admin.html">
+          <span class="nav-icon">A</span>
+          <div>
+            <h2>admin.html</h2>
+            <p>管理配置页已接入 `point_rules` 和 `level_tiers`，用于维护积分规则和段位阈值。</p>
+          </div>
+        </a>
+        <a class="nav-card" href="./students.html">
+          <span class="nav-icon">S</span>
+          <div>
+            <h2>students.html</h2>
+            <p>学生管理页，支持学生主档列表、手动新增、CSV 导入预览和疑似重复提醒。</p>
+          </div>
+        </a>
+        <a class="nav-card" href="./classes.html">
+          <span class="nav-icon">C</span>
+          <div>
+            <h2>classes.html</h2>
+            <p>班级管理页，支持班级列表、新建班级、查看详情和从学生主档搜索加入班级。</p>
+          </div>
+        </a>
+      </section>
+
+      <section class="home-note">
+        <h2>使用说明</h2>
+        <p>
+          请先按 README 在 Supabase 中执行 SQL，再运行 `npm run dev` 打开本地地址进行演示。
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

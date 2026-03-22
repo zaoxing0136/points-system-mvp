@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="20" y1="16" x2="228" y2="240" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff0dc" />
+      <stop offset="0.56" stop-color="#ffc593" />
+      <stop offset="1" stop-color="#ff9b6b" />
+    </linearGradient>
+  </defs>
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="url(#bg)" />
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="#ffffff" fill-opacity="0.12" />
+  <circle cx="76" cy="60" r="28" fill="#ffffff" fill-opacity="0.26" />
+  <circle cx="196" cy="52" r="18" fill="#ffffff" fill-opacity="0.20" />
+  <circle cx="206" cy="194" r="44" fill="#ffffff" fill-opacity="0.22" />
+  <ellipse cx="122" cy="142" rx="78" ry="74" fill="#ffffff" fill-opacity="0.30" />
+  <ellipse cx="122" cy="142" rx="60" ry="56" fill="#ffffff" fill-opacity="0.46" />
+  <text x="122" y="164" text-anchor="middle" font-size="88" font-weight="700" fill="#24314d" font-family="'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', sans-serif">狐</text>
+  <g transform="translate(180 180)">
+    <circle cx="28" cy="28" r="28" fill="#ffffff" fill-opacity="0.92" />
+    <circle cx="28" cy="28" r="21" fill="#ffffff" fill-opacity="0.66" />
+    <text x="28" y="35" text-anchor="middle" font-size="24" font-weight="700" fill="#24314d" font-family="'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', sans-serif">跳</text>
+  </g>
+  <g transform="translate(28 190)">
+    <rect x="0" y="0" width="66" height="28" rx="14" fill="#ffffff" fill-opacity="0.74" />
+    <text x="33" y="19" text-anchor="middle" font-size="13" font-weight="700" fill="#3a4967" font-family="'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', sans-serif">动物</text>
+  </g>
+</svg>
