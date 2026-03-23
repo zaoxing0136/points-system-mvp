@@ -1,4 +1,4 @@
-import { isSupabaseConfigured } from './supabase-client.js';
+﻿import { isSupabaseConfigured } from './supabase-client.js';
 import { mountSessionActions, requirePageAuth } from './auth.js';
 import {
   addStudentToClass,
@@ -263,14 +263,14 @@ if (authContext) {
 
   function renderClassTable() {
     if (state.loadingClasses) {
-      elements.classesTableBody.innerHTML = '<tr><td colspan="8"><div class="empty-state">正在读取班级目录...</div></td></tr>';
+      elements.classesTableBody.innerHTML = '<tr><td colspan="8"><div class="empty-state">正在读取班级目录，请稍候...</div></td></tr>';
       return;
     }
 
     const countMap = getClassMemberCountMap();
     const filteredClasses = getFilteredClasses();
     if (!filteredClasses.length) {
-      elements.classesTableBody.innerHTML = '<tr><td colspan="8"><div class="empty-state">当前没有符合条件的班级。</div></td></tr>';
+      elements.classesTableBody.innerHTML = `<tr><td colspan="8"><div class="empty-state">${state.classSearch || state.campusFilter !== 'all' || state.subjectFilter !== 'all' ? '没有找到符合条件的班级，试试清空搜索或筛选。' : '当前还没有班级，请先新建班级。'}</div></td></tr>`;
       return;
     }
 
@@ -299,12 +299,12 @@ if (authContext) {
   function renderSearchResults() {
     const selectedClass = getSelectedClass();
     if (!selectedClass) {
-      elements.classStudentSearchResults.innerHTML = '<div class="empty-state">先选择班级，再搜索学生加入。</div>';
+      elements.classStudentSearchResults.innerHTML = '<div class="empty-state">先在左侧选一个班级，再搜索学生加入。</div>';
       return;
     }
 
     if (!state.searchResults.length) {
-      elements.classStudentSearchResults.innerHTML = '<div class="empty-state">输入关键字后搜索，或直接查看最近学生主档。</div>';
+      elements.classStudentSearchResults.innerHTML = `<div class="empty-state">${elements.classStudentSearchInput.value ? '没有找到匹配学生，可换关键字重试。' : '输入关键字搜索，或直接查看最近学生主档。'}</div>`;
       return;
     }
 
@@ -363,7 +363,7 @@ if (authContext) {
 
     elements.classRosterSummary.textContent = `当前班级共 ${state.roster.length} 名学生`;
     if (!state.roster.length) {
-      elements.classRosterBody.innerHTML = '<tr><td colspan="6"><div class="empty-state">当前班级还没有学生，请先从学生主档搜索并加入。</div></td></tr>';
+      elements.classRosterBody.innerHTML = '<tr><td colspan="6"><div class="empty-state">当前班级还没有学生，请在下方搜索并加入。</div></td></tr>';
     } else {
       elements.classRosterBody.innerHTML = state.roster.map(function (student) {
         return `<tr>
@@ -372,12 +372,10 @@ if (authContext) {
             <td>${escapeHtml(student.grade || '-')}</td>
             <td>${escapeHtml(buildStudentStatusLabel(student.status))}</td>
             <td>${escapeHtml(formatDateTime(student.joined_at))}</td>
-            <td><button class="inline-button class-roster-remove-button" type="button" data-remove-class-student="${escapeHtml(student.student_id)}">\u79fb\u51fa</button></td>
+            <td><button class="inline-button class-roster-remove-button" type="button" data-remove-class-student="${escapeHtml(student.student_id)}">移出</button></td>
           </tr>`;
       }).join('');
     }
-
-    renderSearchResults();
   }
 
   function renderAll() {
@@ -455,7 +453,7 @@ if (authContext) {
     renderAll();
 
     if (!isSupabaseConfigured) {
-      showInlineNotice('缺少 Supabase 配置，请先在 .env 中填写 SUPABASE_URL 和 SUPABASE_ANON_KEY。', 'error');
+      showInlineNotice('缺少 Supabase 配置，请先在 .env 中填写 VITE_SUPABASE_URL 和 VITE_SUPABASE_ANON_KEY。', 'error');
       elements.classesTableBody.innerHTML = '<tr><td colspan="8"><div class="empty-state">缺少 Supabase 配置，班级页无法读取真实数据。</div></td></tr>';
       return;
     }
@@ -697,3 +695,10 @@ if (authContext) {
   initialize();
 });
 }
+
+
+
+
+
+
+

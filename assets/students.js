@@ -1,4 +1,4 @@
-import { isSupabaseConfigured } from './supabase-client.js';
+﻿import { isSupabaseConfigured } from './supabase-client.js';
 import { mountSessionActions, requirePageAuth } from './auth.js';
 import {
   createStudents,
@@ -312,11 +312,11 @@ if (authContext) {
   }
 
   function getCurrentStatusText() {
-    return state.status === 'all' ? '全部状态' : `${state.status} / ${buildStatusLabel(state.status)}`;
+    return state.status === 'all' ? '全部状态' : buildStatusLabel(state.status);
   }
 
   function getCurrentSearchText() {
-    return state.search ? `搜索：${state.search}` : '未搜索';
+    return state.search ? `关键词：${state.search}` : '全部学生';
   }
 
   function renderSummary() {
@@ -336,12 +336,12 @@ if (authContext) {
 
   function renderStudentsTable() {
     if (state.isLoadingStudents) {
-      elements.studentsTableBody.innerHTML = '<tr><td colspan="8"><div class="empty-state">正在读取学生主档...</div></td></tr>';
+      elements.studentsTableBody.innerHTML = '<tr><td colspan="8"><div class="empty-state">正在读取学生主档，请稍候...</div></td></tr>';
       return;
     }
 
     if (!state.students.length) {
-      elements.studentsTableBody.innerHTML = '<tr><td colspan="8"><div class="empty-state">当前没有符合条件的学生主档。</div></td></tr>';
+      elements.studentsTableBody.innerHTML = `<tr><td colspan="8"><div class="empty-state">${state.search || state.status !== 'all' ? '没有找到符合条件的学生主档，试试清空搜索或调整筛选。' : '当前还没有学生主档，请先手动新增或批量导入 CSV。'}</div></td></tr>`;
       return;
     }
 
@@ -377,7 +377,7 @@ if (authContext) {
   function renderDetail(student) {
     if (!student) {
       elements.editStudentFromDetailButton.hidden = true;
-      elements.studentDetailContent.innerHTML = '<div class="empty-state">未找到学生详情。</div>';
+      elements.studentDetailContent.innerHTML = '<div class="empty-state">没有找到学生详情。</div>';
       return;
     }
 
@@ -387,7 +387,7 @@ if (authContext) {
         ${createAvatarHtml(student, 'large')}
         <div>
           <h3>${escapeHtml(getStudentDisplayName(student))}</h3>
-          <p>${escapeHtml(student.student_code || '未生成学号')} ? ${escapeHtml(buildStatusLabel(student.status))}</p>
+          <p>${escapeHtml(student.student_code || '未生成学号')} · ${escapeHtml(buildStatusLabel(student.status))}</p>
         </div>
       </div>
       <div class="students-detail-grid">
@@ -420,7 +420,7 @@ if (authContext) {
     elements.manualDuplicateBox.dataset.level = assessment.level;
     elements.manualDuplicateBox.innerHTML = `
       <strong>${assessment.level === 'high' ? '检测到高度疑似重复' : '检测到中度疑似重复'}</strong>
-      <p>只做提醒，不会自动合并学生主档。</p>
+      <p>这里只做提醒，不会自动合并学生主档。</p>
       <ul>${messages}</ul>
     `;
   }
@@ -890,3 +890,16 @@ if (authContext) {
   initialize();
 });
 }
+
+
+
+
+
+
+
+
+
+
+
+
+

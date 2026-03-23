@@ -258,13 +258,13 @@ function initAdminPage() {
     elements.teacherAccountCount.textContent = String(accounts.length);
 
     if (!accounts.length) {
-      elements.teacherAccountsBody.innerHTML = '<tr><td colspan="6"><div class="empty-state">当前还没有开通老师账号。</div></td></tr>';
+      elements.teacherAccountsBody.innerHTML = '<tr><td colspan="6"><div class="empty-state">当前还没有开通老师账号，先用左侧表单创建第一位老师。</div></td></tr>';
       return;
     }
 
     elements.teacherAccountsBody.innerHTML = accounts.map(function (account) {
       const teacherName = account.display_name || account.teacher?.display_name || account.teacher?.name || '未命名老师';
-      const lastLogin = account.last_sign_in_at ? new Date(account.last_sign_in_at).toLocaleString('zh-CN') : '从未登录';
+      const lastLogin = account.last_sign_in_at ? new Date(account.last_sign_in_at).toLocaleString('zh-CN') : '尚未登录';
       return `
         <tr>
           <td>
@@ -592,5 +592,6 @@ if (document.readyState === 'loading') {
 } else {
   initAdminPage();
 }
+
 
 

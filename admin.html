@@ -3,67 +3,73 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>管理配置页</title>
+    <title>试运行管理台</title>
     <link rel="stylesheet" href="./assets/styles.css" />
     <script type="module" src="./assets/admin-entry.js"></script>
   </head>
   <body class="admin-body admin-trial-body">
-    <main class="page-shell admin-shell admin-trial-shell">
-      <header class="admin-header surface-card admin-trial-header">
-        <div>
+    <main class="page-shell admin-shell admin-trial-shell trial-admin-page trial-config-page">
+      <header class="admin-header surface-card trial-page-hero trial-page-hero--admin">
+        <div class="trial-page-hero__main">
           <p class="eyebrow">Admin Console</p>
           <h1>试运行管理台</h1>
-          <p class="hero-copy">规则、段位、徽章默认值和老师账号都在这里统一维护。</p>
+          <p class="hero-copy">统一维护老师账号、积分规则、段位阈值和试运行配置。老师账号区已经收敛成可交付版操作区。</p>
+          <div class="trial-page-hero__meta">
+            <span class="trial-meta-pill">账号管理</span>
+            <span class="trial-meta-pill">规则配置</span>
+            <span class="trial-meta-pill">试运行标准配置</span>
+          </div>
         </div>
-        <div class="header-actions">
+        <div class="header-actions trial-header-actions">
           <button id="saveConfigButton" class="primary-button" type="button">保存配置</button>
           <button id="resetConfigButton" class="ghost-button" type="button">恢复试运行默认值</button>
+          <a class="inline-link" href="./classes.html">班级管理</a>
           <a class="inline-link" href="./index.html">返回首页</a>
         </div>
       </header>
 
-      <section class="surface-card admin-section admin-trial-overview">
+      <section class="surface-card admin-section admin-trial-overview trial-overview-card">
         <div class="section-head">
           <div>
             <p class="eyebrow">Trial Overview</p>
             <h2>当前试运行配置</h2>
           </div>
-          <p class="section-tip">老师页会读取积分规则和段位阈值。徽章规则先作为试运行配置管理。</p>
+          <p class="section-tip">老师页会实时读取段位阈值和积分规则。老师账号由管理员统一创建、停用和重置密码。</p>
         </div>
-        <div class="admin-overview-grid">
-          <div class="metric-chip">
+        <div class="admin-overview-grid trial-summary-grid">
+          <div class="metric-chip trial-metric-chip">
+            <span class="metric-label">段位阶梯</span>
             <strong>9 段</strong>
-            <span>50 分起步，10000 分满段</span>
           </div>
-          <div class="metric-chip">
-            <strong>20 项</strong>
-            <span>四类积分按钮默认规则</span>
-          </div>
-          <div class="metric-chip">
-            <strong>8 枚</strong>
-            <span>试运行徽章默认规则</span>
-          </div>
-          <div class="metric-chip">
+          <div class="metric-chip trial-metric-chip">
+            <span class="metric-label">老师账号</span>
             <strong id="teacherAccountCount">0</strong>
-            <span>已开通老师账号</span>
+          </div>
+          <div class="metric-chip trial-metric-chip">
+            <span class="metric-label">积分规则</span>
+            <strong>20 项</strong>
+          </div>
+          <div class="metric-chip trial-metric-chip">
+            <span class="metric-label">徽章说明</span>
+            <strong>8 项</strong>
           </div>
         </div>
       </section>
 
-      <section class="surface-card admin-section">
-        <div class="section-head">
+      <section class="surface-card admin-section trial-account-card">
+        <div class="section-head trial-account-head">
           <div>
             <p class="eyebrow">Teacher Accounts</p>
             <h2>在线开通老师账号</h2>
           </div>
-          <p class="section-tip">老师账号不绑定校区。一个老师可以带多个校区的班，班级归属只在建班时分配。</p>
+          <p class="section-tip">老师账号不绑定固定校区。管理员只需填写老师名称、账号名、初始密码和启停状态。</p>
         </div>
 
-        <div class="admin-account-layout admin-account-layout--stacked">
-          <form id="teacherAccountForm" class="admin-account-form admin-account-form--minimal">
+        <div class="admin-account-layout admin-account-layout--stacked trial-account-layout">
+          <form id="teacherAccountForm" class="admin-account-form admin-account-form--minimal trial-account-form">
             <input id="accountUserIdInput" type="hidden" />
 
-            <div class="admin-account-form-head">
+            <div class="admin-account-form-head trial-account-form-head">
               <div>
                 <p class="eyebrow">Teacher Access</p>
                 <h3 id="teacherAccountFormTitle">创建老师账号</h3>
@@ -72,10 +78,11 @@
               <div class="admin-account-chip-row">
                 <span class="admin-account-chip">默认密码 666666</span>
                 <span class="admin-account-chip">支持管理员重置密码</span>
+                <span class="admin-account-chip">首次登录可强制改密</span>
               </div>
             </div>
 
-            <div class="admin-account-quick-grid">
+            <div class="admin-account-quick-grid trial-account-grid">
               <label class="students-form-field">
                 <span>老师名称 *</span>
                 <input id="accountDisplayNameInput" type="text" placeholder="例如：陈老师" required />
@@ -90,7 +97,7 @@
               </label>
             </div>
 
-            <div class="admin-account-inline-grid">
+            <div class="admin-account-inline-grid trial-account-inline-grid">
               <label class="students-form-field">
                 <span>首次登录</span>
                 <select id="accountMustChangePasswordSelect">
@@ -107,7 +114,7 @@
               </label>
             </div>
 
-            <div class="admin-account-preview">
+            <div class="admin-account-preview trial-account-preview">
               <div>
                 <span>登录账号</span>
                 <strong id="teacherAccountPreviewLogin">待输入</strong>
@@ -128,15 +135,15 @@
             </div>
           </form>
 
-          <div class="table-wrap admin-account-table-wrap">
+          <div class="table-wrap admin-account-table-wrap trial-account-table-wrap">
             <div class="admin-account-table-head">
               <div>
                 <p class="eyebrow">Teacher Directory</p>
                 <h3>已开通账号</h3>
               </div>
-              <p class="admin-account-copy">老师先有账号，后面再去建班页分班。跨校区上课时，不需要重新建老师档案。</p>
+              <p class="section-tip">列表会显示老师名称、账号名、启停状态、首次登录状态和最后登录时间。</p>
             </div>
-            <table class="editable-table admin-account-table">
+            <table class="editable-table admin-account-table trial-table">
               <thead>
                 <tr>
                   <th>老师名称</th>
@@ -161,8 +168,8 @@
           </div>
           <p class="section-tip">老师页和大屏页都会读取这里的 9 段阈值。</p>
         </div>
-        <div class="table-wrap">
-          <table class="editable-table admin-level-table">
+        <div class="table-wrap trial-table-wrap">
+          <table class="editable-table admin-level-table trial-table">
             <thead>
               <tr>
                 <th>序号</th>
@@ -181,10 +188,10 @@
             <p class="eyebrow">Point Rules</p>
             <h2>积分规则配置</h2>
           </div>
-          <p class="section-tip">每类 5 个默认高频按钮，老师页刷新后立即按最新规则显示。</p>
+          <p class="section-tip">老师页刷新后会按这里的启用状态、常用状态和排序展示按钮。</p>
         </div>
-        <div class="table-wrap">
-          <table class="editable-table admin-rules-table">
+        <div class="table-wrap trial-table-wrap">
+          <table class="editable-table admin-rules-table trial-table">
             <thead>
               <tr>
                 <th>分类</th>
@@ -206,10 +213,10 @@
             <p class="eyebrow">Badge Rules</p>
             <h2>徽章规则配置</h2>
           </div>
-          <p class="section-tip">先保存到当前浏览器，作为试运行规则说明；下一阶段再接真实徽章发放。</p>
+          <p class="section-tip">本轮不继续扩展徽章功能，只保留试运行规则说明和默认值维护。</p>
         </div>
-        <div class="table-wrap">
-          <table class="editable-table admin-badges-table">
+        <div class="table-wrap trial-table-wrap">
+          <table class="editable-table admin-badges-table trial-table">
             <thead>
               <tr>
                 <th>序号</th>
@@ -227,7 +234,7 @@
         <div>
           <p class="eyebrow">Config Status</p>
           <h2>试运行说明</h2>
-          <p class="section-tip">点“恢复试运行默认值”会把 9 段、20 条积分规则和 8 条徽章规则恢复到建议配置。</p>
+          <p class="section-tip">点“恢复试运行默认值”会恢复 9 段、20 条积分规则和 8 条徽章说明规则。</p>
         </div>
         <button id="resetAllDataButton" class="ghost-button" type="button">恢复徽章默认值</button>
       </section>
@@ -236,4 +243,3 @@
     </main>
   </body>
 </html>
-

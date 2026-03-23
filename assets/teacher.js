@@ -29,7 +29,8 @@ import {
 const ACTION_TYPE_META = {
   add: '加分',
   batch_add: '整班加分',
-  deduct: '兑换扣分'
+  deduct: '兑换扣分',
+  seed: '补录积分'
 };
 
 const isFileMode = window.location.protocol === 'file:';
@@ -60,7 +61,7 @@ function mountFileModeFallback() {
     selectionHint.textContent = 'file:// mode is disabled for real data.';
   }
 
-  ['openCreateClassButton', 'openAddStudentButton', 'classBoostToggleButton', 'removeSelectedStudentButton', 'openRedeemButton'].forEach(function (id) {
+  ['openCreateClassButton', 'openAddStudentButton', 'classBoostToggleButton', 'removeSelectedStudentButton', 'openSeedDialogButton', 'openRedeemButton'].forEach(function (id) {
     const button = document.getElementById(id);
     if (button) {
       button.disabled = true;
@@ -112,6 +113,7 @@ if (isFileMode) {
       sheetOverlay: document.getElementById('sheetOverlay'),
       studentSpotlight: document.getElementById('studentSpotlight'),
       removeSelectedStudentButton: document.getElementById('removeSelectedStudentButton'),
+      openSeedDialogButton: document.getElementById('openSeedDialogButton'),
       openRedeemButton: document.getElementById('openRedeemButton'),
       redeemHint: document.getElementById('redeemHint'),
       categoryTabs: document.getElementById('categoryTabs'),
@@ -170,6 +172,7 @@ if (isFileMode) {
       authContext,
       isSavingClass: false,
       isRedeeming: false,
+      isSeeding: false,
       isCreatingTempStudent: false,
       lastSearchKeyword: ''
     };
@@ -325,6 +328,25 @@ if (isFileMode) {
         elements.classBoostDialogConfirmButton.disabled = false;
         elements.classBoostDialogConfirmButton.textContent = '确认加分';
       }
+    }
+
+    function openSeedDialog() {
+      const student = getSelectedStudent();
+      if (!student) {
+        showToast('请先选择学生');
+        return;
+      }
+      elements.seedForm.reset();
+      elements.seedRemarkInput.value = '历史积分补录';
+      updateSeedPreview();
+      openDialog(elements.seedDialog);
+      elements.seedPointsInput.focus();
+    }
+
+    function closeSeedDialog() {
+      closeDialog(elements.seedDialog);
+      state.isSeeding = false;
+      updateSeedPreview();
     }
 
     function normalizeText(value) {
@@ -796,7 +818,9 @@ if (isFileMode) {
       }
 
       elements.studentRecordList.innerHTML = state.studentRecords.map(function (record) {
-        const categoryLabel = record.action_type === 'deduct' ? '积分兑换' : (CATEGORY_META[record.category_snapshot]?.label || record.category_snapshot);
+        const categoryLabel = record.action_type === 'deduct'
+          ? '积分兑换'
+          : (record.action_type === 'seed' ? '历史补录' : (CATEGORY_META[record.category_snapshot]?.label || record.category_snapshot));
         const score = Number(record.points_delta || 0);
         const scoreText = `${score > 0 ? '+' : ''}${score}`;
         const typeLabel = ACTION_TYPE_META[record.action_type] || record.action_type || '记录';
@@ -827,7 +851,7 @@ if (isFileMode) {
       elements.panelEmptyState.hidden = hasStudent;
       elements.panelContent.hidden = !hasStudent;
       elements.removeSelectedStudentButton.disabled = !hasStudent;
-
+      elements.openSeedDialogButton.disabled = !hasStudent;
       elements.openRedeemButton.disabled = !hasStudent;
       if (elements.redeemHint) {
         elements.redeemHint.hidden = true;
@@ -842,6 +866,7 @@ if (isFileMode) {
       renderTabs();
       renderActionCards();
       renderStudentRecords();
+      updateSeedPreview();
       updateRedeemPreview();
     }
 
@@ -861,7 +886,7 @@ if (isFileMode) {
       }
 
       if (!state.searchResults.length) {
-        elements.studentSearchResults.innerHTML = '<div class="empty-state">没有找到匹配的学生主档，可以直接在下面创建临时学生。</div>';
+        elements.studentSearchResults.innerHTML = '<div class="empty-state">没有找到匹配的学生主档，可换关键字后重试。</div>';
         return;
       }
 
@@ -884,6 +909,43 @@ if (isFileMode) {
           </article>
         `;
       }).join('');
+    }
+
+    function updateSeedPreview() {
+      const student = getSelectedStudent();
+      if (!student) {
+        elements.seedStudentMeta.innerHTML = '';
+        elements.seedPreview.innerHTML = '<div class="teacher-redeem-preview__row"><span>先选择学生</span><strong>-</strong></div>';
+        elements.seedSubmitButton.disabled = true;
+        elements.seedSubmitButton.textContent = state.isSeeding ? '补录中...' : '确认补录';
+        return;
+      }
+
+      const rawPoints = Number(elements.seedPointsInput.value || 0);
+      const seedPoints = Math.floor(rawPoints);
+      const remark = normalizeText(elements.seedRemarkInput.value) || '历史积分补录';
+      const currentPoints = Number(student.total_points || 0);
+      const nextPoints = currentPoints + Math.max(0, seedPoints);
+      const invalid = !Number.isInteger(seedPoints) || seedPoints <= 0 || seedPoints > 5000 || !remark;
+
+      elements.seedStudentMeta.innerHTML =
+        '<div class="teacher-dialog-meta__student">' +
+          createAvatarHtml(student) +
+          '<div>' +
+            '<strong>' + escapeHtml(getStudentDisplayName(student)) + '</strong>' +
+            '<span>当前积分 ' + escapeHtml(currentPoints) + ' 分</span>' +
+          '</div>' +
+        '</div>';
+
+      elements.seedPreview.innerHTML = [
+        '<div class="teacher-redeem-preview__row"><span>当前积分</span><strong>' + escapeHtml(currentPoints) + ' 分</strong></div>',
+        '<div class="teacher-redeem-preview__row"><span>本次补录</span><strong>' + (seedPoints > 0 ? '+' + escapeHtml(seedPoints) + ' 分' : '待填写') + '</strong></div>',
+        '<div class="teacher-redeem-preview__row ' + (seedPoints > 5000 ? 'is-warning' : '') + '"><span>补录后总分</span><strong>' + (seedPoints > 0 ? escapeHtml(nextPoints) + ' 分' : '待计算') + '</strong></div>',
+        '<div class="teacher-redeem-preview__row"><span>备注</span><strong>' + escapeHtml(remark) + '</strong></div>'
+      ].join('');
+
+      elements.seedSubmitButton.disabled = invalid || state.isSeeding;
+      elements.seedSubmitButton.textContent = state.isSeeding ? '补录中...' : '确认补录';
     }
 
     function updateRedeemPreview() {
@@ -1146,6 +1208,87 @@ if (isFileMode) {
       }
     }
 
+    async function handleSeedSubmit(event) {
+      event.preventDefault();
+      if (state.isSeeding) {
+        return;
+      }
+
+      const selectedClass = getSelectedClass();
+      const student = getSelectedStudent();
+      const seedPoints = Math.floor(Number(elements.seedPointsInput.value || 0));
+      const remark = normalizeText(elements.seedRemarkInput.value) || '历史积分补录';
+
+      if (!selectedClass || !student) {
+        showToast('请先选择学生');
+        return;
+      }
+      if (!Number.isInteger(seedPoints) || seedPoints <= 0) {
+        showToast('补录积分只能填写正整数');
+        updateSeedPreview();
+        return;
+      }
+      if (seedPoints > 5000) {
+        showToast('单次补录上限为 5000 分');
+        updateSeedPreview();
+        return;
+      }
+      if (!remark) {
+        showToast('请填写补录备注');
+        updateSeedPreview();
+        return;
+      }
+
+      state.isSeeding = true;
+      updateSeedPreview();
+      const beforeProgress = getTierProgress(Number(student.total_points || 0), state.levelTiers);
+
+      try {
+        await insertPointLedger({
+          student_id: student.student_id,
+          class_id: selectedClass.id,
+          campus_id: selectedClass.campus_id,
+          subject_id: selectedClass.subject_id,
+          teacher_id: selectedClass.teacher_id || state.authContext.teacherId || null,
+          rule_id: null,
+          rule_name_snapshot: '补录积分',
+          category_snapshot: 'classroom',
+          points_delta: seedPoints,
+          action_type: 'seed',
+          remark
+        });
+
+        closeSeedDialog();
+        await loadRosterAndRecords();
+        const updatedStudent = getSelectedStudent();
+        const afterProgress = getTierProgress(Number(updatedStudent?.total_points || 0), state.levelTiers);
+        state.feedback = {
+          studentId: student.student_id,
+          category: 'seed',
+          ruleId: '',
+          actionLabel: '补录积分',
+          pointsDelta: seedPoints,
+          leveledUp: beforeProgress.currentTier.name !== afterProgress.currentTier.name,
+          newTierName: afterProgress.currentTier.name,
+          note: `补录积分 +${seedPoints} 分`,
+          timestamp: Date.now()
+        };
+        renderAll();
+        showToast(
+          state.feedback.leveledUp
+            ? `${getStudentDisplayName(updatedStudent || student)} 补录 ${seedPoints} 分，升级到 ${afterProgress.currentTier.name}`
+            : `${getStudentDisplayName(updatedStudent || student)} 已补录 ${seedPoints} 分`
+        );
+        clearFeedbackLater();
+      } catch (error) {
+        showInlineNotice(`补录积分失败：${error.message}`, 'error');
+        showToast('补录失败，请稍后重试');
+      } finally {
+        state.isSeeding = false;
+        updateSeedPreview();
+      }
+    }
+
     async function confirmClassBoost() {
       const selectedClass = getSelectedClass();
       if (!selectedClass || !state.roster.length) {
@@ -1243,12 +1386,12 @@ if (isFileMode) {
         state.searchResults = await searchStudents(elements.studentSearchInput.value || '');
         renderSearchResults();
         elements.studentSearchHint.textContent = state.searchResults.length
-          ? `?? ${state.searchResults.length} ???`
-          : '???????????????';
+          ? `已找到 ${state.searchResults.length} 个可加入学生`
+          : '没有找到匹配的学生主档，可尝试更换关键字';
       } catch (error) {
         state.searchResults = [];
         renderSearchResults();
-        elements.studentSearchHint.textContent = `?????${error.message}`;
+        elements.studentSearchHint.textContent = `搜索失败：${error.message}`;
       }
     }
 
@@ -1466,6 +1609,7 @@ if (isFileMode) {
     elements.openCreateClassButton.addEventListener('click', openCreateClassDialog);
     elements.openAddStudentButton.addEventListener('click', openAddStudentDialog);
     elements.removeSelectedStudentButton.addEventListener('click', handleRemoveSelectedStudent);
+    elements.openSeedDialogButton.addEventListener('click', openSeedDialog);
     elements.openRedeemButton.addEventListener('click', openRedeemDialog);
     elements.createClassCampusSelect.addEventListener('change', renderDialogOptions);
     elements.createClassForm.addEventListener('submit', handleCreateClassSubmit);
@@ -1487,6 +1631,12 @@ if (isFileMode) {
     elements.closeAddStudentButton.addEventListener('click', function () {
       closeDialog(elements.addStudentDialog);
     });
+
+    elements.seedForm.addEventListener('submit', handleSeedSubmit);
+    elements.seedPointsInput.addEventListener('input', updateSeedPreview);
+    elements.seedRemarkInput.addEventListener('input', updateSeedPreview);
+    elements.closeSeedDialogButton.addEventListener('click', closeSeedDialog);
+    elements.cancelSeedButton.addEventListener('click', closeSeedDialog);
 
     elements.redeemForm.addEventListener('submit', handleRedeemSubmit);
     elements.redeemItemInput.addEventListener('input', updateRedeemPreview);
@@ -1531,6 +1681,7 @@ if (isFileMode) {
     }
     mountSessionActions(document.querySelector('.teacher-console-links'), authContext);
     renderSearchResults();
+    updateSeedPreview();
     updateRedeemPreview();
     showInlineNotice('' );
     initializeData();
@@ -1542,6 +1693,16 @@ if (isFileMode) {
     initTeacherPage();
   }
 }
+
+
+
+
+
+
+
+
+
+
 
 
 

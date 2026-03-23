@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>学生管理 / 学生导入</title>
+    <title>学生管理</title>
     <link rel="stylesheet" href="./assets/styles.css" />
     <script type="module">
       if (window.location.protocol === 'file:') {
@@ -14,75 +14,94 @@
     </script>
   </head>
   <body class="admin-body">
-    <main class="page-shell admin-shell students-shell">
-      <header class="admin-header surface-card">
-        <div>
+    <main class="page-shell admin-shell trial-admin-page trial-students-page">
+      <header class="admin-header surface-card trial-page-hero trial-page-hero--students">
+        <div class="trial-page-hero__main">
           <p class="eyebrow">Student Registry</p>
-          <h1>学生管理 / 学生导入</h1>
+          <h1>学生管理</h1>
+          <p class="hero-copy">用于维护学生主档、批量导入和基础信息修正。老师端只处理班级关系，不处理学生主档。</p>
+          <div class="trial-page-hero__meta">
+            <span class="trial-meta-pill">主档统一维护</span>
+            <span class="trial-meta-pill">支持 CSV 批量导入</span>
+            <span class="trial-meta-pill">试运行阶段以教务录入为主</span>
+          </div>
         </div>
-        <div class="header-actions">
-          <button id="openCreateStudentButton" class="primary-button" type="button">手动新增学生</button>
+        <div class="header-actions trial-header-actions">
+          <button id="openCreateStudentButton" class="primary-button" type="button">新增学生</button>
           <button id="openImportDialogButton" class="ghost-button" type="button">批量导入 CSV</button>
-          <button id="downloadTemplateButton" class="ghost-button" type="button">下载导入模板</button>
-          <a class="inline-link" href="./admin.html">配置管理</a>
+          <button id="downloadTemplateButton" class="ghost-button" type="button">下载模板</button>
+          <a class="inline-link" href="./classes.html">班级管理</a>
+          <a class="inline-link" href="./admin.html">管理台</a>
           <a class="inline-link" href="./index.html">返回首页</a>
         </div>
       </header>
 
-      <section class="surface-card admin-section">
+      <section class="surface-card admin-section trial-toolbar-card">
         <div class="section-head">
           <div>
-            <p class="eyebrow">Student Archive</p>
-            <h2>学生主档列表</h2>
+            <p class="eyebrow">Student Search</p>
+            <h2>搜索与筛选</h2>
           </div>
-          <p class="section-tip">学生主档只由管理员统一导入和维护。老师端只允许把学生加入班级、移出班级，不允许修改学生正式资料。</p>
+          <p class="section-tip">支持按姓名、显示名称、家长手机号尾号、学号检索。筛选项会直接作用于下方主档列表。</p>
         </div>
 
-        <form id="studentsSearchForm" class="students-search-form">
-          <input id="studentsSearchInput" type="search" placeholder="搜索正式姓名 / 显示名称 / 手机尾号 / 学号" />
-          <button class="ghost-button" type="submit">搜索</button>
-          <button id="clearStudentsSearchButton" class="inline-button" type="button">清空</button>
-        </form>
+        <div class="trial-toolbar-grid">
+          <form id="studentsSearchForm" class="students-search-form trial-search-form">
+            <label class="trial-search-box">
+              <span class="sr-only">搜索学生</span>
+              <input id="studentsSearchInput" type="search" placeholder="搜索正式姓名 / 显示名称 / 手机尾号 / 学号" />
+            </label>
+            <button class="ghost-button" type="submit">搜索</button>
+            <button id="clearStudentsSearchButton" class="inline-button" type="button">清空</button>
+          </form>
 
-        <div class="students-filter-grid">
-          <label class="students-filter-label">
-            <span>状态筛选</span>
-            <select id="studentsStatusFilter">
-              <option value="all">全部状态</option>
-              <option value="normal">normal</option>
-              <option value="temporary">temporary</option>
-              <option value="pending_merge">pending_merge</option>
-              <option value="merged">merged</option>
-            </select>
-          </label>
-          <label class="students-filter-label">
-            <span>校区筛选</span>
-            <select id="studentsCampusFilter" disabled></select>
-            <small>学生主档没有固定校区字段，MVP 阶段先不做按校区精确筛选。</small>
-          </label>
+          <div class="students-filter-grid trial-filter-grid">
+            <label class="students-filter-label">
+              <span>状态</span>
+              <select id="studentsStatusFilter">
+                <option value="all">全部状态</option>
+                <option value="normal">正常</option>
+                <option value="temporary">临时</option>
+                <option value="pending_merge">待合并</option>
+                <option value="merged">已合并</option>
+              </select>
+            </label>
+            <label class="students-filter-label">
+              <span>校区说明</span>
+              <select id="studentsCampusFilter" disabled></select>
+              <small>学生主档没有固定校区字段，当前阶段仍按全局主档统一维护。</small>
+            </label>
+          </div>
         </div>
 
-        <div class="students-summary-grid">
-          <div class="metric-chip">
+        <div class="students-summary-grid trial-summary-grid">
+          <div class="metric-chip trial-metric-chip">
+            <span class="metric-label">当前主档数</span>
             <strong id="studentTotalCount">0</strong>
-            <span>当前列表学生数</span>
           </div>
-          <div class="metric-chip">
+          <div class="metric-chip trial-metric-chip">
+            <span class="metric-label">当前状态</span>
             <strong id="studentStatusSummary">全部状态</strong>
-            <span>当前状态筛选</span>
           </div>
-          <div class="metric-chip">
+          <div class="metric-chip trial-metric-chip">
+            <span class="metric-label">当前搜索</span>
             <strong id="studentSearchSummary">未搜索</strong>
-            <span>当前搜索条件</span>
           </div>
         </div>
 
         <div id="studentsInlineNotice" class="teacher-inline-notice" hidden></div>
       </section>
 
-      <section class="surface-card admin-section">
-        <div class="table-wrap">
-          <table class="editable-table students-table">
+      <section class="surface-card admin-section trial-table-card students-registry-card">
+        <div class="section-head trial-table-head">
+          <div>
+            <p class="eyebrow">Student Archive</p>
+            <h2>学生主档列表</h2>
+          </div>
+          <p class="section-tip">空列表时优先使用“新增学生”或“批量导入 CSV”。若搜索后为空，先清空搜索条件再检查导入数据。</p>
+        </div>
+        <div class="table-wrap trial-table-wrap">
+          <table class="editable-table students-table trial-table">
             <thead>
               <tr>
                 <th>学生</th>
@@ -104,11 +123,12 @@
     </main>
 
     <dialog id="studentDetailDialog" class="teacher-dialog">
-      <div class="teacher-dialog-form students-dialog-form">
+      <div class="teacher-dialog-form students-dialog-form trial-dialog-form">
         <div class="teacher-dialog-head">
           <div>
             <p class="eyebrow">Student Detail</p>
-            <h2>学生详情</h2>
+            <h2>学生主档详情</h2>
+            <p class="section-tip">查看主档字段、重复信息提示和后续编辑入口。</p>
           </div>
           <button id="closeStudentDetailButton" class="ghost-button" type="button">关闭</button>
         </div>
@@ -120,13 +140,13 @@
     </dialog>
 
     <dialog id="createStudentDialog" class="teacher-dialog">
-      <form id="createStudentForm" class="teacher-dialog-form students-dialog-form">
+      <form id="createStudentForm" class="teacher-dialog-form students-dialog-form trial-dialog-form">
         <input id="editingStudentIdInput" type="hidden" />
         <div class="teacher-dialog-head">
           <div>
             <p class="eyebrow">Student Archive</p>
             <h2 id="studentFormTitle">新增学生主档</h2>
-            <p id="studentFormHint" class="students-form-copy">只有管理员可以维护学生主档。老师端只处理班级关系，不处理学生正式资料。</p>
+            <p id="studentFormHint" class="students-form-copy">只有管理员可以维护学生主档。老师端只负责加进班、移出班级，不改正式资料。</p>
           </div>
           <button id="closeCreateStudentButton" class="ghost-button" type="button">关闭</button>
         </div>
@@ -138,19 +158,19 @@
           </label>
           <label class="students-form-field">
             <span>显示名称</span>
-            <input id="createDisplayNameInput" type="text" />
+            <input id="createDisplayNameInput" type="text" placeholder="不填则默认使用正式姓名" />
           </label>
           <label class="students-form-field">
             <span>年级</span>
-            <input id="createGradeInput" type="text" />
+            <input id="createGradeInput" type="text" placeholder="例如：三年级 / G4" />
           </label>
           <label class="students-form-field">
-            <span>状态</span>
+            <span>学生状态</span>
             <select id="createStudentStatusSelect">
-              <option value="normal">normal</option>
-              <option value="temporary">temporary</option>
-              <option value="pending_merge">pending_merge</option>
-              <option value="merged">merged</option>
+              <option value="normal">正常</option>
+              <option value="temporary">临时</option>
+              <option value="pending_merge">待合并</option>
+              <option value="merged">已合并</option>
             </select>
           </label>
           <label class="students-form-field">
@@ -159,15 +179,15 @@
           </label>
           <label class="students-form-field">
             <span>家长手机号</span>
-            <input id="createParentPhoneInput" type="text" inputmode="tel" />
+            <input id="createParentPhoneInput" type="text" inputmode="numeric" />
           </label>
-          <label class="students-form-field">
-            <span>头像 URL</span>
-            <input id="createAvatarUrlInput" type="url" />
+          <label class="students-form-field students-form-field--full">
+            <span>头像地址</span>
+            <input id="createAvatarUrlInput" type="url" placeholder="可选，不填则使用默认头像" />
           </label>
           <label class="students-form-field students-form-field--full">
             <span>备注</span>
-            <textarea id="createNotesInput"></textarea>
+            <textarea id="createNotesInput" rows="3" placeholder="例如：转班记录、姓名修正说明、家长备注"></textarea>
           </label>
         </div>
 
@@ -181,16 +201,17 @@
     </dialog>
 
     <dialog id="importStudentsDialog" class="teacher-dialog students-import-dialog">
-      <div class="teacher-dialog-form students-dialog-form">
+      <div class="teacher-dialog-form students-dialog-form trial-dialog-form">
         <div class="teacher-dialog-head">
           <div>
             <p class="eyebrow">CSV Import</p>
             <h2>批量导入学生</h2>
+            <p class="section-tip">上传后先预览，再确认导入。重复风险会在导入前提示。</p>
           </div>
           <button id="closeImportDialogButton" class="ghost-button" type="button">关闭</button>
         </div>
 
-        <div class="students-import-head">
+        <div class="students-import-head trial-import-head">
           <label class="students-upload-field">
             <span>上传 CSV 文件</span>
             <input id="importFileInput" type="file" accept=".csv,text/csv" />
@@ -200,17 +221,18 @@
           </div>
         </div>
 
-        <div class="table-wrap">
-          <table class="editable-table students-import-table">
+        <div class="table-wrap trial-table-wrap">
+          <table class="editable-table students-import-table trial-table">
             <thead>
               <tr>
                 <th>行号</th>
-                <th>显示名称</th>
                 <th>正式姓名</th>
+                <th>显示名称</th>
                 <th>年级</th>
+                <th>家长姓名</th>
                 <th>家长手机号</th>
-                <th>疑似重复</th>
-                <th>校验结果</th>
+                <th>状态</th>
+                <th>风险提示</th>
               </tr>
             </thead>
             <tbody id="importPreviewTableBody"></tbody>
@@ -219,10 +241,9 @@
 
         <div class="teacher-dialog-actions">
           <button id="cancelImportButton" class="ghost-button" type="button">取消</button>
-          <button id="confirmImportButton" class="primary-button" type="button" disabled>确认导入</button>
+          <button id="confirmImportButton" class="primary-button" type="button">确认导入</button>
         </div>
       </div>
     </dialog>
   </body>
 </html>
-

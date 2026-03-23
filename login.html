@@ -3,69 +3,93 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>登录页</title>
+    <title>积分系统登录</title>
     <link rel="stylesheet" href="./assets/styles.css" />
     <script type="module" src="./assets/login.js"></script>
   </head>
-  <body class="auth-body">
-    <main class="page-shell auth-shell">
-      <section class="auth-panel surface-card">
-        <div class="auth-hero">
-          <p class="eyebrow">Account Access</p>
-          <h1>积分系统登录</h1>
-          <p class="auth-copy">使用管理员分配的账号名和密码登录。老师首次登录后需要修改密码。</p>
+  <body class="auth-body auth-body--trial">
+    <main class="page-shell auth-shell auth-shell--trial">
+      <section class="auth-panel surface-card auth-panel--trial">
+        <div class="auth-hero auth-hero--trial">
+          <div class="auth-hero__copy">
+            <p class="eyebrow">Trial Access</p>
+            <h1>积分系统登录</h1>
+            <p class="auth-copy">使用管理员分配的账号名和密码登录。管理员进入管理台，老师进入老师页，首次登录会先引导修改密码。</p>
+          </div>
+          <div class="auth-hero__info">
+            <div class="auth-info-card">
+              <span>统一入口</span>
+              <strong>账号名 + 密码登录</strong>
+              <p>支持管理员和老师共用一个登录入口，系统会按角色自动跳转。</p>
+            </div>
+            <div class="auth-info-card">
+              <span>首次登录</span>
+              <strong>先改密码再进入系统</strong>
+              <p>老师账号支持管理员统一开通，默认初始密码可设置为 666666。</p>
+            </div>
+            <div class="auth-info-card auth-info-card--link">
+              <span>前台展示</span>
+              <strong><a class="inline-link" href="./display.html">直接打开积分大屏</a></strong>
+              <p>大屏适合前台电视或公开展示，不占用老师账号登录流程。</p>
+            </div>
+          </div>
         </div>
 
-        <div id="loginNotice" class="notice-bar" hidden></div>
+        <div class="auth-stage">
+          <div id="loginNotice" class="notice-bar" hidden></div>
 
-        <section id="loginCard" class="auth-card">
-          <div class="section-head auth-section-head">
-            <div>
-              <p class="eyebrow">Sign In</p>
-              <h2>账号登录</h2>
+          <section id="loginCard" class="auth-card auth-card--trial">
+            <div class="section-head auth-section-head">
+              <div>
+                <p class="eyebrow">Sign In</p>
+                <h2>账号登录</h2>
+              </div>
+              <p class="section-tip">账号名一般是老师拼音简称或管理员账号，例如 `cls`、`xls`、`sls`、`admin`。</p>
             </div>
-            <p class="section-tip">支持拼音首字母账号，例如 `cls`、`xls`、`sls`、`admin`。</p>
-          </div>
 
-          <form id="loginForm" class="auth-form">
-            <label class="field-group">
-              <span>账号</span>
-              <input id="loginAccountInput" type="text" autocomplete="username" placeholder="例如：cls / xls / sls / admin" required />
-            </label>
-            <label class="field-group">
-              <span>密码</span>
-              <input id="loginPasswordInput" type="password" autocomplete="current-password" placeholder="请输入密码" required />
-            </label>
-            <button id="loginSubmitButton" class="primary-button auth-submit" type="submit">登录</button>
-          </form>
+            <form id="loginForm" class="auth-form auth-form--trial">
+              <label class="field-group">
+                <span>账号名</span>
+                <input id="loginAccountInput" type="text" autocomplete="username" placeholder="例如：cls / xls / sls / admin" required />
+              </label>
+              <label class="field-group">
+                <span>密码</span>
+                <input id="loginPasswordInput" type="password" autocomplete="current-password" placeholder="请输入密码" required />
+              </label>
+              <button id="loginSubmitButton" class="primary-button auth-submit" type="submit">登录系统</button>
+            </form>
 
-          <div class="auth-footnote">
-            <span>老师初始密码由管理员统一设置，默认可用 `666666`。</span>
-            <a class="inline-link" href="./display.html">直接打开大屏</a>
-          </div>
-        </section>
-
-        <section id="changePasswordCard" class="auth-card" hidden>
-          <div class="section-head auth-section-head">
-            <div>
-              <p class="eyebrow">Password Update</p>
-              <h2>首次登录请修改密码</h2>
+            <div class="auth-footnote auth-footnote--trial">
+              <span>老师首次登录后请立即修改密码；若忘记密码，请联系管理员重置。</span>
             </div>
-            <p id="changePasswordHint" class="section-tip">修改完成后再进入系统。</p>
-          </div>
+          </section>
 
-          <form id="changePasswordForm" class="auth-form">
-            <label class="field-group">
-              <span>新密码</span>
-              <input id="newPasswordInput" type="password" minlength="6" autocomplete="new-password" placeholder="至少 6 位" required />
-            </label>
-            <label class="field-group">
-              <span>确认新密码</span>
-              <input id="confirmPasswordInput" type="password" minlength="6" autocomplete="new-password" placeholder="再次输入新密码" required />
-            </label>
-            <button id="changePasswordButton" class="primary-button auth-submit" type="submit">保存新密码</button>
-          </form>
-        </section>
+          <section id="changePasswordCard" class="auth-card auth-card--trial" hidden>
+            <div class="section-head auth-section-head">
+              <div>
+                <p class="eyebrow">Password Update</p>
+                <h2>首次登录请修改密码</h2>
+              </div>
+              <p id="changePasswordHint" class="section-tip">修改完成后再进入系统。</p>
+            </div>
+
+            <form id="changePasswordForm" class="auth-form auth-form--trial">
+              <label class="field-group">
+                <span>新密码</span>
+                <input id="newPasswordInput" type="password" minlength="6" autocomplete="new-password" placeholder="至少 6 位" required />
+              </label>
+              <label class="field-group">
+                <span>确认新密码</span>
+                <input id="confirmPasswordInput" type="password" minlength="6" autocomplete="new-password" placeholder="再次输入新密码" required />
+              </label>
+              <button id="changePasswordButton" class="primary-button auth-submit" type="submit">保存新密码</button>
+            </form>
+
+            <div class="auth-footnote auth-footnote--trial">
+              <span>建议使用便于记忆但不易猜到的密码，保存后系统会自动进入对应角色页面。</span>
+            </div>
+          </section>
+        </div>
       </section>
     </main>
   </body>
