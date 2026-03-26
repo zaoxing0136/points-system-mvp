@@ -1,0 +1,58 @@
+[
+  {
+    "student_code": "STU20260324040807118001U07V",
+    "legal_name": "张明",
+    "display_name": "小明",
+    "parent_name": "张女士",
+    "grade": "三年级",
+    "parent_phone": "13800001234"
+  },
+  {
+    "student_code": "STU202603240408071180024CVL",
+    "legal_name": "张明1",
+    "display_name": "小明1",
+    "parent_name": "张女士",
+    "grade": "三年级",
+    "parent_phone": "13800001235"
+  },
+  {
+    "student_code": "STU2026032404080711800319GZ",
+    "legal_name": "张明2",
+    "display_name": "小明2",
+    "parent_name": "张女士",
+    "grade": "三年级",
+    "parent_phone": "13800001236"
+  },
+  {
+    "student_code": "STU2026032404080711800492DR",
+    "legal_name": "张明3",
+    "display_name": "小明3",
+    "parent_name": "张女士",
+    "grade": "三年级",
+    "parent_phone": "13800001237"
+  },
+  {
+    "student_code": "STU20260324040807118005O2F5",
+    "legal_name": "张明4",
+    "display_name": "小明4",
+    "parent_name": "张女士",
+    "grade": "三年级",
+    "parent_phone": "13800001238"
+  },
+  {
+    "student_code": "STU20260324040807118006CN7E",
+    "legal_name": "张明5",
+    "display_name": "小明5",
+    "parent_name": "张女士",
+    "grade": "三年级",
+    "parent_phone": "13800001239"
+  },
+  {
+    "student_code": "STU20260324040807118007EILW",
+    "legal_name": "张明6",
+    "display_name": "小明6",
+    "parent_name": "张女士",
+    "grade": "三年级",
+    "parent_phone": "13800001240"
+  }
+]

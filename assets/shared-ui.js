@@ -274,10 +274,6 @@ export function groupRulesByCategory(rules) {
   }, {});
 }
 
-export function computeBadgePlaceholder(totalPoints, progress7d) {
-  return Math.max(1, Math.min(8, Math.floor((totalPoints + progress7d) / 240) + 1));
-}
-
 
 
 

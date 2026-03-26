@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>班级管理</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+    <script type="module" src="./assets/classes.js"></script>
+  </head>
+  <body class="admin-body">
+    <main class="page-shell admin-shell trial-admin-page trial-classes-page">
+      <header class="admin-header surface-card trial-page-hero trial-page-hero--classes">
+        <div class="trial-page-hero__main">
+          <p class="eyebrow">Class Workspace</p>
+          <h1>班级管理</h1>
+          <p class="hero-copy">完成班级创建、详情查看和从学生主档搜索加人。</p>
+          <div class="trial-page-hero__meta">
+            <span class="trial-meta-pill">班级目录</span>
+            <span class="trial-meta-pill">搜索加人</span>
+            <span class="trial-meta-pill">试运行期间的教务主工作台</span>
+          </div>
+        </div>
+        <div class="header-actions trial-header-actions">
+          <button id="openCreateClassButton" class="primary-button" type="button">新建班级</button>
+          <a class="inline-link" href="./students.html">学生管理</a>
+          <a class="inline-link" href="./teacher.html">老师页</a>
+          <a class="inline-link" href="./index.html">返回首页</a>
+        </div>
+      </header>
+
+      <section class="surface-card admin-section trial-toolbar-card">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Class Filters</p>
+            <h2>班级检索与筛选</h2>
+          </div>
+          <p class="section-tip">先筛出班级，再在右侧查看详情和 roster。</p>
+        </div>
+
+        <div class="trial-toolbar-grid">
+          <form id="classesSearchForm" class="students-search-form trial-search-form">
+            <label class="trial-search-box">
+              <span class="sr-only">搜索班级</span>
+              <input id="classesSearchInput" type="search" placeholder="搜索班级名称" />
+            </label>
+            <button class="ghost-button" type="submit">搜索</button>
+            <button id="clearClassesSearchButton" class="inline-button" type="button">清空</button>
+          </form>
+
+          <div class="classes-filter-grid trial-filter-grid">
+            <label class="students-filter-label">
+              <span>校区</span>
+              <select id="classesCampusFilter"></select>
+            </label>
+            <label class="students-filter-label">
+              <span>学科</span>
+              <select id="classesSubjectFilter"></select>
+            </label>
+          </div>
+        </div>
+
+        <div class="students-summary-grid trial-summary-grid">
+          <div class="metric-chip trial-metric-chip">
+            <span class="metric-label">当前班级数</span>
+            <strong id="classesTotalCount">0</strong>
+          </div>
+          <div class="metric-chip trial-metric-chip">
+            <span class="metric-label">所选班级人数</span>
+            <strong id="classesSelectedCount">0</strong>
+          </div>
+          <div class="metric-chip trial-metric-chip metric-chip--wide">
+            <span class="metric-label">当前筛选</span>
+            <strong id="classesFilterSummary">全部班级</strong>
+          </div>
+        </div>
+
+        <div id="classesInlineNotice" class="teacher-inline-notice" hidden></div>
+      </section>
+
+      <section class="classes-workspace trial-classes-workspace">
+        <section class="surface-card admin-section classes-list-panel trial-table-card">
+          <div class="section-head trial-table-head">
+            <div>
+              <p class="eyebrow">Class Directory</p>
+              <h2>班级列表</h2>
+            </div>
+            <p class="section-tip">点击查看后，右侧展示详情、名单和加人区。</p>
+          </div>
+          <div class="table-wrap trial-table-wrap">
+            <table class="editable-table classes-table trial-table">
+              <thead>
+                <tr>
+                  <th>班级名称</th>
+                  <th>校区</th>
+                  <th>学科</th>
+                  <th>老师</th>
+                  <th>状态</th>
+                  <th>人数</th>
+                  <th>创建时间</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="classesTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <aside class="surface-card admin-section classes-detail-panel trial-detail-card">
+          <div id="classDetailEmpty" class="classes-detail-empty trial-empty-state">
+            <p class="eyebrow">Class Detail</p>
+            <h2>先选一个班级</h2>
+            <p>选中班级后，这里会显示资料、名单和搜索加人入口。</p>
+          </div>
+
+          <div id="classDetailContent" class="classes-detail-content" hidden>
+            <section class="classes-detail-section">
+              <div class="section-head">
+                <div>
+                  <p class="eyebrow">Class Overview</p>
+                  <h2 id="classDetailTitle">班级详情</h2>
+                </div>
+                <p id="classDetailMeta" class="section-tip">-</p>
+              </div>
+              <div id="classDetailGrid" class="classes-detail-grid"></div>
+            </section>
+
+            <section class="classes-detail-section">
+              <div class="section-head">
+                <div>
+                  <p class="eyebrow">Roster</p>
+                  <h2>当前班级学生</h2>
+                </div>
+                <p id="classRosterSummary" class="section-tip">-</p>
+              </div>
+              <div class="table-wrap trial-table-wrap">
+                <table class="editable-table class-roster-table trial-table">
+                  <thead>
+                    <tr>
+                      <th>显示名称</th>
+                      <th>正式姓名</th>
+                      <th>年级</th>
+                      <th>状态</th>
+                      <th>加入时间</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="classRosterBody"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="classes-detail-section classes-search-panel">
+              <div class="section-head">
+                <div>
+                  <p class="eyebrow">Add Student</p>
+                  <h2>搜索并加入班级</h2>
+                </div>
+                <p id="classStudentSearchHint" class="teacher-search-hint">默认展示最近导入的学生主档。</p>
+              </div>
+              <form id="classStudentSearchForm" class="teacher-search-form trial-search-inline">
+                <input id="classStudentSearchInput" type="search" placeholder="搜索昵称 / 姓名 / 学号 / 家长手机号尾号" />
+                <button class="primary-button" type="submit">搜索学生</button>
+              </form>
+              <div id="classStudentSearchResults" class="teacher-search-results"></div>
+            </section>
+          </div>
+        </aside>
+      </section>
+
+      <div id="classesNotice" class="notice-bar" hidden></div>
+    </main>
+
+    <dialog id="createClassDialog" class="teacher-dialog">
+      <form id="createClassForm" class="teacher-dialog-form trial-dialog-form">
+        <div class="teacher-dialog-head">
+          <div>
+            <p class="eyebrow">Create Class</p>
+            <h2>新建班级</h2>
+            <p class="section-tip">先建班，再在右侧 roster 区补充学生。</p>
+          </div>
+          <button id="closeCreateClassButton" class="icon-button" type="button" aria-label="关闭">×</button>
+        </div>
+        <label class="field-group">
+          <span>班级名称 *</span>
+          <input id="createClassNameInput" name="class_name" type="text" placeholder="例如：周六启航编程班" required />
+        </label>
+        <div class="filters-grid teacher-dialog-grid">
+          <label class="field-group">
+            <span>所属校区 *</span>
+            <select id="createClassCampusSelect" name="campus_id" required></select>
+          </label>
+          <label class="field-group">
+            <span>学科 *</span>
+            <select id="createClassSubjectSelect" name="subject_id" required></select>
+          </label>
+        </div>
+        <div class="filters-grid teacher-dialog-grid">
+          <label class="field-group">
+            <span>授课老师</span>
+            <select id="createClassTeacherSelect" name="teacher_id"></select>
+          </label>
+          <label class="field-group">
+            <span>班级类型</span>
+            <select id="createClassTypeSelect" name="class_type">
+              <option value="regular">常规班</option>
+              <option value="trial">试听班</option>
+              <option value="intensive">主题班</option>
+              <option value="camp">假期班</option>
+            </select>
+          </label>
+        </div>
+        <div class="filters-grid teacher-dialog-grid">
+          <label class="field-group">
+            <span>班级状态</span>
+            <select id="createClassStatusSelect" name="status">
+              <option value="active">启用</option>
+              <option value="draft">草稿</option>
+              <option value="completed">已结课</option>
+              <option value="archived">已归档</option>
+            </select>
+          </label>
+          <label class="field-group">
+            <span>上课时间</span>
+            <input id="createClassScheduleInput" name="schedule_text" type="text" placeholder="例如：周六 14:00-16:00" />
+          </label>
+        </div>
+        <div class="teacher-dialog-actions">
+          <button class="primary-button" type="submit">创建班级</button>
+          <button id="cancelCreateClassButton" class="ghost-button" type="button">取消</button>
+        </div>
+      </form>
+    </dialog>
+  </body>
+</html>

@@ -55,15 +55,20 @@ function hashText(text) {
 }
 
 export function buildAvatarSeed(student) {
-  return student?.avatar_seed
-    || student?.avatar_code
-    || student?.id
-    || student?.student_id
-    || student?.student_code
-    || student?.parent_phone
-    || student?.display_name
-    || student?.legal_name
-    || 'student-avatar';
+  const seed = [
+    student?.avatar_seed,
+    student?.avatar_code,
+    student?.student_code,
+    student?.id,
+    student?.student_id,
+    student?.parent_phone,
+    student?.display_name,
+    student?.legal_name,
+    student?.parent_name,
+    student?.grade
+  ].map(normalizeText).filter(Boolean).join('|');
+
+  return seed || 'student-avatar';
 }
 
 export function getAvatarEntryByCode(code) {
@@ -125,16 +130,6 @@ export function getLibraryAvatarForStudent(student) {
   }
 
   const seed = buildAvatarSeed(student);
-  const orderedCategories = getCategoryOrder(seed);
-
-  if (orderedCategories.length) {
-    const primaryCategory = orderedCategories[0];
-    const primaryEntries = getCategoryEntries(primaryCategory);
-    if (primaryEntries.length) {
-      const primaryIndex = Math.abs(hashText(`entry:${seed}`)) % primaryEntries.length;
-      return primaryEntries[primaryIndex];
-    }
-  }
-
-  return AVATAR_LIBRARY_LIST[Math.abs(hashText(`entry:${seed}`)) % AVATAR_LIBRARY_LIST.length];
+  const libraryIndex = Math.abs(hashText(`library:${seed}`)) % AVATAR_LIBRARY_LIST.length;
+  return AVATAR_LIBRARY_LIST[libraryIndex] || null;
 }

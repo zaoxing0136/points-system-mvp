@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="produce-pumpkin-buddy-title">
+  <title id="produce-pumpkin-buddy-title">南瓜圆圆</title>
+  
+  <defs>
+    <linearGradient id="produce-pumpkin-buddy-bg" x1="24" y1="12" x2="222" y2="244" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFF1D9" />
+      <stop offset="1" stop-color="#FFBE70" />
+    </linearGradient>
+    <radialGradient id="produce-pumpkin-buddy-halo" cx="46%" cy="34%" r="72%">
+      <stop offset="0" stop-color="#FFF9EA" stop-opacity="0.95" />
+      <stop offset="1" stop-color="#FFF9EA" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="url(#produce-pumpkin-buddy-bg)" />
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="#ffffff" fill-opacity="0.10" />
+  <circle cx="70" cy="54" r="28" fill="#ffffff" fill-opacity="0.26" />
+  <circle cx="196" cy="58" r="18" fill="#ffffff" fill-opacity="0.16" />
+  <circle cx="208" cy="190" r="22" fill="#7FBE6A" fill-opacity="0.10" />
+  <circle cx="46" cy="168" r="10" fill="#7FBE6A" fill-opacity="0.14" />
+  <path d="M32 188 C58 166 100 168 126 186 C150 202 188 206 224 188 L224 232 L32 232 Z" fill="#ffffff" fill-opacity="0.14" />
+  <circle cx="128" cy="106" r="74" fill="url(#produce-pumpkin-buddy-halo)" />
+  <ellipse cx="128" cy="210" rx="58" ry="14" fill="#102030" fill-opacity="0.10" />
+  
+    <g>
+      
+      <ellipse cx="128" cy="134" rx="58" ry="54" fill="#E98F44" />
+      <ellipse cx="108" cy="134" rx="24" ry="50" fill="#F5A859" fill-opacity="0.52" />
+      <ellipse cx="148" cy="134" rx="24" ry="50" fill="#F5A859" fill-opacity="0.52" />
+      <path d="M 128 72 C 126 54, 136 46, 148 48" fill="none" stroke="#7CB96A" stroke-width="7" stroke-linecap="round" />
+      
+    <circle cx="100" cy="150" r="9" fill="#F7A5B2" fill-opacity="0.26" />
+    <circle cx="156" cy="150" r="9" fill="#F7A5B2" fill-opacity="0.26" />
+    
+    <circle cx="110" cy="132" r="4.6" fill="#31495C" />
+    <circle cx="146" cy="132" r="4.6" fill="#31495C" />
+    <ellipse cx="128" cy="143" rx="3.6" ry="2.8" fill="#31495C" fill-opacity="0.52" />
+    <path d="M 114 152 C 122 160, 134 160, 142 152" fill="none" stroke="#31495C" stroke-width="4" stroke-linecap="round" />
+    </g>
+</svg>

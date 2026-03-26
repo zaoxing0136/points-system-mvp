@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="plant-lotus-dream-title">
+  <title id="plant-lotus-dream-title">莲莲梦灵</title>
+  
+  <defs>
+    <linearGradient id="plant-lotus-dream-bg" x1="24" y1="12" x2="222" y2="244" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFF1FA" />
+      <stop offset="1" stop-color="#E4C7FF" />
+    </linearGradient>
+    <radialGradient id="plant-lotus-dream-halo" cx="46%" cy="34%" r="72%">
+      <stop offset="0" stop-color="#FFF8FD" stop-opacity="0.95" />
+      <stop offset="1" stop-color="#FFF8FD" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="url(#plant-lotus-dream-bg)" />
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="#ffffff" fill-opacity="0.10" />
+  <circle cx="70" cy="54" r="28" fill="#ffffff" fill-opacity="0.26" />
+  <circle cx="196" cy="58" r="18" fill="#ffffff" fill-opacity="0.16" />
+  <circle cx="208" cy="190" r="22" fill="#87C7D8" fill-opacity="0.10" />
+  <circle cx="46" cy="168" r="10" fill="#87C7D8" fill-opacity="0.14" />
+  <path d="M32 188 C58 166 100 168 126 186 C150 202 188 206 224 188 L224 232 L32 232 Z" fill="#ffffff" fill-opacity="0.14" />
+  <circle cx="128" cy="106" r="74" fill="url(#plant-lotus-dream-halo)" />
+  <ellipse cx="128" cy="210" rx="58" ry="14" fill="#102030" fill-opacity="0.10" />
+  
+    <g>
+      
+      <ellipse cx="170" cy="122" rx="12" ry="26" fill="#D29AE7" opacity="0.88" transform="rotate(90 170 122)" /><ellipse cx="157.7" cy="151.7" rx="12" ry="26" fill="#D29AE7" opacity="0.88" transform="rotate(135 157.7 151.7)" /><ellipse cx="128" cy="164" rx="12" ry="26" fill="#D29AE7" opacity="0.88" transform="rotate(180 128 164)" /><ellipse cx="98.3" cy="151.7" rx="12" ry="26" fill="#D29AE7" opacity="0.88" transform="rotate(225 98.3 151.7)" /><ellipse cx="86" cy="122" rx="12" ry="26" fill="#D29AE7" opacity="0.88" transform="rotate(270 86 122)" /><ellipse cx="98.3" cy="92.3" rx="12" ry="26" fill="#D29AE7" opacity="0.88" transform="rotate(315 98.3 92.3)" /><ellipse cx="128" cy="80" rx="12" ry="26" fill="#D29AE7" opacity="0.88" transform="rotate(360 128 80)" /><ellipse cx="157.7" cy="92.3" rx="12" ry="26" fill="#D29AE7" opacity="0.88" transform="rotate(405 157.7 92.3)" />
+      <path d="M 84 142 C 96 114, 108 100, 128 100 C 148 100, 160 114, 172 142 C 154 138, 142 134, 128 126 C 114 134, 102 138, 84 142 Z" fill="#D29AE7" />
+      <circle cx="128" cy="118" r="34" fill="#FFF3F7" />
+      <path d="M 84 210 C 88 182, 104 160, 128 160 C 152 160, 168 182, 172 210 Z" fill="#F0D8FF" />
+      
+    <circle cx="100" cy="136" r="9" fill="#F7A5B2" fill-opacity="0.26" />
+    <circle cx="156" cy="136" r="9" fill="#F7A5B2" fill-opacity="0.26" />
+    
+    <circle cx="110" cy="118" r="4.6" fill="#31495C" />
+    <circle cx="146" cy="118" r="4.6" fill="#31495C" />
+    <ellipse cx="128" cy="129" rx="3.6" ry="2.8" fill="#31495C" fill-opacity="0.52" />
+    <path d="M 114 138 C 122 146, 134 146, 142 138" fill="none" stroke="#31495C" stroke-width="4" stroke-linecap="round" />
+    </g>
+</svg>

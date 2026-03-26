@@ -69,15 +69,44 @@ export function getRoleHome(role) {
   return role === 'teacher' ? './teacher.html' : './index.html';
 }
 
-export function getAuthDisplayName(context) {
-  if (!context?.profile) {
+function isQuestionOnlyText(value) {
+  return /^[?？]+$/.test(String(value || '').trim());
+}
+
+function normalizeAuthLabel(value) {
+  const text = String(value || '').trim();
+  if (!text) {
     return '';
   }
-  return context.profile.display_name
-    || context.profile.teacher?.display_name
-    || context.profile.teacher?.name
-    || context.profile.phone
-    || '未命名账号';
+  if (isQuestionOnlyText(text) || /^(null|undefined|unknown)$/i.test(text)) {
+    return '';
+  }
+  return text;
+}
+
+export function getAuthDisplayName(context) {
+  const candidates = [
+    context?.profile?.display_name,
+    context?.profile?.teacher?.display_name,
+    context?.profile?.teacher?.name,
+    context?.user?.user_metadata?.display_name,
+    context?.user?.user_metadata?.login_name,
+    context?.profile?.phone,
+    context?.user?.email ? String(context.user.email).split('@')[0] : ''
+  ];
+
+  const resolved = candidates.map(normalizeAuthLabel).find(Boolean);
+  if (resolved) {
+    return resolved;
+  }
+
+  if (context?.isAdmin) {
+    return '管理员';
+  }
+  if (context?.isTeacher) {
+    return '老师账号';
+  }
+  return '未命名账号';
 }
 
 export function setCurrentAuthContext(context) {

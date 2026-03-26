@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
@@ -13,7 +13,7 @@
         <div class="trial-page-hero__main">
           <p class="eyebrow">Class Workspace</p>
           <h1>班级管理</h1>
-          <p class="hero-copy">在这里完成班级创建、老师分配、当前 roster 查看，以及从学生主档搜索并加入班级。</p>
+          <p class="hero-copy">完成班级创建、详情查看和从学生主档搜索加人。</p>
           <div class="trial-page-hero__meta">
             <span class="trial-meta-pill">班级目录</span>
             <span class="trial-meta-pill">搜索加人</span>
@@ -34,7 +34,7 @@
             <p class="eyebrow">Class Filters</p>
             <h2>班级检索与筛选</h2>
           </div>
-          <p class="section-tip">先筛出目标班级，再在右侧查看详情、当前学生和搜索加人区。</p>
+          <p class="section-tip">先筛出班级，再在右侧查看详情和 roster。</p>
         </div>
 
         <div class="trial-toolbar-grid">
@@ -84,7 +84,7 @@
               <p class="eyebrow">Class Directory</p>
               <h2>班级列表</h2>
             </div>
-            <p class="section-tip">点击“查看”后，右侧会切换到该班的详情、名单和搜索加人区域。</p>
+            <p class="section-tip">点击查看后，右侧展示详情、名单和加人区。</p>
           </div>
           <div class="table-wrap trial-table-wrap">
             <table class="editable-table classes-table trial-table">
@@ -109,7 +109,7 @@
           <div id="classDetailEmpty" class="classes-detail-empty trial-empty-state">
             <p class="eyebrow">Class Detail</p>
             <h2>先选一个班级</h2>
-            <p>选中班级后，这里会显示班级资料、当前学生名单，以及搜索并加入班级的入口。</p>
+            <p>选中班级后，这里会显示资料、名单和搜索加人入口。</p>
           </div>
 
           <div id="classDetailContent" class="classes-detail-content" hidden>
@@ -176,7 +176,7 @@
           <div>
             <p class="eyebrow">Create Class</p>
             <h2>新建班级</h2>
-            <p class="section-tip">先建班，再在右侧 roster 区补充学生。老师账号不绑定校区，班级归属在这里决定。</p>
+            <p class="section-tip">先建班，再在右侧 roster 区补充学生。</p>
           </div>
           <button id="closeCreateClassButton" class="icon-button" type="button" aria-label="关闭">×</button>
         </div>
@@ -215,7 +215,6 @@
             <select id="createClassStatusSelect" name="status">
               <option value="active">启用</option>
               <option value="draft">草稿</option>
-              <option value="completed">已结课</option>
               <option value="archived">已归档</option>
             </select>
           </label>

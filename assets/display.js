@@ -1,12 +1,10 @@
-﻿import { fetchLeaderboardSummary, fetchLevelTiers } from './supabase-service.js';
+import { fetchBadgeLeaderboard, fetchLeaderboardSummary } from './supabase-service.js';
 import {
-  computeBadgePlaceholder,
   createAvatarHtml,
   escapeHtml,
+  formatDateTime,
   getCampusShortName,
-  getStudentDisplayName,
-  normalizeTierList,
-  resolveTier
+  getStudentDisplayName
 } from './shared-ui.js';
 import { isSupabaseConfigured } from './supabase-client.js';
 
@@ -14,7 +12,7 @@ const ROTATE_INTERVAL_MS = 8000;
 const REFRESH_INTERVAL_MS = 10000;
 const PAGE_SIZE = 8;
 
-document.addEventListener('DOMContentLoaded', function () {
+function initDisplayPage() {
   const elements = {
     totalBoard: document.getElementById('totalBoard'),
     progressBoard: document.getElementById('progressBoard'),
@@ -26,7 +24,6 @@ document.addEventListener('DOMContentLoaded', function () {
   };
 
   const state = {
-    tiers: normalizeTierList([]),
     boards: {
       total: [],
       progress: [],
@@ -67,7 +64,27 @@ document.addEventListener('DOMContentLoaded', function () {
     if (type === 'progress') {
       return `<strong>+${escapeHtml(student.progress_7d)}</strong><span>近 7 天</span>`;
     }
-    return `<strong>${escapeHtml(student.badge_count)}</strong><span>占位徽章值</span>`;
+    return `
+      <strong>${escapeHtml(student.unlocked_count || 0)}</strong>
+      <span>已解锁徽章</span>
+      <small>${escapeHtml(student.event_count || 0)} 次行为记录</small>
+    `;
+  }
+
+  function buildDetailLine(type, student) {
+    if (type !== 'badge') {
+      return '';
+    }
+
+    if (student.unlocked_badge_names) {
+      return `<p class="display-rank-line">${escapeHtml(student.unlocked_badge_names)}</p>`;
+    }
+
+    if (student.latest_unlocked_at) {
+      return `<p class="display-rank-line">最近解锁 ${escapeHtml(formatDateTime(student.latest_unlocked_at))}</p>`;
+    }
+
+    return `<p class="display-rank-line">${escapeHtml(student.event_count || 0)} 次行为记录</p>`;
   }
 
   function renderBoard(container, pageElement, type) {
@@ -82,11 +99,11 @@ document.addEventListener('DOMContentLoaded', function () {
     pageElement.textContent = '';
     container.innerHTML = list.map(function (student, index) {
       const rankIndex = start + index + 1;
-      const tier = resolveTier(Number(student.total_points || 0), state.tiers);
       const campusShortName = getCampusShortName(student.campus_name);
       const campusLine = campusShortName
         ? `<p class="display-rank-campus">${escapeHtml(campusShortName)}</p>`
         : '';
+      const detailLine = buildDetailLine(type, student);
 
       return `
         <article class="rank-item display-rank-item display-rank-item--${escapeHtml(type)} ${rankIndex <= 3 ? 'is-top' : ''}">
@@ -96,6 +113,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="rank-text display-rank-text">
               <h3>${escapeHtml(getStudentDisplayName(student))}</h3>
               ${campusLine}
+              ${detailLine}
             </div>
           </div>
           <div class="rank-score display-rank-score">${buildScoreLabel(type, student)}</div>
@@ -126,30 +144,25 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     try {
-      const [summary, levelTiers] = await Promise.all([
+      const [summary, badgeLeaderboard] = await Promise.all([
         fetchLeaderboardSummary(),
-        fetchLevelTiers().catch(function () { return []; })
+        fetchBadgeLeaderboard().catch(function () { return []; })
       ]);
 
-      state.tiers = normalizeTierList(levelTiers);
-      const enriched = summary.map(function (student) {
-        return {
-          ...student,
-          badge_count: computeBadgePlaceholder(Number(student.total_points || 0), Number(student.progress_7d || 0))
-        };
-      });
-
-      state.boards.total = enriched.slice().sort(function (left, right) {
+      state.boards.total = summary.slice().sort(function (left, right) {
         return Number(right.total_points || 0) - Number(left.total_points || 0);
       });
-      state.boards.progress = enriched.slice().sort(function (left, right) {
+      state.boards.progress = summary.slice().sort(function (left, right) {
         return Number(right.progress_7d || 0) - Number(left.progress_7d || 0);
       });
-      state.boards.badge = enriched.slice().sort(function (left, right) {
-        if (Number(right.badge_count || 0) !== Number(left.badge_count || 0)) {
-          return Number(right.badge_count || 0) - Number(left.badge_count || 0);
+      state.boards.badge = badgeLeaderboard.slice().sort(function (left, right) {
+        if (Number(right.unlocked_count || 0) !== Number(left.unlocked_count || 0)) {
+          return Number(right.unlocked_count || 0) - Number(left.unlocked_count || 0);
         }
-        return Number(right.total_points || 0) - Number(left.total_points || 0);
+        if (Number(right.event_count || 0) !== Number(left.event_count || 0)) {
+          return Number(right.event_count || 0) - Number(left.event_count || 0);
+        }
+        return String(right.latest_unlocked_at || '').localeCompare(String(left.latest_unlocked_at || ''));
       });
 
       ['total', 'progress', 'badge'].forEach(function (type) {
@@ -178,5 +191,10 @@ document.addEventListener('DOMContentLoaded', function () {
   window.setInterval(updateClock, 1000);
   window.setInterval(refreshBoards, REFRESH_INTERVAL_MS);
   window.setInterval(rotateBoards, ROTATE_INTERVAL_MS);
-});
+}
 
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initDisplayPage, { once: true });
+} else {
+  initDisplayPage();
+}

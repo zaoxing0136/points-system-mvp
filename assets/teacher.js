@@ -2,15 +2,18 @@
 import { getAuthDisplayName, mountSessionActions, requirePageAuth } from './auth.js';
 import {
   addStudentToClass,
-  createClass,
+  createClass,
+  fetchBadgeDefinitions,
   fetchCampuses,
   fetchClasses,
   fetchClassRoster,
   fetchLevelTiers,
   fetchPointRules,
+  fetchStudentBadgeProgress,
   fetchStudentLedger,
   fetchSubjects,
   fetchTeachers,
+  insertStudentBadgeEvent,
   insertPointLedger,
   removeStudentFromClass,
   searchStudents
@@ -120,6 +123,8 @@ if (isFileMode) {
       activeCategoryTitle: document.getElementById('activeCategoryTitle'),
       activeCategoryTip: document.getElementById('activeCategoryTip'),
       actionCards: document.getElementById('actionCards'),
+      badgeActionCards: document.getElementById('badgeActionCards'),
+      badgeProgressList: document.getElementById('badgeProgressList'),
       studentRecordList: document.getElementById('studentRecordList'),
       toast: document.getElementById('toast'),
       fileModeNotice: document.getElementById('fileModeNotice'),
@@ -139,7 +144,17 @@ if (isFileMode) {
       studentSearchForm: document.getElementById('studentSearchForm'),
       studentSearchInput: document.getElementById('studentSearchInput'),
       studentSearchHint: document.getElementById('studentSearchHint'),
-      studentSearchResults: document.getElementById('studentSearchResults'),
+      studentSearchResults: document.getElementById('studentSearchResults'),
+      seedDialog: document.getElementById('seedDialog'),
+      seedForm: document.getElementById('seedForm'),
+      closeSeedDialogButton: document.getElementById('closeSeedDialogButton'),
+      cancelSeedButton: document.getElementById('cancelSeedButton'),
+      seedStudentMeta: document.getElementById('seedStudentMeta'),
+      seedPointsInput: document.getElementById('seedPointsInput'),
+      seedRemarkInput: document.getElementById('seedRemarkInput'),
+      seedPreview: document.getElementById('seedPreview'),
+      seedSubmitButton: document.getElementById('seedSubmitButton'),
+
       redeemDialog: document.getElementById('redeemDialog'),
       redeemForm: document.getElementById('redeemForm'),
       closeRedeemButton: document.getElementById('closeRedeemButton'),
@@ -157,22 +172,28 @@ if (isFileMode) {
       teachers: [],
       classes: [],
       pointRules: [],
+      badgeDefinitions: [],
       levelTiers: normalizeTierList([]),
       campusId: '',
       classId: '',
       roster: [],
       selectedStudentId: null,
       studentRecords: [],
+      studentBadgeProgress: [],
       activeCategory: 'classroom',
       isMobilePanelOpen: false,
       classBoostArmed: false,
       feedback: null,
+      badgeFeedback: null,
       searchResults: [],
       loadingRoster: false,
+      loadingStudentDetails: false,
       authContext,
       isSavingClass: false,
       isRedeeming: false,
       isSeeding: false,
+      isSavingBadgeEvent: false,
+      savingBadgeDefinitionId: '',
       isCreatingTempStudent: false,
       lastSearchKeyword: ''
     };
@@ -191,6 +212,47 @@ if (isFileMode) {
 
     function getCurrentRules() {
       return groupRulesByCategory(state.pointRules);
+    }
+
+    function getSelectedBadgeProgress() {
+      return state.studentBadgeProgress.filter(function (row) {
+        return row.student_id === state.selectedStudentId;
+      });
+    }
+
+    function getBadgeProgressRow(badgeDefinitionId) {
+      return getSelectedBadgeProgress().find(function (row) {
+        return row.badge_definition_id === badgeDefinitionId;
+      }) || null;
+    }
+
+    function getBadgeSummary(rows) {
+      const progressRows = Array.isArray(rows) ? rows : [];
+      const unlockedRows = progressRows.filter(function (row) {
+        return Boolean(row.unlocked_at);
+      });
+      const latestUnlocked = unlockedRows
+        .slice()
+        .sort(function (left, right) {
+          return new Date(right.unlocked_at).getTime() - new Date(left.unlocked_at).getTime();
+        })[0] || null;
+      const nextLocked = progressRows
+        .filter(function (row) {
+          return !row.unlocked_at;
+        })
+        .sort(function (left, right) {
+          if (Number(left.remaining_count || 0) !== Number(right.remaining_count || 0)) {
+            return Number(left.remaining_count || 0) - Number(right.remaining_count || 0);
+          }
+          return Number(left.sort_order || 0) - Number(right.sort_order || 0);
+        })[0] || null;
+
+      return {
+        unlockedCount: unlockedRows.length,
+        totalCount: progressRows.length,
+        latestUnlocked,
+        nextLocked
+      };
     }
 
     function getCampusName(campusId) {
@@ -260,6 +322,7 @@ if (isFileMode) {
       window.clearTimeout(clearFeedbackLater.timer);
       clearFeedbackLater.timer = window.setTimeout(function () {
         state.feedback = null;
+        state.badgeFeedback = null;
         renderAll();
       }, 1800);
     }
@@ -537,6 +600,8 @@ if (isFileMode) {
         state.roster = [];
         state.selectedStudentId = null;
         state.studentRecords = [];
+        state.studentBadgeProgress = [];
+        state.badgeFeedback = null;
         return;
       }
 
@@ -572,29 +637,42 @@ if (isFileMode) {
       if (!state.classId) {
         state.roster = [];
         state.studentRecords = [];
+        state.studentBadgeProgress = [];
         state.selectedStudentId = null;
+        state.loadingStudentDetails = false;
         renderAll();
         return;
       }
 
       state.loadingRoster = true;
+      state.studentRecords = [];
+      state.studentBadgeProgress = [];
+      state.loadingStudentDetails = Boolean(state.selectedStudentId);
       renderAll();
 
       try {
         state.roster = await fetchClassRoster(state.classId);
         syncStudentSelection();
         if (state.selectedStudentId) {
-          state.studentRecords = await fetchStudentLedger(state.selectedStudentId, desktopMedia.matches ? 6 : 5);
+          const [studentRecords, studentBadgeProgress] = await Promise.all([
+            fetchStudentLedger(state.selectedStudentId, desktopMedia.matches ? 6 : 5),
+            fetchStudentBadgeProgress(state.selectedStudentId)
+          ]);
+          state.studentRecords = studentRecords;
+          state.studentBadgeProgress = studentBadgeProgress;
         } else {
           state.studentRecords = [];
+          state.studentBadgeProgress = [];
         }
         showInlineNotice('');
       } catch (error) {
         state.roster = [];
         state.studentRecords = [];
+        state.studentBadgeProgress = [];
         showInlineNotice(`班级数据读取失败：${error.message}`, 'error');
       } finally {
         state.loadingRoster = false;
+        state.loadingStudentDetails = false;
         renderAll();
       }
     }
@@ -602,15 +680,38 @@ if (isFileMode) {
     async function loadStudentRecords(studentId) {
       if (!studentId) {
         state.studentRecords = [];
+        state.studentBadgeProgress = [];
+        state.loadingStudentDetails = false;
         renderPanel();
         return;
       }
 
+      state.loadingStudentDetails = true;
+      renderPanel();
+      const requestedStudentId = studentId;
+
       try {
-        state.studentRecords = await fetchStudentLedger(studentId, desktopMedia.matches ? 6 : 5);
+        const [studentRecords, studentBadgeProgress] = await Promise.all([
+          fetchStudentLedger(studentId, desktopMedia.matches ? 6 : 5),
+          fetchStudentBadgeProgress(studentId)
+        ]);
+
+        if (requestedStudentId !== state.selectedStudentId) {
+          return;
+        }
+
+        state.studentRecords = studentRecords;
+        state.studentBadgeProgress = studentBadgeProgress;
       } catch (error) {
-        state.studentRecords = [];
-        showInlineNotice(`积分流水读取失败：${error.message}`, 'error');
+        if (requestedStudentId === state.selectedStudentId) {
+          state.studentRecords = [];
+          state.studentBadgeProgress = [];
+          showInlineNotice(`学生详情读取失败：${error.message}`, 'error');
+        }
+      } finally {
+        if (requestedStudentId === state.selectedStudentId) {
+          state.loadingStudentDetails = false;
+        }
       }
       renderPanel();
     }
@@ -707,8 +808,13 @@ if (isFileMode) {
     function renderSpotlight(student) {
       const selectedClass = getSelectedClass();
       const progress = getTierProgress(Number(student.total_points || 0), state.levelTiers);
+      const badgeRows = getSelectedBadgeProgress();
+      const badgeSummary = getBadgeSummary(badgeRows);
       const recentFeedback = state.feedback && state.feedback.studentId === student.student_id && Date.now() - state.feedback.timestamp < 1800
         ? state.feedback
+        : null;
+      const recentBadgeFeedback = state.badgeFeedback && state.badgeFeedback.studentId === student.student_id && Date.now() - state.badgeFeedback.timestamp < 2200
+        ? state.badgeFeedback
         : null;
       const deltaText = recentFeedback ? `${recentFeedback.pointsDelta > 0 ? '+' : ''}${recentFeedback.pointsDelta}` : '';
       const levelUpMessage = recentFeedback && recentFeedback.leveledUp
@@ -717,6 +823,12 @@ if (isFileMode) {
       const nextLabel = progress.nextTier ? `下一段 ${progress.nextTier.name}` : '当前已是最高段位';
       const distanceLabel = progress.nextTier ? `还差 ${progress.distance} 分` : '继续保持';
       const metaLine = [getCampusName(selectedClass?.campus_id), selectedClass?.class_name].filter(Boolean).join(' · ');
+      const badgeChipText = badgeSummary.totalCount
+        ? `已解锁 ${badgeSummary.unlockedCount} / ${badgeSummary.totalCount} 枚徽章`
+        : '暂无徽章规则';
+      const badgeSummaryLine = badgeSummary.nextLocked
+        ? `下一个：${badgeSummary.nextLocked.badge_name}，再 ${badgeSummary.nextLocked.remaining_count} 次“${badgeSummary.nextLocked.event_label}”`
+        : (badgeSummary.latestUnlocked ? `最近解锁：${badgeSummary.latestUnlocked.badge_name}` : '老师记录行为后会自动累计徽章进度');
 
       elements.studentSpotlight.innerHTML = `
         <div class="student-spotlight__hero">
@@ -738,6 +850,7 @@ if (isFileMode) {
           <span class="tag-pill teacher-contrast-pill">${escapeHtml(progress.currentTier.name)}</span>
           <span class="status-pill teacher-contrast-pill">${escapeHtml(distanceLabel)}</span>
           <span class="status-pill teacher-contrast-pill">${escapeHtml(nextLabel)}</span>
+          <span class="status-pill teacher-contrast-pill">${escapeHtml(badgeChipText)}</span>
         </div>
         <div class="student-progress">
           <div class="student-progress__row">
@@ -748,8 +861,10 @@ if (isFileMode) {
             <span class="student-progress__fill" style="width:${progress.progress}%"></span>
           </div>
         </div>
+        <p class="teacher-badge-summary-line">${escapeHtml(badgeSummaryLine)}</p>
         ${levelUpMessage ? `<div class="teacher-levelup-banner">${escapeHtml(levelUpMessage)}</div>` : ''}
         ${recentFeedback?.note ? `<p class="teacher-feedback-line">${escapeHtml(recentFeedback.note)}</p>` : ''}
+        ${recentBadgeFeedback?.note ? `<p class="teacher-feedback-line teacher-feedback-line--badge">${escapeHtml(recentBadgeFeedback.note)}</p>` : ''}
       `;
     }
 
@@ -806,9 +921,113 @@ if (isFileMode) {
       }).join('');
     }
 
+    function renderBadgeActionCards() {
+      const student = getSelectedStudent();
+
+      if (!student) {
+        elements.badgeActionCards.innerHTML = '<div class="empty-state">先选择学生，再记录行为徽章。</div>';
+        return;
+      }
+
+      if (state.loadingStudentDetails && !state.studentBadgeProgress.length) {
+        elements.badgeActionCards.innerHTML = '<div class="empty-state">正在读取当前学生的徽章进度...</div>';
+        return;
+      }
+
+      if (!state.badgeDefinitions.length) {
+        elements.badgeActionCards.innerHTML = '<div class="empty-state">当前还没有启用的徽章规则。</div>';
+        return;
+      }
+
+      elements.badgeActionCards.innerHTML = state.badgeDefinitions.map(function (badge) {
+        const progress = getBadgeProgressRow(badge.id);
+        const eventCount = Number(progress?.event_count || 0);
+        const threshold = Number(progress?.threshold || badge.threshold || 1);
+        const remainingCount = Math.max(Number(progress?.remaining_count ?? (threshold - eventCount)), 0);
+        const isUnlocked = Boolean(progress?.unlocked_at);
+        const progressPercent = Math.max(8, Math.min(100, Math.round((eventCount / threshold) * 100)));
+        const helperText = isUnlocked
+          ? `已解锁 · 累计 ${eventCount} 次`
+          : `累计 ${eventCount} / ${threshold} · 再 ${remainingCount} 次解锁`;
+        const actionState = state.isSavingBadgeEvent
+          ? (state.savingBadgeDefinitionId === badge.id ? '记录中...' : '处理中...')
+          : '点击记录';
+
+        return `
+          <button class="teacher-badge-action-card ${isUnlocked ? 'is-unlocked' : ''}" type="button" data-badge-definition-id="${escapeHtml(badge.id)}" ${state.isSavingBadgeEvent ? 'disabled' : ''}>
+            <div class="teacher-badge-action-card__head">
+              <span class="teacher-badge-token">${escapeHtml(badge.icon_token || '🏅')}</span>
+              <span class="teacher-badge-state">${escapeHtml(isUnlocked ? '已解锁' : '待解锁')}</span>
+            </div>
+            <strong>${escapeHtml(badge.name)}</strong>
+            <p>${escapeHtml(badge.event_label)}</p>
+            <div class="teacher-badge-action-card__meta">
+              <span>${escapeHtml(helperText)}</span>
+              <span>${escapeHtml(actionState)}</span>
+            </div>
+            <div class="teacher-badge-action-card__track">
+              <span style="width:${isUnlocked ? 100 : progressPercent}%"></span>
+            </div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function renderBadgeProgress() {
+      const student = getSelectedStudent();
+
+      if (!student) {
+        elements.badgeProgressList.innerHTML = '<div class="empty-state">选中学生后，这里显示真实徽章累计和解锁结果。</div>';
+        return;
+      }
+
+      if (state.loadingStudentDetails && !state.studentBadgeProgress.length) {
+        elements.badgeProgressList.innerHTML = '<div class="empty-state">正在同步真实徽章结果...</div>';
+        return;
+      }
+
+      const badgeRows = getSelectedBadgeProgress();
+
+      if (!badgeRows.length) {
+        elements.badgeProgressList.innerHTML = '<div class="empty-state">当前学生还没有徽章进度。</div>';
+        return;
+      }
+
+      elements.badgeProgressList.innerHTML = badgeRows.map(function (row) {
+        const eventCount = Number(row.event_count || 0);
+        const threshold = Math.max(1, Number(row.threshold || 1));
+        const remainingCount = Math.max(Number(row.remaining_count || 0), 0);
+        const isUnlocked = Boolean(row.unlocked_at);
+        const progressPercent = Math.max(8, Math.min(100, Math.round((eventCount / threshold) * 100)));
+        const description = row.description || `${row.event_label} 累计达到阈值后解锁`;
+
+        return `
+          <article class="teacher-badge-progress-item ${isUnlocked ? 'is-unlocked' : ''}">
+            <div class="teacher-badge-progress-item__head">
+              <strong>${escapeHtml(row.icon_token || '🏅')} ${escapeHtml(row.badge_name)}</strong>
+              <span>${escapeHtml(isUnlocked ? `已解锁 · ${formatDateTime(row.unlocked_at)}` : `累计 ${eventCount} / ${threshold}`)}</span>
+            </div>
+            <p>${escapeHtml(description)}</p>
+            <div class="teacher-badge-progress-item__track">
+              <span style="width:${isUnlocked ? 100 : progressPercent}%"></span>
+            </div>
+            <div class="teacher-badge-progress-item__meta">
+              <span>${escapeHtml(row.event_label)}</span>
+              <span>${escapeHtml(isUnlocked ? `首解锁于第 ${row.source_event_count || threshold} 次` : `还差 ${remainingCount} 次`)}</span>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
     function renderStudentRecords() {
       if (!state.selectedStudentId) {
         elements.studentRecordList.innerHTML = '<div class="empty-state">选学生后，这里显示最近积分和兑换记录。</div>';
+        return;
+      }
+
+      if (state.loadingStudentDetails && !state.studentRecords.length) {
+        elements.studentRecordList.innerHTML = '<div class="empty-state">正在读取最近积分流水...</div>';
         return;
       }
 
@@ -865,6 +1084,8 @@ if (isFileMode) {
       renderSpotlight(selectedStudent);
       renderTabs();
       renderActionCards();
+      renderBadgeActionCards();
+      renderBadgeProgress();
       renderStudentRecords();
       updateSeedPreview();
       updateRedeemPreview();
@@ -899,7 +1120,7 @@ if (isFileMode) {
         return `
           <article class="teacher-search-card">
             <div class="teacher-search-card__text">
-              <h3>${escapeHtml(student.display_name)} ${escapeHtml(legalName)}</h3>
+              <h3>${escapeHtml(getStudentDisplayName(student))} ${escapeHtml(legalName)}</h3>
               <p>${escapeHtml(student.grade || '未设置年级')} · ${escapeHtml(student.student_code || '未生成学号')} · ${escapeHtml(statusLabel)}</p>
               <p>家长：${escapeHtml(student.parent_name || '未填写')} · ${escapeHtml(student.parent_phone || '未填写')}</p>
             </div>
@@ -909,6 +1130,10 @@ if (isFileMode) {
           </article>
         `;
       }).join('');
+    }
+
+    function resetTempStudentForm() {
+      state.isCreatingTempStudent = false;
     }
 
     function updateSeedPreview() {
@@ -1019,13 +1244,14 @@ if (isFileMode) {
                 }))
           : fetchTeachers();
 
-        const [campuses, subjects, teachers, classes, pointRules, levelTiers] = await Promise.all([
+        const [campuses, subjects, teachers, classes, pointRules, levelTiers, badgeDefinitions] = await Promise.all([
           fetchCampuses(),
           fetchSubjects(),
           teacherPromise,
           fetchClasses(getClassQueryOptions()),
           fetchPointRules(),
-          fetchLevelTiers().catch(function () { return []; })
+          fetchLevelTiers().catch(function () { return []; }),
+          fetchBadgeDefinitions().catch(function () { return []; })
         ]);
 
         state.campuses = campuses;
@@ -1033,6 +1259,7 @@ if (isFileMode) {
         state.teachers = teachers;
         state.classes = classes;
         state.pointRules = pointRules;
+        state.badgeDefinitions = badgeDefinitions;
         state.levelTiers = normalizeTierList(levelTiers);
         state.campusId = classes[0]?.campus_id || state.authContext.profile?.teacher?.campus_id || campuses[0]?.id || '';
         syncClassSelection();
@@ -1046,16 +1273,13 @@ if (isFileMode) {
 
     function selectStudent(studentId) {
       state.selectedStudentId = studentId;
+      state.studentRecords = [];
+      state.studentBadgeProgress = [];
+      state.loadingStudentDetails = true;
       if (!desktopMedia.matches) {
         state.isMobilePanelOpen = true;
       }
       renderAll();
-      if (desktopMedia.matches) {
-        window.requestAnimationFrame(function () {
-          const panelTop = elements.teacherPanel.getBoundingClientRect().top + window.scrollY - 14;
-          window.scrollTo({ top: Math.max(0, panelTop) });
-        });
-      }
       resetPanelScroll();
       loadStudentRecords(studentId);
     }
@@ -1134,6 +1358,67 @@ if (isFileMode) {
       } catch (error) {
         showInlineNotice(`写入积分流水失败：${error.message}`, 'error');
         showToast('加分失败，请检查 Supabase 配置');
+      }
+    }
+
+    async function handleBadgeAction(badgeDefinitionId) {
+      if (state.isSavingBadgeEvent) {
+        return;
+      }
+
+      const selectedClass = getSelectedClass();
+      const student = getSelectedStudent();
+      const badgeDefinition = state.badgeDefinitions.find(function (item) {
+        return item.id === badgeDefinitionId;
+      });
+
+      if (!selectedClass || !student || !badgeDefinition) {
+        return;
+      }
+
+      const previousProgress = getBadgeProgressRow(badgeDefinition.id);
+      const teacherId = state.authContext.teacherId || selectedClass.teacher_id || null;
+
+      state.isSavingBadgeEvent = true;
+      state.savingBadgeDefinitionId = badgeDefinition.id;
+      renderBadgeActionCards();
+
+      try {
+        await insertStudentBadgeEvent({
+          student_id: student.student_id,
+          badge_definition_id: badgeDefinition.id,
+          teacher_id: teacherId,
+          class_id: selectedClass.id,
+          note: `老师端行为记录：${badgeDefinition.event_label}`
+        });
+
+        await loadStudentRecords(student.student_id);
+        const updatedProgress = getBadgeProgressRow(badgeDefinition.id);
+        const eventCount = Number(updatedProgress?.event_count || 0);
+        const threshold = Number(updatedProgress?.threshold || badgeDefinition.threshold || 1);
+        const unlockedJustNow = !previousProgress?.unlocked_at && Boolean(updatedProgress?.unlocked_at);
+        const studentName = getStudentDisplayName(getSelectedStudent() || student);
+
+        state.badgeFeedback = {
+          studentId: student.student_id,
+          badgeDefinitionId: badgeDefinition.id,
+          badgeName: badgeDefinition.name,
+          unlockedJustNow,
+          note: unlockedJustNow
+            ? `${badgeDefinition.name} 已解锁，${badgeDefinition.event_label} 已累计到 ${eventCount} 次`
+            : `${badgeDefinition.event_label} 已记录，当前 ${eventCount} / ${threshold}`,
+          timestamp: Date.now()
+        };
+        renderPanel();
+        showToast(unlockedJustNow ? `${studentName} 解锁 ${badgeDefinition.name}` : `${studentName} 已记录“${badgeDefinition.event_label}”`);
+        clearFeedbackLater();
+      } catch (error) {
+        showInlineNotice(`记录行为失败：${error.message}`, 'error');
+        showToast('徽章记录失败，请稍后重试');
+      } finally {
+        state.isSavingBadgeEvent = false;
+        state.savingBadgeDefinitionId = '';
+        renderBadgeActionCards();
       }
     }
 
@@ -1382,6 +1667,10 @@ if (isFileMode) {
         event.preventDefault();
       }
 
+      state.searchResults = [];
+      elements.studentSearchHint.textContent = '正在搜索学生主档...';
+      elements.studentSearchResults.innerHTML = '<div class="empty-state">正在搜索学生，请稍候...</div>';
+
       try {
         state.searchResults = await searchStudents(elements.studentSearchInput.value || '');
         renderSearchResults();
@@ -1393,6 +1682,40 @@ if (isFileMode) {
         renderSearchResults();
         elements.studentSearchHint.textContent = `搜索失败：${error.message}`;
       }
+    }
+
+    function buildOptimisticRosterStudent(studentId) {
+      const student = state.searchResults.find(function (item) {
+        return item.id === studentId;
+      });
+      if (!student) {
+        return null;
+      }
+      return {
+        student_id: student.id,
+        student_code: student.student_code || '',
+        legal_name: student.legal_name || '',
+        display_name: student.display_name || student.legal_name || '',
+        avatar_url: student.avatar_url || '',
+        grade: student.grade || '',
+        student_status: student.status || 'normal',
+        status: student.status || 'normal',
+        total_points: 0,
+        progress_7d: 0,
+        last_point_at: null,
+        joined_at: new Date().toISOString(),
+        member_status: 'active'
+      };
+    }
+
+    function addStudentToRosterOptimistically(studentId) {
+      const optimisticStudent = buildOptimisticRosterStudent(studentId);
+      if (!optimisticStudent) {
+        return;
+      }
+      state.roster = state.roster.concat(optimisticStudent);
+      syncStudentSelection();
+      renderAll();
     }
 
     async function handleAddStudent(studentId) {
@@ -1410,6 +1733,10 @@ if (isFileMode) {
         return;
       }
 
+      addStudentToRosterOptimistically(studentId);
+      showInlineNotice('');
+      showToast('学生已加入当前班级');
+
       try {
         await addStudentToClass({
           class_id: selectedClass.id,
@@ -1418,15 +1745,25 @@ if (isFileMode) {
           joined_by_id: state.authContext.teacherId || null,
           notes: '老师端加入班级'
         });
-        await loadRosterAndRecords();
-        await handleStudentSearch();
-        showToast('学生已加入当前班级');
+        loadRosterAndRecords().catch(function (refreshError) {
+          showInlineNotice(`班级刷新失败：${refreshError.message}`, 'error');
+        });
+        handleStudentSearch().catch(function () {});
       } catch (error) {
         if (error.code === '23505') {
+          loadRosterAndRecords().catch(function () {});
+          handleStudentSearch().catch(function () {});
           showToast('该学生已在当前班级中');
           return;
         }
+
+        state.roster = state.roster.filter(function (member) {
+          return member.student_id !== studentId;
+        });
+        syncStudentSelection();
+        renderAll();
         showInlineNotice(`加入班级失败：${error.message}`, 'error');
+        showToast('加入班级失败');
       }
     }
 
@@ -1586,6 +1923,14 @@ if (isFileMode) {
       }
       handleAction(button.dataset.ruleId);
     });
+
+    elements.badgeActionCards.addEventListener('click', function (event) {
+      const button = event.target.closest('[data-badge-definition-id]');
+      if (!button) {
+        return;
+      }
+      handleBadgeAction(button.dataset.badgeDefinitionId);
+    });
     elements.classBoostToggleButton.addEventListener('click', function () {
       const selectedClass = getSelectedClass();
       if (!selectedClass || !state.roster.length) {
@@ -1620,7 +1965,7 @@ if (isFileMode) {
       closeDialog(elements.createClassDialog);
     });
 
-    elements.studentSearchForm.addEventListener('submit', handleStudentSearch);
+    elements.studentSearchForm.addEventListener('submit', handleStudentSearch);
     elements.studentSearchResults.addEventListener('click', function (event) {
       const button = event.target.closest('[data-add-student-id]');
       if (!button) {
@@ -1693,6 +2038,8 @@ if (isFileMode) {
     initTeacherPage();
   }
 }
+
+
 
 
 

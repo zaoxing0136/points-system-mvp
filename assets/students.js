@@ -1,4 +1,4 @@
-﻿import { isSupabaseConfigured } from './supabase-client.js';
+import { isSupabaseConfigured } from './supabase-client.js';
 import { mountSessionActions, requirePageAuth } from './auth.js';
 import {
   createStudents,
@@ -13,6 +13,7 @@ import {
   formatDateTime,
   getStudentDisplayName
 } from './shared-ui.js';
+import { getLibraryAvatarForStudent } from './avatar-library.js';
 
 const CSV_FIELDS = ['legal_name', 'display_name', 'grade', 'parent_name', 'parent_phone', 'avatar_url', 'notes'];
 const STATUS_META = {
@@ -93,6 +94,35 @@ function parseCsv(text) {
   return rows;
 }
 
+async function decodeCsvFile(file) {
+  const buffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  const hasUtf8Bom = bytes.length >= 3
+    && bytes[0] === 0xef
+    && bytes[1] === 0xbb
+    && bytes[2] === 0xbf;
+  const decoders = hasUtf8Bom
+    ? [{ label: 'utf-8', fatal: false }]
+    : [
+        { label: 'utf-8', fatal: true },
+        { label: 'gb18030', fatal: false },
+        { label: 'utf-8', fatal: false }
+      ];
+
+  for (const decoder of decoders) {
+    try {
+      const text = new TextDecoder(decoder.label, { fatal: decoder.fatal }).decode(buffer);
+      if (text) {
+        return text.replace(/^\uFEFF/u, '');
+      }
+    } catch (error) {
+      continue;
+    }
+  }
+
+  throw new Error('CSV 文件编码无法识别，请保存为 UTF-8 或 Excel CSV 后重试');
+}
+
 function createCsvTemplate() {
   const sampleRow = ['张明', '小明', '三年级', '张女士', '13800001234', '', '春季新班预备生'];
   return '\uFEFF' + [CSV_FIELDS.join(','), sampleRow.join(',')].join('\r\n');
@@ -103,16 +133,32 @@ function buildStatusLabel(status) {
 }
 
 function buildStudentInsertRow(draft, index) {
+  const studentCode = buildStudentCode(index);
   const legalName = normalizeText(draft.legal_name);
   const displayName = normalizeText(draft.display_name) || legalName;
+  const grade = normalizeText(draft.grade);
+  const parentName = normalizeText(draft.parent_name);
+  const parentPhone = normalizeText(draft.parent_phone);
+  const explicitAvatarUrl = normalizeText(draft.avatar_url);
+  const defaultAvatar = explicitAvatarUrl
+    ? null
+    : getLibraryAvatarForStudent({
+        student_code: studentCode,
+        legal_name: legalName,
+        display_name: displayName,
+        grade,
+        parent_name: parentName,
+        parent_phone: parentPhone
+      });
+
   return {
-    student_code: buildStudentCode(index),
+    student_code: studentCode,
     legal_name: legalName,
     display_name: displayName,
-    grade: normalizeText(draft.grade),
-    parent_name: normalizeText(draft.parent_name),
-    parent_phone: normalizeText(draft.parent_phone),
-    avatar_url: normalizeText(draft.avatar_url),
+    grade,
+    parent_name: parentName,
+    parent_phone: parentPhone,
+    avatar_url: explicitAvatarUrl || defaultAvatar?.image_path || '',
     notes: normalizeText(draft.notes),
     status: normalizeText(draft.status) || 'normal',
     created_by_role: 'admin',
@@ -206,7 +252,7 @@ function buildDuplicateAssessment(draft, candidates, batchRows, currentRowNumber
 const authContext = await requirePageAuth({ allowedRoles: ['admin'] });
 
 if (authContext) {
-  document.addEventListener('DOMContentLoaded', function () {
+  const initStudentsPage = function () {
   const elements = {
     studentsSearchForm: document.getElementById('studentsSearchForm'),
     studentsSearchInput: document.getElementById('studentsSearchInput'),
@@ -266,12 +312,22 @@ if (authContext) {
   };
 
   function openDialog(dialog) {
-    if (!dialog) {
+    if (!dialog || dialog.open) {
       return;
     }
     if (typeof dialog.showModal === 'function') {
-      dialog.showModal();
-      return;
+      try {
+        dialog.showModal();
+        return;
+      } catch (error) {
+        if (typeof dialog.show === 'function') {
+          try {
+            dialog.show();
+            return;
+          } catch (fallbackError) {
+          }
+        }
+      }
     }
     dialog.setAttribute('open', 'open');
   }
@@ -529,7 +585,7 @@ if (authContext) {
     state.importRows = [];
     elements.importFileInput.value = '';
     elements.importPreviewSummary.textContent = '上传 CSV 后，这里会显示预览、可导入数量和疑似重复提醒。';
-    elements.importPreviewTableBody.innerHTML = '<tr><td colspan="7"><div class="empty-state">尚未上传 CSV 文件。</div></td></tr>';
+    elements.importPreviewTableBody.innerHTML = '<tr><td colspan="8"><div class="empty-state">尚未上传 CSV 文件。</div></td></tr>';
     elements.confirmImportButton.disabled = true;
   }
 
@@ -563,15 +619,17 @@ if (authContext) {
       return `
         <tr>
           <td>${row.rowNumber}</td>
-          <td>${escapeHtml(row.display_name || row.legal_name || '-')}</td>
           <td>${escapeHtml(row.legal_name || '-')}</td>
+          <td>${escapeHtml(row.display_name || '-')}</td>
           <td>${escapeHtml(row.grade || '-')}</td>
+          <td>${escapeHtml(row.parent_name || '-')}</td>
           <td>${escapeHtml(row.parent_phone || '-')}</td>
+          <td>${escapeHtml(buildStatusLabel(row.status || 'normal'))}</td>
           <td>
             <span class="student-risk-badge is-${row.duplicateAssessment.level}">${escapeHtml(duplicateText)}</span>
             ${duplicateLines.length ? `<p class="students-risk-copy">${escapeHtml(duplicateLines.join('；'))}</p>` : ''}
+            <p class="students-risk-copy">${escapeHtml(validationText)}</p>
           </td>
-          <td>${escapeHtml(validationText)}</td>
         </tr>
       `;
     }).join('');
@@ -686,7 +744,7 @@ if (authContext) {
     }
 
     try {
-      const text = await file.text();
+      const text = await decodeCsvFile(file);
       const parsedRows = parseCsv(text);
       if (!parsedRows.length) {
         throw new Error('CSV 文件为空');
@@ -870,8 +928,11 @@ if (authContext) {
     if (!state.selectedStudent) {
       return;
     }
+    const studentId = state.selectedStudent.id;
     closeDialog(elements.studentDetailDialog);
-    openEditStudentDialog(state.selectedStudent.id);
+    window.requestAnimationFrame(function () {
+      openEditStudentDialog(studentId);
+    });
   });
 
   elements.downloadTemplateButton.addEventListener('click', function () {
@@ -888,8 +949,18 @@ if (authContext) {
 
   mountSessionActions(document.querySelector('.header-actions'), authContext);
   initialize();
-});
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initStudentsPage, { once: true });
+  } else {
+    initStudentsPage();
+  }
 }
+
+
+
+
 
 
 

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="plant-sunflower-sprite-title">
+  <title id="plant-sunflower-sprite-title">向阳花灵</title>
+  
+  <defs>
+    <linearGradient id="plant-sunflower-sprite-bg" x1="24" y1="12" x2="222" y2="244" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFF5C9" />
+      <stop offset="1" stop-color="#FFD567" />
+    </linearGradient>
+    <radialGradient id="plant-sunflower-sprite-halo" cx="46%" cy="34%" r="72%">
+      <stop offset="0" stop-color="#FFFBEA" stop-opacity="0.95" />
+      <stop offset="1" stop-color="#FFFBEA" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="url(#plant-sunflower-sprite-bg)" />
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="#ffffff" fill-opacity="0.10" />
+  <circle cx="70" cy="54" r="28" fill="#ffffff" fill-opacity="0.26" />
+  <circle cx="196" cy="58" r="18" fill="#ffffff" fill-opacity="0.16" />
+  <circle cx="208" cy="190" r="22" fill="#F39B4D" fill-opacity="0.10" />
+  <circle cx="46" cy="168" r="10" fill="#F39B4D" fill-opacity="0.14" />
+  <path d="M32 188 C58 166 100 168 126 186 C150 202 188 206 224 188 L224 232 L32 232 Z" fill="#ffffff" fill-opacity="0.14" />
+  <circle cx="128" cy="106" r="74" fill="url(#plant-sunflower-sprite-halo)" />
+  <ellipse cx="128" cy="210" rx="58" ry="14" fill="#102030" fill-opacity="0.10" />
+  
+    <g>
+      
+      <ellipse cx="180" cy="110" rx="10" ry="24" fill="#F1C04E" opacity="0.96" transform="rotate(90 180 110)" /><ellipse cx="174.9" cy="132.6" rx="10" ry="24" fill="#F1C04E" opacity="0.96" transform="rotate(115.7 174.9 132.6)" /><ellipse cx="160.4" cy="150.7" rx="10" ry="24" fill="#F1C04E" opacity="0.96" transform="rotate(141.4 160.4 150.7)" /><ellipse cx="139.6" cy="160.7" rx="10" ry="24" fill="#F1C04E" opacity="0.96" transform="rotate(167.1 139.6 160.7)" /><ellipse cx="116.4" cy="160.7" rx="10" ry="24" fill="#F1C04E" opacity="0.96" transform="rotate(192.9 116.4 160.7)" /><ellipse cx="95.6" cy="150.7" rx="10" ry="24" fill="#F1C04E" opacity="0.96" transform="rotate(218.6 95.6 150.7)" /><ellipse cx="81.1" cy="132.6" rx="10" ry="24" fill="#F1C04E" opacity="0.96" transform="rotate(244.3 81.1 132.6)" /><ellipse cx="76" cy="110" rx="10" ry="24" fill="#F1C04E" opacity="0.96" transform="rotate(270 76 110)" /><ellipse cx="81.1" cy="87.4" rx="10" ry="24" fill="#F1C04E" opacity="0.96" transform="rotate(295.7 81.1 87.4)" /><ellipse cx="95.6" cy="69.3" rx="10" ry="24" fill="#F1C04E" opacity="0.96" transform="rotate(321.4 95.6 69.3)" /><ellipse cx="116.4" cy="59.3" rx="10" ry="24" fill="#F1C04E" opacity="0.96" transform="rotate(347.1 116.4 59.3)" /><ellipse cx="139.6" cy="59.3" rx="10" ry="24" fill="#F1C04E" opacity="0.96" transform="rotate(372.9 139.6 59.3)" /><ellipse cx="160.4" cy="69.3" rx="10" ry="24" fill="#F1C04E" opacity="0.96" transform="rotate(398.6 160.4 69.3)" /><ellipse cx="174.9" cy="87.4" rx="10" ry="24" fill="#F1C04E" opacity="0.96" transform="rotate(424.3 174.9 87.4)" />
+      <circle cx="128" cy="116" r="38" fill="#A97345" fill-opacity="0.92" />
+      <circle cx="128" cy="116" r="31" fill="#FFF1D8" />
+      <path d="M 84 210 C 88 180, 104 158, 128 158 C 152 158, 168 180, 172 210 Z" fill="#FFD983" />
+      <path d="M 92 178 C 104 160, 118 156, 128 168 C 138 156, 152 160, 164 178" fill="none" stroke="#F39B4D" stroke-width="8" stroke-linecap="round" />
+      
+    <circle cx="100" cy="136" r="9" fill="#F7A5B2" fill-opacity="0.26" />
+    <circle cx="156" cy="136" r="9" fill="#F7A5B2" fill-opacity="0.26" />
+    
+    <circle cx="110" cy="118" r="4.6" fill="#31495C" />
+    <circle cx="146" cy="118" r="4.6" fill="#31495C" />
+    <ellipse cx="128" cy="129" rx="3.6" ry="2.8" fill="#31495C" fill-opacity="0.52" />
+    <path d="M 114 138 C 122 146, 134 146, 142 138" fill="none" stroke="#31495C" stroke-width="4" stroke-linecap="round" />
+    </g>
+</svg>

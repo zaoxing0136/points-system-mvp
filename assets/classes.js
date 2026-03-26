@@ -37,7 +37,7 @@ function normalizeText(value) {
 const authContext = await requirePageAuth({ allowedRoles: ['admin'] });
 
 if (authContext) {
-  document.addEventListener('DOMContentLoaded', function () {
+  const initClassesPage = function () {
   const elements = {
     classesSearchForm: document.getElementById('classesSearchForm'),
     classesSearchInput: document.getElementById('classesSearchInput'),
@@ -485,6 +485,10 @@ if (authContext) {
       return;
     }
 
+    state.searchResults = [];
+    elements.classStudentSearchHint.textContent = '正在搜索学生主档...';
+    elements.classStudentSearchResults.innerHTML = '<div class="empty-state">正在搜索学生，请稍候...</div>';
+
     try {
       state.searchResults = await searchStudents(elements.classStudentSearchInput.value || '');
       elements.classStudentSearchHint.textContent = `搜索到 ${state.searchResults.length} 条学生主档，可直接加入当前班级。`;
@@ -693,8 +697,20 @@ if (authContext) {
 
   mountSessionActions(document.querySelector('.header-actions'), authContext);
   initialize();
-});
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initClassesPage, { once: true });
+  } else {
+    initClassesPage();
+  }
 }
+
+
+
+
+
+
 
 
 

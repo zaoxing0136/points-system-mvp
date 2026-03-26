@@ -1,0 +1,72 @@
+[
+  {
+    "name": "管理员账号校准",
+    "ok": true,
+    "detail": "82421e41-5f0c-4a91-b772-6e4611423595"
+  },
+  {
+    "name": "开发服务器启动",
+    "ok": true,
+    "detail": "http://127.0.0.1:4175"
+  },
+  {
+    "name": "login.html 加载",
+    "ok": true,
+    "detail": "登录页表单可见"
+  },
+  {
+    "name": "管理员登录并跳转首页",
+    "ok": true,
+    "detail": "http://127.0.0.1:4175/index.html"
+  },
+  {
+    "name": "管理员可正常访问老师页",
+    "ok": true,
+    "detail": 4
+  },
+  {
+    "name": "回归老师账号准备",
+    "ok": true,
+    "detail": "uqa657703"
+  },
+  {
+    "name": "老师账号管理可创建与编辑入口正常",
+    "ok": true,
+    "detail": "79dc0ea2-5d8c-4c4f-9388-9974b67f22de"
+  },
+  {
+    "name": "学生管理支持搜索新增详情编辑与模板下载",
+    "ok": true,
+    "detail": "students-import-template.csv"
+  },
+  {
+    "name": "班级管理支持搜索筛选建班查看与加人",
+    "ok": true,
+    "detail": "回归班级657703"
+  },
+  {
+    "name": "老师首次登录强制改密与角色跳转正常",
+    "ok": true,
+    "detail": "http://127.0.0.1:4175/teacher.html"
+  },
+  {
+    "name": "老师访问管理页会被重定向回老师页",
+    "ok": true,
+    "detail": "role guard ok"
+  },
+  {
+    "name": "老师端核心操作链路可用",
+    "ok": true,
+    "detail": "老师快建657703"
+  },
+  {
+    "name": "大屏展示页总分榜进步榜徽章榜与时钟正常",
+    "ok": true,
+    "detail": "{\"totalCount\":8,\"progressCount\":8,\"badgeCount\":8,\"clock\":\"2026-03-24 05:51:57\"}"
+  },
+  {
+    "name": "大屏空数据状态合理",
+    "ok": true,
+    "detail": "empty state ok"
+  }
+]

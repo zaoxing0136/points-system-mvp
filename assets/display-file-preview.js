@@ -1,5 +1,4 @@
-﻿import {
-  computeBadgePlaceholder,
+import {
   createAvatarHtml,
   escapeHtml,
   getCampusShortName,
@@ -18,6 +17,12 @@ const LEVEL_TIERS = normalizeTierList([
   { level_name: '发光体', threshold: 240 },
   { level_name: '领航员', threshold: 340 }
 ]);
+
+function computePreviewBadgeCount(totalPoints, progress7d) {
+  const total = Number(totalPoints || 0);
+  const progress = Number(progress7d || 0);
+  return Math.max(1, Math.round(total / 48) + Math.round(progress / 14));
+}
 
 document.addEventListener('DOMContentLoaded', function () {
   const elements = {
@@ -51,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function () {
       ...student,
       total_points: totalPoints,
       progress_7d: progress,
-      badge_count: computeBadgePlaceholder(totalPoints, progress)
+      badge_count: computePreviewBadgeCount(totalPoints, progress)
     };
   });
 

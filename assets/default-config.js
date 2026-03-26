@@ -33,13 +33,47 @@ export const DEFAULT_POINT_RULES = [
   { id: '84444444-4444-4444-4444-444444444445', category: 'habits', rule_name: '自律榜样', points: 3, sort_order: 50, is_active: true, is_common: true }
 ];
 
-export const DEFAULT_BADGE_RULES = [
-  { id: 'badge-voice-star', badge_name: '发言达人', rule_text: '课堂积极发言累计 20 次', is_active: true, sort_order: 10 },
-  { id: 'badge-focus-star', badge_name: '专注之星', rule_text: '专注听讲累计 30 次', is_active: true, sort_order: 20 },
-  { id: 'badge-homework-star', badge_name: '作业稳稳星', rule_text: '按时完成作业累计 15 次', is_active: true, sort_order: 30 },
-  { id: 'badge-creative-star', badge_name: '创意小能手', rule_text: '创意表达累计 12 次', is_active: true, sort_order: 40 },
-  { id: 'badge-habit-star', badge_name: '习惯小标兵', rule_text: '准时到课累计 20 次', is_active: true, sort_order: 50 },
-  { id: 'badge-progress-star', badge_name: '进步飞跃星', rule_text: '近 7 天积分增长达到 40 分', is_active: true, sort_order: 60 },
-  { id: 'badge-attendance-star', badge_name: '全勤能量星', rule_text: '连续 4 周出勤稳定', is_active: true, sort_order: 70 },
-  { id: 'badge-rolemodel-star', badge_name: '班级榜样', rule_text: '总积分达到 1000 分', is_active: true, sort_order: 80 }
+export const DEFAULT_BADGE_DEFINITIONS = [
+  {
+    code: 'focus_star',
+    name: '专注星',
+    description: '专注听课累计达到阈值后解锁。',
+    event_label: '专注听课',
+    icon_token: '⭐',
+    threshold: 10,
+    is_active: true,
+    sort_order: 10
+  },
+  {
+    code: 'expression_star',
+    name: '表达星',
+    description: '积极表达累计达到阈值后解锁。',
+    event_label: '积极表达',
+    icon_token: '🗣️',
+    threshold: 10,
+    is_active: true,
+    sort_order: 20
+  },
+  {
+    code: 'cooperation_star',
+    name: '协作星',
+    description: '帮助同学或合作良好累计达到阈值后解锁。',
+    event_label: '主动帮助',
+    icon_token: '🤝',
+    threshold: 10,
+    is_active: true,
+    sort_order: 30
+  },
+  {
+    code: 'persistence_star',
+    name: '坚持星',
+    description: '坚持完成任务累计达到阈值后解锁。',
+    event_label: '坚持完成',
+    icon_token: '🏁',
+    threshold: 10,
+    is_active: true,
+    sort_order: 40
+  }
 ];
+
+export const DEFAULT_BADGE_RULES = DEFAULT_BADGE_DEFINITIONS;

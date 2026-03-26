@@ -1,0 +1,65 @@
+{
+  "updated": 139,
+  "sample": [
+    {
+      "student_code": "DMO-0001",
+      "display_name": "小禾",
+      "avatar_url": "/assets/avatars/main/animals/animal-cocoa-bear.svg"
+    },
+    {
+      "student_code": "DMO-0002",
+      "display_name": "沐阳",
+      "avatar_url": "/assets/avatars/main/animals/animal-sun-lion.svg"
+    },
+    {
+      "student_code": "DMO-0003",
+      "display_name": "安安",
+      "avatar_url": "/assets/avatars/main/animals/animal-mint-bunny.svg"
+    },
+    {
+      "student_code": "DMO-0004",
+      "display_name": "言言",
+      "avatar_url": "/assets/avatars/main/animals/animal-coral-fox.svg"
+    },
+    {
+      "student_code": "DMO-0005",
+      "display_name": "可可",
+      "avatar_url": "/assets/avatars/main/animals/animal-cloud-panda.svg"
+    },
+    {
+      "student_code": "DMO-0006",
+      "display_name": "宁宁",
+      "avatar_url": "/assets/avatars/main/animals/animal-ocean-whale.svg"
+    },
+    {
+      "student_code": "DMO-0007",
+      "display_name": "子辰",
+      "avatar_url": "/assets/avatars/main/animals/animal-plum-owl.svg"
+    },
+    {
+      "student_code": "DMO-0008",
+      "display_name": "夏夏",
+      "avatar_url": "/assets/avatars/main/animals/animal-hazel-squirrel.svg"
+    },
+    {
+      "student_code": "DMO-0009",
+      "display_name": "恩恩",
+      "avatar_url": "/assets/avatars/main/animals/animal-moss-turtle.svg"
+    },
+    {
+      "student_code": "DMO-0010",
+      "display_name": "彤彤",
+      "avatar_url": "/assets/avatars/main/animals/animal-snow-seal.svg"
+    },
+    {
+      "student_code": "DMO-0011",
+      "display_name": "承泽",
+      "avatar_url": "/assets/avatars/main/animals/animal-amber-tiger.svg"
+    },
+    {
+      "student_code": "DMO-0012",
+      "display_name": "雨桐",
+      "avatar_url": "/assets/avatars/main/animals/animal-dusk-cat.svg"
+    }
+  ]
+}

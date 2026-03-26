@@ -32,7 +32,7 @@ function createClients(env) {
   const supabaseAnonKey = env.SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey || !env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw createHttpError(500, '缺少服务端 Supabase 环境变量。');
+    throw createHttpError(500, '缺少服务端 Supabase 环境变量：SUPABASE_URL、SUPABASE_ANON_KEY、SUPABASE_SERVICE_ROLE_KEY。');
   }
 
   const anonClient = createClient(supabaseUrl, supabaseAnonKey, {

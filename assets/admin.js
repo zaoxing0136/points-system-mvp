@@ -1,22 +1,24 @@
-﻿import { isSupabaseConfigured } from './supabase-client.js';
+import { isSupabaseConfigured } from './supabase-client.js';
 import {
   fetchAdminPointRules,
+  fetchBadgeDefinitions,
+  fetchBadgeLeaderboard,
   fetchLevelTiers,
   fetchTeacherAccountDirectory,
+  upsertBadgeDefinitions,
   upsertLevelTiers,
   upsertPointRules,
   resetTeacherAccountPassword,
   saveTeacherAccount
 } from './supabase-service.js';
-import { CATEGORY_META, escapeHtml } from './shared-ui.js';
+import { CATEGORY_META, escapeHtml, formatDateTime } from './shared-ui.js';
 import {
-  DEFAULT_BADGE_RULES,
+  DEFAULT_BADGE_DEFINITIONS,
   DEFAULT_LEVEL_TIERS,
   DEFAULT_POINT_RULES
 } from './default-config.js';
 
 const CATEGORY_ORDER = ['classroom', 'homework', 'project', 'habits'];
-const BADGE_RULES_STORAGE_KEY = 'points-mvp.badge-rules';
 
 function getCategoryRank(category) {
   const index = CATEGORY_ORDER.indexOf(category);
@@ -35,6 +37,15 @@ function sortPointRules(rules) {
       return Number(left.sort_order || 0) - Number(right.sort_order || 0);
     }
     return String(left.rule_name || '').localeCompare(String(right.rule_name || ''), 'zh-CN');
+  });
+}
+
+function sortBadgeDefinitions(rows) {
+  return rows.slice().sort(function (left, right) {
+    if (Number(left.sort_order || 0) !== Number(right.sort_order || 0)) {
+      return Number(left.sort_order || 0) - Number(right.sort_order || 0);
+    }
+    return String(left.name || '').localeCompare(String(right.name || ''), 'zh-CN');
   });
 }
 
@@ -71,35 +82,23 @@ function normalizePointRules(rows) {
   return sortPointRules(merged);
 }
 
-function normalizeBadgeRules(rows) {
-  const source = Array.isArray(rows) && rows.length ? rows : DEFAULT_BADGE_RULES;
-  return source.map(function (badge, index) {
+function normalizeBadgeDefinitions(rows) {
+  const source = Array.isArray(rows) && rows.length ? rows : DEFAULT_BADGE_DEFINITIONS;
+  return sortBadgeDefinitions(source.map(function (badge, index) {
     return {
-      id: badge.id || `badge-${index + 1}`,
-      badge_name: String(badge.badge_name || badge.name || '').trim() || `徽章 ${index + 1}`,
-      rule_text: String(badge.rule_text || badge.rule || '').trim() || '待补充规则',
+      id: badge.id || null,
+      code: String(badge.code || `badge_${index + 1}`).trim() || `badge_${index + 1}`,
+      name: String(badge.name || badge.badge_name || `徽章 ${index + 1}`).trim() || `徽章 ${index + 1}`,
+      description: String(badge.description || badge.rule_text || '').trim(),
+      event_label: String(badge.event_label || badge.behavior_label || badge.rule || badge.name || '').trim() || `行为 ${index + 1}`,
+      icon_token: String(badge.icon_token || badge.icon || '').trim(),
+      threshold: Math.max(1, Number(badge.threshold || 1)),
       is_active: badge.is_active !== false,
-      sort_order: Number(badge.sort_order || (index + 1) * 10)
+      sort_order: Number(badge.sort_order || (index + 1) * 10),
+      created_at: badge.created_at || null,
+      updated_at: badge.updated_at || null
     };
-  }).sort(function (left, right) {
-    return Number(left.sort_order || 0) - Number(right.sort_order || 0);
-  });
-}
-
-function loadBadgeRulesFromStorage() {
-  try {
-    const raw = window.localStorage.getItem(BADGE_RULES_STORAGE_KEY);
-    if (!raw) {
-      return normalizeBadgeRules(DEFAULT_BADGE_RULES);
-    }
-    return normalizeBadgeRules(JSON.parse(raw));
-  } catch (_error) {
-    return normalizeBadgeRules(DEFAULT_BADGE_RULES);
-  }
-}
-
-function saveBadgeRulesToStorage(rows) {
-  window.localStorage.setItem(BADGE_RULES_STORAGE_KEY, JSON.stringify(rows));
+  }));
 }
 
 function initAdminPage() {
@@ -107,11 +106,13 @@ function initAdminPage() {
     tiersTableBody: document.getElementById('tiersTableBody'),
     buttonsTableBody: document.getElementById('buttonsTableBody'),
     badgesTableBody: document.getElementById('badgesTableBody'),
+    badgeResultsBody: document.getElementById('badgeResultsBody'),
     saveConfigButton: document.getElementById('saveConfigButton'),
     resetConfigButton: document.getElementById('resetConfigButton'),
     resetAllDataButton: document.getElementById('resetAllDataButton'),
     adminNotice: document.getElementById('adminNotice'),
     teacherAccountCount: document.getElementById('teacherAccountCount'),
+    badgeDefinitionCount: document.getElementById('badgeDefinitionCount'),
     teacherAccountForm: document.getElementById('teacherAccountForm'),
     accountUserIdInput: document.getElementById('accountUserIdInput'),
     teacherAccountFormTitle: document.getElementById('teacherAccountFormTitle'),
@@ -132,7 +133,8 @@ function initAdminPage() {
   const state = {
     levelTiers: normalizeLevelTiers([]),
     pointRules: normalizePointRules(DEFAULT_POINT_RULES),
-    badges: loadBadgeRulesFromStorage(),
+    badges: normalizeBadgeDefinitions([]),
+    badgeResults: [],
     teacherAccounts: [],
     isSaving: false,
     isLoading: false,
@@ -192,6 +194,15 @@ function initAdminPage() {
     elements.teacherAccountSaveButton.textContent = isBusy ? '保存中...' : getTeacherAccountButtonLabel();
   }
 
+  function renderOverview() {
+    if (elements.teacherAccountCount) {
+      elements.teacherAccountCount.textContent = String(state.teacherAccounts.length);
+    }
+    if (elements.badgeDefinitionCount) {
+      elements.badgeDefinitionCount.textContent = String(state.badges.length);
+    }
+  }
+
   function renderLevelTable() {
     elements.tiersTableBody.innerHTML = state.levelTiers.map(function (tier) {
       return `
@@ -237,13 +248,16 @@ function initAdminPage() {
 
   function renderBadgesTable() {
     elements.badgesTableBody.innerHTML = state.badges.map(function (badge, index) {
+      const key = escapeHtml(badge.code);
       return `
         <tr>
-          <td>${index + 1}</td>
-          <td><input type="text" data-badge-name="${escapeHtml(badge.id)}" value="${escapeHtml(badge.badge_name)}" /></td>
-          <td><textarea data-badge-rule="${escapeHtml(badge.id)}">${escapeHtml(badge.rule_text)}</textarea></td>
+          <td><input type="number" min="1" step="1" data-badge-sort="${key}" value="${escapeHtml(String(badge.sort_order))}" /></td>
+          <td><input type="text" data-badge-name="${key}" value="${escapeHtml(badge.name)}" /></td>
+          <td><input type="text" data-badge-event="${key}" value="${escapeHtml(badge.event_label)}" /></td>
+          <td><input type="number" min="1" step="1" data-badge-threshold="${key}" value="${escapeHtml(String(badge.threshold))}" /></td>
+          <td><textarea data-badge-description="${key}" rows="2">${escapeHtml(badge.description)}</textarea></td>
           <td>
-            <select data-badge-active="${escapeHtml(badge.id)}">
+            <select data-badge-active="${key}">
               <option value="true" ${badge.is_active ? 'selected' : ''}>启用</option>
               <option value="false" ${badge.is_active ? '' : 'selected'}>停用</option>
             </select>
@@ -253,9 +267,39 @@ function initAdminPage() {
     }).join('');
   }
 
+  function renderBadgeResults() {
+    if (!elements.badgeResultsBody) {
+      return;
+    }
+
+    if (!state.badgeResults.length) {
+      elements.badgeResultsBody.innerHTML = '<tr><td colspan="5"><div class="empty-state">当前还没有真实徽章结果。老师记录行为后，这里会实时显示。</div></td></tr>';
+      return;
+    }
+
+    elements.badgeResultsBody.innerHTML = state.badgeResults.map(function (row) {
+      const studentName = row.display_name || row.legal_name || '未命名学生';
+      const badgeNames = row.unlocked_badge_names || '尚未解锁';
+      const latestUnlock = row.latest_unlocked_at ? formatDateTime(row.latest_unlocked_at) : '尚未解锁';
+      return `
+        <tr>
+          <td>
+            <div class="admin-account-name">
+              <strong>${escapeHtml(studentName)}</strong>
+              <span>${escapeHtml(row.grade || row.student_code || '')}</span>
+            </div>
+          </td>
+          <td>${escapeHtml(badgeNames)}</td>
+          <td>${escapeHtml(String(row.unlocked_count || 0))}</td>
+          <td>${escapeHtml(String(row.event_count || 0))}</td>
+          <td>${escapeHtml(latestUnlock)}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
   function renderTeacherAccounts() {
     const accounts = Array.isArray(state.teacherAccounts) ? state.teacherAccounts : [];
-    elements.teacherAccountCount.textContent = String(accounts.length);
 
     if (!accounts.length) {
       elements.teacherAccountsBody.innerHTML = '<tr><td colspan="6"><div class="empty-state">当前还没有开通老师账号，先用左侧表单创建第一位老师。</div></td></tr>';
@@ -288,10 +332,65 @@ function initAdminPage() {
     }).join('');
   }
 
+  function upsertTeacherAccountState(result) {
+    const profile = result?.profile;
+    if (!profile?.id) {
+      return;
+    }
+
+    const existing = state.teacherAccounts.find(function (account) {
+      return account.id === profile.id;
+    }) || {};
+
+    const nextAccount = {
+      ...existing,
+      ...profile,
+      login_name: result.login_name || existing.login_name || '',
+      auth_email: result.auth_email || existing.auth_email || '',
+      teacher: result.teacher || existing.teacher || null,
+      last_sign_in_at: existing.last_sign_in_at || null
+    };
+
+    state.teacherAccounts = [nextAccount].concat(state.teacherAccounts.filter(function (account) {
+      return account.id !== nextAccount.id;
+    }));
+    renderOverview();
+    renderTeacherAccounts();
+  }
+
+  function markTeacherAccountPasswordReset(userId) {
+    state.teacherAccounts = state.teacherAccounts.map(function (account) {
+      if (account.id !== userId) {
+        return account;
+      }
+      return {
+        ...account,
+        must_change_password: true
+      };
+    });
+    renderTeacherAccounts();
+  }
+
+  function refreshTeacherAccountsInBackground(delayMs = 0) {
+    window.clearTimeout(refreshTeacherAccountsInBackground.timer);
+    refreshTeacherAccountsInBackground.timer = window.setTimeout(function () {
+      reloadTeacherAccounts().catch(function () {});
+    }, Math.max(0, Number(delayMs || 0)));
+  }
+
+  function refreshBadgeResultsInBackground(delayMs = 0) {
+    window.clearTimeout(refreshBadgeResultsInBackground.timer);
+    refreshBadgeResultsInBackground.timer = window.setTimeout(function () {
+      reloadBadgeResults().catch(function () {});
+    }, Math.max(0, Number(delayMs || 0)));
+  }
+
   function renderAll() {
+    renderOverview();
     renderLevelTable();
     renderPointRulesTable();
     renderBadgesTable();
+    renderBadgeResults();
     renderTeacherAccounts();
     syncTeacherAccountPreview();
   }
@@ -326,15 +425,20 @@ function initAdminPage() {
   }
 
   function readBadges() {
-    return state.badges.map(function (badge, index) {
+    return sortBadgeDefinitions(state.badges.map(function (badge, index) {
+      const key = badge.code;
       return {
-        id: badge.id,
-        badge_name: (document.querySelector(`[data-badge-name="${badge.id}"]`)?.value || '').trim() || `徽章 ${index + 1}`,
-        rule_text: (document.querySelector(`[data-badge-rule="${badge.id}"]`)?.value || '').trim() || '待补充规则',
-        is_active: document.querySelector(`[data-badge-active="${badge.id}"]`)?.value === 'true',
-        sort_order: badge.sort_order || (index + 1) * 10
+        id: badge.id || undefined,
+        code: key,
+        name: (document.querySelector(`[data-badge-name="${key}"]`)?.value || '').trim() || `徽章 ${index + 1}`,
+        description: (document.querySelector(`[data-badge-description="${key}"]`)?.value || '').trim(),
+        event_label: (document.querySelector(`[data-badge-event="${key}"]`)?.value || '').trim() || `行为 ${index + 1}`,
+        icon_token: badge.icon_token || '',
+        threshold: Math.max(1, Number(document.querySelector(`[data-badge-threshold="${key}"]`)?.value || 1)),
+        is_active: document.querySelector(`[data-badge-active="${key}"]`)?.value === 'true',
+        sort_order: Number(document.querySelector(`[data-badge-sort="${key}"]`)?.value || ((index + 1) * 10))
       };
-    });
+    }));
   }
 
   function validateLevelTiers(levelTiers) {
@@ -376,17 +480,67 @@ function initAdminPage() {
     syncTeacherAccountPreview();
   }
 
-  async function seedDefaultsIfNeeded(levelTiers, pointRules) {
+  async function seedDefaultsIfNeeded(levelTiers, pointRules, badgeDefinitions) {
     const needsLevelSeed = !levelTiers.length;
     const needsRuleSeed = (pointRules || []).length < DEFAULT_POINT_RULES.length;
-
-    if (!needsLevelSeed && !needsRuleSeed) {
-      return { levelTiers, pointRules, seeded: false };
-    }
+    const needsBadgeSeed = (badgeDefinitions || []).length < DEFAULT_BADGE_DEFINITIONS.length;
 
     const nextLevelTiers = needsLevelSeed ? await upsertLevelTiers(DEFAULT_LEVEL_TIERS) : levelTiers;
     const nextPointRules = needsRuleSeed ? await upsertPointRules(DEFAULT_POINT_RULES) : pointRules;
-    return { levelTiers: nextLevelTiers, pointRules: nextPointRules, seeded: true };
+    const nextBadgeDefinitions = needsBadgeSeed ? await upsertBadgeDefinitions(DEFAULT_BADGE_DEFINITIONS) : badgeDefinitions;
+
+    return {
+      levelTiers: nextLevelTiers,
+      pointRules: nextPointRules,
+      badgeDefinitions: nextBadgeDefinitions,
+      seeded: needsLevelSeed || needsRuleSeed || needsBadgeSeed
+    };
+  }
+
+  function shouldRetryTeacherAccountFetch(error) {
+    const message = String(error?.message || error || '');
+    return /401|登录态已失效|session/i.test(message);
+  }
+
+  async function fetchTeacherAccountsWithRetry() {
+    let lastError = null;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        return await fetchTeacherAccountDirectory();
+      } catch (error) {
+        lastError = error;
+        if (!shouldRetryTeacherAccountFetch(error) || attempt === 2) {
+          break;
+        }
+        await new Promise(function (resolve) {
+          window.setTimeout(resolve, 600 * (attempt + 1));
+        });
+      }
+    }
+    throw lastError || new Error('老师账号列表读取失败');
+  }
+
+  async function reloadTeacherAccounts() {
+    const nextAccounts = await fetchTeacherAccountsWithRetry().catch(function () {
+      return null;
+    });
+    if (!Array.isArray(nextAccounts)) {
+      return;
+    }
+    state.teacherAccounts = nextAccounts;
+    renderOverview();
+    renderTeacherAccounts();
+  }
+
+  async function reloadBadgeResults() {
+    const nextResults = await fetchBadgeLeaderboard().catch(function () {
+      return null;
+    });
+    if (!Array.isArray(nextResults)) {
+      return;
+    }
+    state.badgeResults = nextResults;
+    renderBadgeResults();
   }
 
   async function loadConfig() {
@@ -402,20 +556,30 @@ function initAdminPage() {
     }
 
     try {
-      const [rawLevelTiers, rawPointRules, rawTeacherAccounts] = await Promise.all([
+      const [
+        rawLevelTiers,
+        rawPointRules,
+        rawBadgeDefinitions,
+        rawTeacherAccounts,
+        rawBadgeResults
+      ] = await Promise.all([
         fetchLevelTiers().catch(function () { return []; }),
         fetchAdminPointRules().catch(function () { return []; }),
-        fetchTeacherAccountDirectory().catch(function () { return []; })
+        fetchBadgeDefinitions({ activeOnly: false }).catch(function () { return []; }),
+        fetchTeacherAccountsWithRetry().catch(function () { return []; }),
+        fetchBadgeLeaderboard().catch(function () { return []; })
       ]);
 
-      const seeded = await seedDefaultsIfNeeded(rawLevelTiers, rawPointRules);
+      const seeded = await seedDefaultsIfNeeded(rawLevelTiers, rawPointRules, rawBadgeDefinitions);
       state.levelTiers = normalizeLevelTiers(seeded.levelTiers);
       state.pointRules = normalizePointRules(seeded.pointRules);
-      state.badges = loadBadgeRulesFromStorage();
+      state.badges = normalizeBadgeDefinitions(seeded.badgeDefinitions);
       state.teacherAccounts = Array.isArray(rawTeacherAccounts) ? rawTeacherAccounts : [];
+      state.badgeResults = Array.isArray(rawBadgeResults) ? rawBadgeResults : [];
       renderAll();
       if (seeded.seeded) {
-        showNotice('已自动写入试运行默认段位和积分规则。', 'success');
+        refreshBadgeResultsInBackground(1000);
+        showNotice('已自动写入试运营默认段位、积分规则和真实徽章规则。', 'success');
       }
     } catch (error) {
       renderAll();
@@ -423,13 +587,6 @@ function initAdminPage() {
     } finally {
       state.isLoading = false;
     }
-  }
-
-  async function reloadTeacherAccounts() {
-    state.teacherAccounts = await fetchTeacherAccountDirectory().catch(function () {
-      return [];
-    });
-    renderTeacherAccounts();
   }
 
   async function handleSave() {
@@ -445,20 +602,22 @@ function initAdminPage() {
     }
 
     const nextPointRules = readPointRules();
-    const nextBadges = normalizeBadgeRules(readBadges());
+    const nextBadges = readBadges();
 
     try {
       setConfigBusy(true, '保存中...');
-      const [savedLevelTiers, savedPointRules] = await Promise.all([
+      const [savedLevelTiers, savedPointRules, savedBadgeDefinitions] = await Promise.all([
         upsertLevelTiers(nextLevelTiers),
-        upsertPointRules(nextPointRules)
+        upsertPointRules(nextPointRules),
+        upsertBadgeDefinitions(nextBadges)
       ]);
-      saveBadgeRulesToStorage(nextBadges);
+
       state.levelTiers = normalizeLevelTiers(savedLevelTiers);
       state.pointRules = normalizePointRules(savedPointRules);
-      state.badges = nextBadges;
+      state.badges = normalizeBadgeDefinitions(savedBadgeDefinitions);
       renderAll();
-      showNotice('段位、积分规则和试运行徽章规则已保存。', 'success');
+      refreshBadgeResultsInBackground(800);
+      showNotice('段位、积分规则和真实徽章规则已保存。', 'success');
     } catch (error) {
       showNotice(`保存失败：${error.message}`, 'error');
     } finally {
@@ -473,18 +632,38 @@ function initAdminPage() {
 
     try {
       setConfigBusy(true, '恢复中...');
-      const [savedLevelTiers, savedPointRules] = await Promise.all([
+      const [savedLevelTiers, savedPointRules, savedBadgeDefinitions] = await Promise.all([
         upsertLevelTiers(DEFAULT_LEVEL_TIERS),
-        upsertPointRules(DEFAULT_POINT_RULES)
+        upsertPointRules(DEFAULT_POINT_RULES),
+        upsertBadgeDefinitions(DEFAULT_BADGE_DEFINITIONS)
       ]);
       state.levelTiers = normalizeLevelTiers(savedLevelTiers);
       state.pointRules = normalizePointRules(savedPointRules);
-      state.badges = normalizeBadgeRules(DEFAULT_BADGE_RULES);
-      saveBadgeRulesToStorage(state.badges);
+      state.badges = normalizeBadgeDefinitions(savedBadgeDefinitions);
       renderAll();
-      showNotice('试运行默认值已恢复。', 'success');
+      refreshBadgeResultsInBackground(800);
+      showNotice('试运营默认值已恢复。', 'success');
     } catch (error) {
       showNotice(`恢复默认失败：${error.message}`, 'error');
+    } finally {
+      setConfigBusy(false, '保存配置');
+    }
+  }
+
+  async function handleResetBadgeDefaults() {
+    if (!isSupabaseConfigured || state.isSaving || state.isLoading) {
+      return;
+    }
+
+    try {
+      setConfigBusy(true, '恢复中...');
+      const savedBadgeDefinitions = await upsertBadgeDefinitions(DEFAULT_BADGE_DEFINITIONS);
+      state.badges = normalizeBadgeDefinitions(savedBadgeDefinitions);
+      renderAll();
+      refreshBadgeResultsInBackground(800);
+      showNotice('真实徽章规则已恢复到试运营默认值。', 'success');
+    } catch (error) {
+      showNotice(`恢复徽章默认失败：${error.message}`, 'error');
     } finally {
       setConfigBusy(false, '保存配置');
     }
@@ -521,9 +700,10 @@ function initAdminPage() {
         mustChangePassword,
         isActive
       });
-      await reloadTeacherAccounts();
+      upsertTeacherAccountState(result);
       prefillTeacherAccountForm(result?.profile?.id || userId);
       showNotice(`${wasEditing ? '老师账号已更新' : '老师账号已创建'}：${loginName}`, 'success');
+      refreshTeacherAccountsInBackground(1200);
     } catch (error) {
       showNotice(`老师账号保存失败：${error.message}`, 'error');
     } finally {
@@ -550,11 +730,12 @@ function initAdminPage() {
         password: '666666',
         mustChangePassword: true
       });
-      await reloadTeacherAccounts();
+      markTeacherAccountPasswordReset(resetButton.dataset.accountReset);
       if (state.selectedAccountId === resetButton.dataset.accountReset) {
         prefillTeacherAccountForm(state.selectedAccountId);
       }
       showNotice('密码已重置为 666666，并要求首次登录修改密码。', 'success');
+      refreshTeacherAccountsInBackground(1200);
     } catch (error) {
       showNotice(`重置密码失败：${error.message}`, 'error');
     }
@@ -562,12 +743,7 @@ function initAdminPage() {
 
   elements.saveConfigButton.addEventListener('click', handleSave);
   elements.resetConfigButton.addEventListener('click', handleResetDefaults);
-  elements.resetAllDataButton.addEventListener('click', function () {
-    state.badges = normalizeBadgeRules(DEFAULT_BADGE_RULES);
-    saveBadgeRulesToStorage(state.badges);
-    renderBadgesTable();
-    showNotice('徽章规则已恢复到试运行默认值。', 'success');
-  });
+  elements.resetAllDataButton.addEventListener('click', handleResetBadgeDefaults);
   elements.teacherAccountResetButton.addEventListener('click', resetTeacherAccountForm);
   elements.teacherAccountForm.addEventListener('submit', handleTeacherAccountSave);
   [
@@ -592,6 +768,3 @@ if (document.readyState === 'loading') {
 } else {
   initAdminPage();
 }
-
-
-

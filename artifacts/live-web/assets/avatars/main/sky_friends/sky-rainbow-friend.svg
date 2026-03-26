@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="sky-rainbow-friend-title">
+  <title id="sky-rainbow-friend-title">彩虹弯弯</title>
+  
+  <defs>
+    <linearGradient id="sky-rainbow-friend-bg" x1="24" y1="12" x2="222" y2="244" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F3F4FF" />
+      <stop offset="1" stop-color="#D5E6FF" />
+    </linearGradient>
+    <radialGradient id="sky-rainbow-friend-halo" cx="46%" cy="34%" r="72%">
+      <stop offset="0" stop-color="#FCFDFF" stop-opacity="0.95" />
+      <stop offset="1" stop-color="#FCFDFF" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="url(#sky-rainbow-friend-bg)" />
+  <rect x="10" y="10" width="236" height="236" rx="68" fill="#ffffff" fill-opacity="0.10" />
+  <circle cx="70" cy="54" r="28" fill="#ffffff" fill-opacity="0.26" />
+  <circle cx="196" cy="58" r="18" fill="#ffffff" fill-opacity="0.16" />
+  <circle cx="208" cy="190" r="22" fill="#FF8BB8" fill-opacity="0.10" />
+  <circle cx="46" cy="168" r="10" fill="#FF8BB8" fill-opacity="0.14" />
+  <path d="M32 188 C58 166 100 168 126 186 C150 202 188 206 224 188 L224 232 L32 232 Z" fill="#ffffff" fill-opacity="0.14" />
+  <circle cx="128" cy="106" r="74" fill="url(#sky-rainbow-friend-halo)" />
+  <ellipse cx="128" cy="210" rx="58" ry="14" fill="#102030" fill-opacity="0.10" />
+  
+    <g>
+      
+      <path d="M 74 144 C 82 96, 102 72, 128 72 C 154 72, 174 96, 182 144" fill="none" stroke="#FF8FA1" stroke-width="12" stroke-linecap="round" />
+      <path d="M 86 144 C 92 108, 108 90, 128 90 C 148 90, 164 108, 170 144" fill="none" stroke="#FFD96D" stroke-width="12" stroke-linecap="round" />
+      <path d="M 98 144 C 102 120, 114 108, 128 108 C 142 108, 154 120, 158 144" fill="none" stroke="#84D58B" stroke-width="12" stroke-linecap="round" />
+      <circle cx="102" cy="150" r="22" fill="#FFFFFF" />
+      <circle cx="128" cy="146" r="28" fill="#FFFFFF" />
+      <circle cx="154" cy="150" r="22" fill="#FFFFFF" />
+      <rect x="92" y="150" width="72" height="26" rx="13" fill="#FFFFFF" />
+      
+    <circle cx="100" cy="162" r="9" fill="#F7A5B2" fill-opacity="0.26" />
+    <circle cx="156" cy="162" r="9" fill="#F7A5B2" fill-opacity="0.26" />
+    
+    <circle cx="110" cy="144" r="4.6" fill="#31495C" />
+    <circle cx="146" cy="144" r="4.6" fill="#31495C" />
+    <ellipse cx="128" cy="155" rx="3.6" ry="2.8" fill="#31495C" fill-opacity="0.52" />
+    <path d="M 114 164 C 122 172, 134 172, 142 164" fill="none" stroke="#31495C" stroke-width="4" stroke-linecap="round" />
+    </g>
+</svg>

@@ -1,0 +1,73 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>大屏展示页</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+    <script type="module" src="./assets/display.js"></script>
+  </head>
+  <body class="display-body display-dopamine-body">
+    <main class="display-shell display-dopamine-shell">
+      <header class="display-header display-dopamine-header">
+        <div class="display-title-wrap">
+          <p class="eyebrow">Growth Wall</p>
+          <h1>学生成长荣耀榜</h1>
+          <p class="hero-copy">大字、轮播、强反馈，适合校区电视持续展示。</p>
+        </div>
+        <div class="display-meta">
+          <div class="display-status">
+            <span class="status-dot"></span>
+            <span>10 秒刷新 · 8 秒轮播</span>
+          </div>
+          <div id="displayClock" class="clock-pill"></div>
+          <a class="inline-link light-link" href="./index.html">返回首页</a>
+        </div>
+      </header>
+
+      <section class="display-grid display-dopamine-grid">
+        <article class="leaderboard-card gold-card display-board display-board--total">
+          <div class="section-head on-dark display-board-head">
+            <div>
+              <p class="eyebrow">Leaderboard 01</p>
+              <h2>总分榜</h2>
+            </div>
+            <div class="display-board-meta">
+              <strong id="totalBoardPage"></strong>
+            </div>
+          </div>
+          <div id="totalBoard" class="leaderboard-list display-leaderboard-list"></div>
+        </article>
+
+        <article class="leaderboard-card cyan-card display-board display-board--progress">
+          <div class="section-head on-dark display-board-head">
+            <div>
+              <p class="eyebrow">Leaderboard 02</p>
+              <h2>进步榜</h2>
+            </div>
+            <div class="display-board-meta">
+              <strong id="progressBoardPage"></strong>
+            </div>
+          </div>
+          <div id="progressBoard" class="leaderboard-list display-leaderboard-list"></div>
+        </article>
+
+        <article class="leaderboard-card coral-card display-board display-board--badge">
+          <div class="section-head on-dark display-board-head">
+            <div>
+              <p class="eyebrow">Leaderboard 03</p>
+              <h2>徽章榜</h2>
+            </div>
+            <div class="display-board-meta">
+              <strong id="badgeBoardPage"></strong>
+            </div>
+          </div>
+          <div id="badgeBoard" class="leaderboard-list display-leaderboard-list"></div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
+
+
+

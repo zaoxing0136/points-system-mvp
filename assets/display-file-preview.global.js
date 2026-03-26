@@ -1,10 +1,9 @@
-﻿(function () {
+(function () {
   if (window.location.protocol !== 'file:' || !window.FileAvatarPreview) {
     return;
   }
 
   const helpers = window.FileAvatarPreview;
-  const computeBadgePlaceholder = helpers.computeBadgePlaceholder;
   const createAvatarHtml = helpers.createAvatarHtml;
   const escapeHtml = helpers.escapeHtml;
   const getCampusShortName = helpers.getCampusShortName;
@@ -22,6 +21,12 @@
     { level_name: '发光体', threshold: 240 },
     { level_name: '领航员', threshold: 340 }
   ]);
+
+  function computePreviewBadgeCount(totalPoints, progress7d) {
+    const total = Number(totalPoints || 0);
+    const progress = Number(progress7d || 0);
+    return Math.max(1, Math.round(total / 48) + Math.round(progress / 14));
+  }
 
   document.addEventListener('DOMContentLoaded', function () {
     const elements = {
@@ -51,12 +56,16 @@
         campus_name: student.campus_name,
         total_points: totalPoints,
         progress_7d: progress,
-        badge_count: computeBadgePlaceholder(totalPoints, progress)
+        badge_count: computePreviewBadgeCount(totalPoints, progress)
       };
     });
 
-    state.boards.total = previewRows.slice().sort(function (left, right) { return Number(right.total_points || 0) - Number(left.total_points || 0); });
-    state.boards.progress = previewRows.slice().sort(function (left, right) { return Number(right.progress_7d || 0) - Number(left.progress_7d || 0); });
+    state.boards.total = previewRows.slice().sort(function (left, right) {
+      return Number(right.total_points || 0) - Number(left.total_points || 0);
+    });
+    state.boards.progress = previewRows.slice().sort(function (left, right) {
+      return Number(right.progress_7d || 0) - Number(left.progress_7d || 0);
+    });
     state.boards.badge = previewRows.slice().sort(function (left, right) {
       if (Number(right.badge_count || 0) !== Number(left.badge_count || 0)) {
         return Number(right.badge_count || 0) - Number(left.badge_count || 0);
@@ -69,7 +78,12 @@
       const pageCount = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
       const pageIndex = Math.min(state.pages[type] || 0, pageCount - 1);
       const start = pageIndex * PAGE_SIZE;
-      return { list: list.slice(start, start + PAGE_SIZE), start: start, pageCount: pageCount, pageIndex: pageIndex };
+      return {
+        list: list.slice(start, start + PAGE_SIZE),
+        start: start,
+        pageCount: pageCount,
+        pageIndex: pageIndex
+      };
     }
 
     function buildScoreLabel(type, student) {

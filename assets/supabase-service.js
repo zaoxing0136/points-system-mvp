@@ -3,6 +3,7 @@
 const ACTIVE_POINT_RULE_FIELDS = 'id, category, rule_name, points, sort_order, is_active, is_common, created_at';
 const ADMIN_POINT_RULE_FIELDS = 'id, category, rule_name, points, sort_order, is_active, is_common, created_at';
 const LEVEL_TIER_FIELDS = 'id, level_no, level_name, threshold, is_active, created_at, updated_at';
+const BADGE_DEFINITION_FIELDS = 'id, code, name, description, event_label, icon_token, threshold, is_active, sort_order, created_at, updated_at';
 const STUDENT_FIELDS = 'id, student_code, legal_name, display_name, gender, grade, birth_year, parent_name, parent_phone, avatar_url, status, created_by_role, created_by_id, notes, created_at, updated_at';
 const STUDENT_DUPLICATE_FIELDS = 'id, student_code, legal_name, display_name, grade, parent_name, parent_phone, status, created_at';
 const CLASS_SELECT_FIELDS = `
@@ -21,10 +22,39 @@ const CLASS_SELECT_FIELDS = `
   teachers:teacher_id ( id, name, display_name )
 `;
 
-async function runQuery(builder) {
+function buildErrorMessage(prefix, message) {
+  const normalizedPrefix = String(prefix || '').trim();
+  const normalizedMessage = String(message || '').trim();
+  if (!normalizedPrefix) {
+    return normalizedMessage;
+  }
+  if (!normalizedMessage) {
+    return normalizedPrefix;
+  }
+  return `${normalizedPrefix}：${normalizedMessage}`;
+}
+
+function mapSupabaseError(error, context) {
+  const code = String(error?.code || '').trim();
+  const message = String(error?.message || error || '').trim();
+
+  if (
+    code === 'PGRST205'
+    && /(badge_definitions|student_badge_progress|student_badge_unlocks|badge_leaderboard)/i.test(message)
+  ) {
+    return new Error(buildErrorMessage(
+      context,
+      '生产数据库尚未升级到真实徽章链路。请先执行 supabase/009_badges_real_chain.sql，再刷新页面重试。'
+    ));
+  }
+
+  return new Error(buildErrorMessage(context, message || '请求失败'));
+}
+
+async function runQuery(builder, context) {
   const { data, error } = await builder;
   if (error) {
-    throw error;
+    throw mapSupabaseError(error, context);
   }
   return data;
 }
@@ -185,6 +215,35 @@ export async function upsertLevelTiers(rows) {
   );
 }
 
+export async function fetchBadgeDefinitions(options = {}) {
+  const supabase = ensureSupabase();
+  const activeOnly = options.activeOnly !== false;
+  let query = supabase
+    .from('badge_definitions')
+    .select(BADGE_DEFINITION_FIELDS)
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true });
+
+  if (activeOnly) {
+    query = query.eq('is_active', true);
+  }
+
+  return runQuery(query, '读取徽章规则失败');
+}
+
+export async function upsertBadgeDefinitions(rows) {
+  const supabase = ensureSupabase();
+  const payload = Array.isArray(rows) ? rows : [rows];
+  return runQuery(
+    supabase
+      .from('badge_definitions')
+      .upsert(payload, { onConflict: 'code' })
+      .select(BADGE_DEFINITION_FIELDS)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: true })
+  , '保存徽章规则失败');
+}
+
 export async function fetchStudentsList(options = {}) {
   const supabase = ensureSupabase();
   const search = String(options.search || '').trim();
@@ -297,6 +356,34 @@ export async function fetchStudentLedger(studentId, limit = 6) {
   );
 }
 
+export async function fetchStudentBadgeProgress(studentId) {
+  const supabase = ensureSupabase();
+  const ids = Array.isArray(studentId) ? studentId.filter(Boolean) : [studentId].filter(Boolean);
+  let query = supabase
+    .from('student_badge_progress')
+    .select('*')
+    .order('sort_order', { ascending: true })
+    .order('badge_name', { ascending: true });
+
+  if (ids.length === 1) {
+    query = query.eq('student_id', ids[0]);
+  } else if (ids.length > 1) {
+    query = query.in('student_id', ids);
+  }
+
+  return runQuery(query, '读取学生徽章进度失败');
+}
+
+export async function insertStudentBadgeEvent(payload) {
+  const supabase = ensureSupabase();
+  return runQuery(
+    supabase
+      .from('student_badge_events')
+      .insert(Array.isArray(payload) ? payload : [payload])
+      .select('id, student_id, badge_definition_id, teacher_id, class_id, note, created_at')
+  , '写入徽章行为记录失败');
+}
+
 export async function createClass(payload) {
   const supabase = ensureSupabase();
   return runQuery(
@@ -327,7 +414,7 @@ export async function searchStudents(keyword) {
     ].join(','));
   }
 
-  return runQuery(query);
+  return runQuery(query, '读取徽章榜失败');
 }
 
 export async function addStudentToClass(payload) {
@@ -391,7 +478,7 @@ function parseCampusNameFromNotes(notes) {
   return match ? match[1] : '';
 }
 
-async function fetchCampusNameMapForLeaderboard(studentIds) {
+async function fetchCampusNameMapForStudents(studentIds) {
   const supabase = ensureSupabase();
   const uniqueStudentIds = uniqueTruthy(studentIds);
   const campusMap = new Map();
@@ -499,7 +586,7 @@ export async function fetchLeaderboardSummary() {
       .order('display_name', { ascending: true })
   );
 
-  const campusMap = await fetchCampusNameMapForLeaderboard(summary.map(function (row) {
+  const campusMap = await fetchCampusNameMapForStudents(summary.map(function (row) {
     return row.student_id;
   }));
 
@@ -510,36 +597,102 @@ export async function fetchLeaderboardSummary() {
     };
   });
 }
+
+export async function fetchBadgeLeaderboard(studentIds) {
+  const supabase = ensureSupabase();
+  let query = supabase
+    .from('badge_leaderboard')
+    .select('*')
+    .order('unlocked_count', { ascending: false })
+    .order('event_count', { ascending: false })
+    .order('latest_unlocked_at', { ascending: false, nullsFirst: false })
+    .order('display_name', { ascending: true });
+
+  if (Array.isArray(studentIds) && studentIds.length) {
+    query = query.in('student_id', studentIds);
+  }
+
+  const rows = await runQuery(query);
+  const campusMap = await fetchCampusNameMapForStudents(rows.map(function (row) {
+    return row.student_id;
+  }));
+
+  return rows.map(function (row) {
+    return {
+      ...row,
+      campus_name: campusMap.get(row.student_id) || ''
+    };
+  });
+}
+function waitForAdminApi(ms) {
+  return new Promise(function (resolve) {
+    window.setTimeout(resolve, ms);
+  });
+}
+
+async function getTeacherAccountsAccessToken(supabase) {
+  let lastError = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) {
+      lastError = sessionError;
+    }
+
+    const accessToken = sessionData?.session?.access_token;
+    if (accessToken) {
+      return accessToken;
+    }
+
+    lastError = lastError || new Error('Admin session is missing. Please sign in again.');
+    if (attempt < 2) {
+      await waitForAdminApi(400 * (attempt + 1));
+    }
+  }
+
+  throw lastError || new Error('Admin session is missing. Please sign in again.');
+}
+
 async function requestTeacherAccountsApi(method, payload) {
   const supabase = ensureSupabase();
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-  if (sessionError) {
-    throw sessionError;
+  let lastError = null;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const accessToken = await getTeacherAccountsAccessToken(supabase);
+    const response = await fetch('/api/admin/teacher-accounts', {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`
+      },
+      body: payload ? JSON.stringify(payload) : undefined
+    });
+
+    const responseText = await response.text();
+    let result = {};
+    try {
+      result = responseText ? JSON.parse(responseText) : {};
+    } catch (_error) {
+      result = {};
+    }
+
+    if (response.ok) {
+      return result;
+    }
+
+    const fallbackMessage = response.status === 404
+      ? '线上缺少 /api/admin/teacher-accounts 接口，请确认当前 Vercel 项目已包含 api/admin/teacher-accounts.js 并完成重新部署。'
+      : response.status >= 500 && /SUPABASE_(URL|ANON_KEY|SERVICE_ROLE_KEY)|缺少服务端 Supabase 环境变量/i.test(responseText)
+        ? 'Vercel 服务端环境变量不完整，请补齐 SUPABASE_URL、SUPABASE_ANON_KEY、SUPABASE_SERVICE_ROLE_KEY。'
+        : `Teacher account API request failed (HTTP ${response.status}).`;
+    lastError = new Error(result.error || fallbackMessage);
+    if (response.status !== 401 || attempt === 2) {
+      throw lastError;
+    }
+
+    await waitForAdminApi(500 * (attempt + 1));
   }
 
-  const accessToken = sessionData.session?.access_token;
-  if (!accessToken) {
-    throw new Error('Admin session is missing. Please sign in again.');
-  }
-
-  const response = await fetch('/api/admin/teacher-accounts', {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${accessToken}`
-    },
-    body: payload ? JSON.stringify(payload) : undefined
-  });
-
-  const result = await response.json().catch(function () {
-    return {};
-  });
-
-  if (!response.ok) {
-    throw new Error(result.error || 'Teacher account API request failed.');
-  }
-
-  return result;
+  throw lastError || new Error('Teacher account API request failed.');
 }
 
 export async function fetchTeacherAccountDirectory() {
@@ -562,6 +715,7 @@ export async function resetTeacherAccountPassword(payload) {
   });
   return result.result;
 }
+
 
 
 

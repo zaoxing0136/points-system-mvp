@@ -1,0 +1,298 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>老师积分台</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+    <script type="module" src="./assets/teacher.js"></script>
+  </head>
+  <body class="teacher-body teacher-console-body">
+    <main class="page-shell teacher-console teacher-console-v1">
+      <header class="teacher-console-header surface-card teacher-console-header--v1">
+        <div class="teacher-header-main">
+          <div class="teacher-header-title">
+            <p class="eyebrow">Teacher Console</p>
+            <h1>老师积分台</h1>
+            <p class="hero-copy">用于班级切换、点按加分、补录积分、积分兑换和学生班级关系管理。</p>
+            <div id="fileModeNotice" class="teacher-inline-notice" hidden>当前是直接打开本地文件。请改用 http://127.0.0.1:4175/teacher.html 打开，真实数据和下拉交互才会生效。</div>
+          </div>
+          <div class="teacher-console-links teacher-console-links--v1">
+            <a class="inline-link teacher-home-link" href="./index.html">返回首页</a>
+          </div>
+        </div>
+      </header>
+
+      <section class="teacher-command surface-card teacher-command--v1">
+        <div class="teacher-command-main teacher-command-main--compact">
+          <div class="filters-grid teacher-filters-grid">
+            <label class="field-group">
+              <span>校区</span>
+              <select id="campusSelect"></select>
+            </label>
+            <label class="field-group">
+              <span>班级</span>
+              <select id="classSelect"></select>
+            </label>
+          </div>
+
+          <div class="teacher-command-summary teacher-command-summary--compact">
+            <div class="metric-chip trial-metric-chip">
+              <span class="metric-label">班级人数</span>
+              <strong id="studentCount">0</strong>
+            </div>
+            <div class="metric-chip trial-metric-chip">
+              <span class="metric-label">班级总分</span>
+              <strong id="classPoints">0</strong>
+            </div>
+            <strong id="selectedState" class="sr-only">等待选学生</strong>
+          </div>
+        </div>
+
+        <div id="campusRailShell" class="teacher-rail-shell teacher-rail-shell--campus">
+          <button id="campusRailPrevButton" class="teacher-rail-nav teacher-rail-nav--prev" type="button" aria-label="向左滚动" hidden>&larr;</button>
+          <div class="teacher-rail-viewport">
+            <div id="campusRail" class="teacher-filter-rail"></div>
+          </div>
+          <button id="campusRailNextButton" class="teacher-rail-nav teacher-rail-nav--next" type="button" aria-label="向右滚动" hidden>&rarr;</button>
+        </div>
+        <div id="classRailShell" class="teacher-rail-shell teacher-rail-shell--classes">
+          <button id="classRailPrevButton" class="teacher-rail-nav teacher-rail-nav--prev" type="button" aria-label="向左滚动" hidden>&larr;</button>
+          <div class="teacher-rail-viewport">
+            <div id="classRail" class="teacher-filter-rail teacher-filter-rail--classes"></div>
+          </div>
+          <button id="classRailNextButton" class="teacher-rail-nav teacher-rail-nav--next" type="button" aria-label="向右滚动" hidden>&rarr;</button>
+        </div>
+
+        <div id="classMeta" class="teacher-class-meta"></div>
+
+        <div class="teacher-class-actions teacher-class-actions--v1">
+          <div class="teacher-class-actions-row">
+            <button id="openCreateClassButton" class="primary-button" type="button">快速建班</button>
+            <button id="openAddStudentButton" class="ghost-button" type="button">搜索加人</button>
+            <button id="classBoostToggleButton" class="ghost-button teacher-safe-button" type="button">整班 +1</button>
+          </div>
+          <div id="teacherInlineNotice" class="teacher-inline-notice" hidden></div>
+        </div>
+      </section>
+
+      <section class="teacher-workspace teacher-workspace--v1">
+        <section class="teacher-list-panel surface-card teacher-list-panel--v1">
+          <div class="teacher-list-head teacher-list-head--simple">
+            <div>
+              <p class="eyebrow">Roster</p>
+              <h2>当前班级学生</h2>
+            </div>
+            <p id="selectionHint" class="section-tip" hidden></p>
+          </div>
+          <div id="studentGrid" class="teacher-student-grid"></div>
+        </section>
+
+        <aside id="teacherPanel" class="teacher-panel surface-card teacher-panel--v1" aria-hidden="true">
+          <div class="teacher-panel-shell">
+            <div class="teacher-panel-top">
+              <button id="panelBackButton" class="inline-button teacher-back-button" type="button">返回学生列表</button>
+              <button id="closeSheetButton" class="icon-button teacher-close-button" type="button" aria-label="关闭">×</button>
+            </div>
+
+            <div id="panelEmptyState" class="teacher-panel-empty">
+              <h2>先选一个学生</h2>
+              <p>选择学生后即可快速加分、补录积分、积分兑换和移出本班。</p>
+            </div>
+
+            <div id="panelContent" class="teacher-panel-content" hidden>
+              <section id="studentSpotlight" class="student-spotlight"></section>
+
+              <div class="teacher-panel-tools teacher-panel-tools--v1">
+                <button id="removeSelectedStudentButton" class="ghost-button teacher-remove-button" type="button">移出本班</button>
+                <button id="openSeedDialogButton" class="ghost-button teacher-seed-button" type="button">补录积分</button>
+                <button id="openRedeemButton" class="ghost-button" type="button">积分兑换</button>
+                <span id="redeemHint" class="teacher-panel-hint" hidden></span>
+              </div>
+
+              <nav id="categoryTabs" class="teacher-tabs" aria-label="积分分类"></nav>
+
+              <section class="teacher-actions-section teacher-actions-section--v1">
+                <div class="teacher-actions-head teacher-actions-head--v1">
+                  <div>
+                    <p class="eyebrow">Quick Rules</p>
+                    <h3 id="activeCategoryTitle">课堂表现</h3>
+                  </div>
+                  <p id="activeCategoryTip" class="section-tip">点一下立即记分，常用规则会优先强调。</p>
+                </div>
+                <div id="actionCards" class="teacher-action-grid teacher-action-grid--compact"></div>
+              </section>
+
+              <section class="teacher-actions-section teacher-actions-section--v1 teacher-badge-section">
+                <div class="teacher-actions-head teacher-actions-head--v1">
+                  <div>
+                    <p class="eyebrow">Badge Actions</p>
+                    <h3>行为徽章</h3>
+                  </div>
+                  <p class="section-tip">每点一次都会写入真实行为记录，达到阈值后自动解锁对应徽章。</p>
+                </div>
+                <div id="badgeActionCards" class="teacher-badge-grid"></div>
+                <div id="badgeProgressList" class="teacher-badge-progress-list"></div>
+              </section>
+
+              <section class="teacher-records-card teacher-records-card--v1">
+                <div class="teacher-actions-head teacher-actions-head--v1">
+                  <div>
+                    <p class="eyebrow">Point Ledger</p>
+                    <h3>最近流水</h3>
+                  </div>
+                </div>
+                <div id="studentRecordList" class="teacher-record-list"></div>
+              </section>
+            </div>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <dialog id="createClassDialog" class="teacher-dialog">
+      <form id="createClassForm" class="teacher-dialog-form trial-dialog-form">
+        <div class="teacher-dialog-head">
+          <div>
+            <h2>快速建班</h2>
+            <p class="section-tip">老师端也可以在试运行阶段快速创建自己的班级。</p>
+          </div>
+          <button id="closeCreateClassButton" class="icon-button" type="button" aria-label="关闭">×</button>
+        </div>
+        <label class="field-group">
+          <span>班级名称</span>
+          <input id="createClassNameInput" name="class_name" type="text" placeholder="例如：周三启航编程班" required />
+        </label>
+        <div class="filters-grid teacher-dialog-grid">
+          <label class="field-group">
+            <span>所属校区</span>
+            <select id="createClassCampusSelect" name="campus_id" required></select>
+          </label>
+          <label class="field-group">
+            <span>学科</span>
+            <select id="createClassSubjectSelect" name="subject_id" required></select>
+          </label>
+        </div>
+        <div class="filters-grid teacher-dialog-grid">
+          <label class="field-group">
+            <span>授课老师</span>
+            <select id="createClassTeacherSelect" name="teacher_id"></select>
+          </label>
+          <label class="field-group">
+            <span>班级类型</span>
+            <select id="createClassTypeSelect" name="class_type">
+              <option value="regular">常规班</option>
+              <option value="trial">试听班</option>
+              <option value="intensive">主题班</option>
+              <option value="camp">假期班</option>
+            </select>
+          </label>
+        </div>
+        <div id="createClassTeacherHint" class="teacher-search-hint">老师端默认归属给当前老师。</div>
+        <label class="field-group">
+          <span>上课时间</span>
+          <input id="createClassScheduleInput" name="schedule_text" type="text" placeholder="例如：周三 19:00-20:30" />
+        </label>
+        <div class="teacher-dialog-actions">
+          <button class="primary-button" type="submit">创建班级</button>
+          <button id="cancelCreateClassButton" class="ghost-button" type="button">取消</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="addStudentDialog" class="teacher-dialog">
+      <div class="teacher-dialog-form teacher-dialog-form--search trial-dialog-form">
+        <div class="teacher-dialog-head">
+          <div>
+            <h2>搜索并加入学生</h2>
+            <p class="section-tip">优先从学生主档搜索已有学生，再加入当前班级；若找不到，再考虑创建临时学生。</p>
+          </div>
+          <button id="closeAddStudentButton" class="icon-button" type="button" aria-label="关闭">×</button>
+        </div>
+        <form id="studentSearchForm" class="teacher-search-form trial-search-inline">
+          <input id="studentSearchInput" type="search" placeholder="搜索昵称 / 正式姓名 / 学号 / 家长手机号尾号" />
+          <button class="primary-button" type="submit">搜索学生</button>
+        </form>
+        <div id="studentSearchHint" class="teacher-search-hint">默认展示最近学生主档，也可以输入关键字精确搜索。</div>
+        <div id="studentSearchResults" class="teacher-search-results"></div>
+        <section class="teacher-search-note">
+          <h3>试运行建议</h3>
+          <p>先保证学生主档完整，再由老师把学生加入班级。这样后续积分、兑换和展示都会沿用同一份学生数据。</p>
+        </section>
+      </div>
+    </dialog>
+
+    <dialog id="seedDialog" class="teacher-dialog">
+      <form id="seedForm" class="teacher-dialog-form trial-dialog-form">
+        <div class="teacher-dialog-head">
+          <div>
+            <h2>补录积分</h2>
+            <p class="section-tip">用于补录系统启用前已经存在的历史积分，单次仅允许录入正整数，建议附带备注。</p>
+          </div>
+          <button id="closeSeedDialogButton" class="icon-button" type="button" aria-label="关闭">×</button>
+        </div>
+        <div id="seedStudentMeta" class="teacher-dialog-meta"></div>
+        <div class="filters-grid teacher-dialog-grid">
+          <label class="field-group">
+            <span>补录分值</span>
+            <input id="seedPointsInput" type="number" min="1" max="5000" step="1" placeholder="例如：300" required />
+          </label>
+          <label class="field-group">
+            <span>备注</span>
+            <input id="seedRemarkInput" type="text" value="历史积分补录" placeholder="例如：历史积分补录" required />
+          </label>
+        </div>
+        <div id="seedPreview" class="teacher-redeem-preview"></div>
+        <div class="teacher-dialog-actions">
+          <button id="seedSubmitButton" class="primary-button" type="submit">确认补录</button>
+          <button id="cancelSeedButton" class="ghost-button" type="button">取消</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="redeemDialog" class="teacher-dialog">
+      <form id="redeemForm" class="teacher-dialog-form trial-dialog-form">
+        <div class="teacher-dialog-head">
+          <div>
+            <h2>积分兑换</h2>
+            <p class="section-tip">兑换会写入扣分流水，并立刻刷新当前学生的总分和最近记录。</p>
+          </div>
+          <button id="closeRedeemButton" class="icon-button" type="button" aria-label="关闭">×</button>
+        </div>
+        <div id="redeemStudentMeta" class="teacher-dialog-meta"></div>
+        <label class="field-group">
+          <span>兑换内容</span>
+          <input id="redeemItemInput" type="text" placeholder="例如：娃娃 / 盲盒 / 小奖品" required />
+        </label>
+        <label class="field-group">
+          <span>扣除积分</span>
+          <input id="redeemPointsInput" type="number" min="1" step="1" placeholder="例如：300" required />
+        </label>
+        <div id="redeemPreview" class="teacher-redeem-preview"></div>
+        <div class="teacher-dialog-actions">
+          <button id="redeemSubmitButton" class="primary-button" type="submit">确认兑换</button>
+          <button id="cancelRedeemButton" class="ghost-button" type="button">取消</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="classBoostDialog" class="teacher-dialog teacher-dialog--compact">
+      <div class="teacher-dialog-form teacher-dialog-form--compact trial-dialog-form">
+        <div class="teacher-dialog-head teacher-dialog-head--centered">
+          <div>
+            <h2>整班加 1 分</h2>
+          </div>
+          <button id="classBoostDialogCloseButton" class="icon-button" type="button" aria-label="关闭">×</button>
+        </div>
+        <p id="classBoostDialogText" class="teacher-confirm-copy"></p>
+        <div class="teacher-dialog-actions teacher-confirm-actions">
+          <button id="classBoostDialogConfirmButton" class="primary-button" type="button">确认加分</button>
+          <button id="classBoostDialogCancelButton" class="ghost-button" type="button">取消</button>
+        </div>
+      </div>
+    </dialog>
+
+    <div id="sheetOverlay" class="sheet-overlay" hidden></div>
+    <div id="toast" class="toast" hidden></div>
+    </body>
+</html>
