@@ -36,6 +36,40 @@ const ACTION_TYPE_META = {
   seed: '补录积分'
 };
 
+const TEACHER_FOCUS_MODE_STORAGE_KEY = 'teacher:class-focus-mode';
+const ACTION_LABEL_ALIASES = Object.freeze({
+  '专注听讲': '专注听课',
+  '积极发言': '积极表达'
+});
+
+function normalizeActionLabel(value) {
+  const normalized = String(value || '').trim();
+  return ACTION_LABEL_ALIASES[normalized] || normalized;
+}
+
+function normalizeActionCopy(value) {
+  return Object.entries(ACTION_LABEL_ALIASES).reduce(function (text, entry) {
+    const [source, target] = entry;
+    return String(text || '').split(source).join(target);
+  }, String(value || '').trim());
+}
+
+function getInitialTeacherFocusMode() {
+  try {
+    return window.localStorage.getItem(TEACHER_FOCUS_MODE_STORAGE_KEY) !== 'off';
+  } catch (error) {
+    return true;
+  }
+}
+
+function persistTeacherFocusMode(enabled) {
+  try {
+    window.localStorage.setItem(TEACHER_FOCUS_MODE_STORAGE_KEY, enabled ? 'on' : 'off');
+  } catch (error) {
+    // Ignore localStorage failures so the page can keep working in locked-down browsers.
+  }
+}
+
 const isFileMode = window.location.protocol === 'file:';
 const authContext = isFileMode ? null : await requirePageAuth({ allowedRoles: ['admin', 'teacher'] });
 
@@ -79,8 +113,10 @@ if (isFileMode) {
     const desktopMedia = window.matchMedia('(min-width: 1024px)');
 
     const elements = {
+      teacherCommandPanel: document.getElementById('teacherCommandPanel'),
       campusSelect: document.getElementById('campusSelect'),
       classSelect: document.getElementById('classSelect'),
+      teacherFocusToggleButton: document.getElementById('teacherFocusToggleButton'),
       campusRailShell: document.getElementById('campusRailShell'),
       campusRail: document.getElementById('campusRail'),
       campusRailPrevButton: document.getElementById('campusRailPrevButton'),
@@ -194,6 +230,7 @@ if (isFileMode) {
       isSeeding: false,
       isSavingBadgeEvent: false,
       savingBadgeDefinitionId: '',
+      isClassFocusMode: getInitialTeacherFocusMode(),
       isCreatingTempStudent: false,
       lastSearchKeyword: ''
     };
@@ -423,6 +460,34 @@ if (isFileMode) {
       });
     }
 
+    function shouldUseClassFocusMode() {
+      return Boolean(state.classId) && state.isClassFocusMode;
+    }
+
+    function updateTeacherCommandState() {
+      const isFocused = shouldUseClassFocusMode();
+
+      if (elements.teacherCommandPanel) {
+        elements.teacherCommandPanel.classList.toggle('is-class-focused', isFocused);
+      }
+
+      if (elements.teacherFocusToggleButton) {
+        elements.teacherFocusToggleButton.hidden = !state.classId;
+        elements.teacherFocusToggleButton.textContent = isFocused ? '切换班级/校区' : '收起顶部';
+        elements.teacherFocusToggleButton.setAttribute('aria-pressed', isFocused ? 'true' : 'false');
+      }
+    }
+
+    function centerRailOnActiveChip(rail, chip) {
+      if (!rail || !chip) {
+        return;
+      }
+
+      const maxScroll = Math.max(0, rail.scrollWidth - rail.clientWidth);
+      const idealLeft = chip.offsetLeft - Math.max(0, (rail.clientWidth - chip.offsetWidth) / 2);
+      rail.scrollLeft = Math.max(0, Math.min(idealLeft, maxScroll));
+    }
+
     function getRailControlSet(type) {
       return type === 'campus'
         ? {
@@ -467,7 +532,7 @@ if (isFileMode) {
       window.requestAnimationFrame(function () {
         const activeChip = config.rail.querySelector('.is-active');
         if (activeChip) {
-          activeChip.scrollIntoView({ inline: 'center', block: 'nearest' });
+          centerRailOnActiveChip(config.rail, activeChip);
         }
         updateRailControlState(type);
       });
@@ -827,7 +892,7 @@ if (isFileMode) {
         ? `已解锁 ${badgeSummary.unlockedCount} / ${badgeSummary.totalCount} 枚徽章`
         : '暂无徽章规则';
       const badgeSummaryLine = badgeSummary.nextLocked
-        ? `下一个：${badgeSummary.nextLocked.badge_name}，再 ${badgeSummary.nextLocked.remaining_count} 次“${badgeSummary.nextLocked.event_label}”`
+        ? `下一个：${badgeSummary.nextLocked.badge_name}，再 ${badgeSummary.nextLocked.remaining_count} 次“${normalizeActionLabel(badgeSummary.nextLocked.event_label)}”`
         : (badgeSummary.latestUnlocked ? `最近解锁：${badgeSummary.latestUnlocked.badge_name}` : '老师记录行为后会自动累计徽章进度');
 
       elements.studentSpotlight.innerHTML = `
@@ -863,8 +928,8 @@ if (isFileMode) {
         </div>
         <p class="teacher-badge-summary-line">${escapeHtml(badgeSummaryLine)}</p>
         ${levelUpMessage ? `<div class="teacher-levelup-banner">${escapeHtml(levelUpMessage)}</div>` : ''}
-        ${recentFeedback?.note ? `<p class="teacher-feedback-line">${escapeHtml(recentFeedback.note)}</p>` : ''}
-        ${recentBadgeFeedback?.note ? `<p class="teacher-feedback-line teacher-feedback-line--badge">${escapeHtml(recentBadgeFeedback.note)}</p>` : ''}
+        ${recentFeedback?.note ? `<p class="teacher-feedback-line">${escapeHtml(normalizeActionCopy(recentFeedback.note))}</p>` : ''}
+        ${recentBadgeFeedback?.note ? `<p class="teacher-feedback-line teacher-feedback-line--badge">${escapeHtml(normalizeActionCopy(recentBadgeFeedback.note))}</p>` : ''}
       `;
     }
 
@@ -908,7 +973,7 @@ if (isFileMode) {
         return `
           <button class="teacher-action-card ${isRecent ? 'is-ack' : ''} ${isHighFrequency ? 'is-high-frequency' : ''}" type="button" data-rule-id="${escapeHtml(rule.id)}" data-category="${escapeHtml(state.activeCategory)}">
             <div class="teacher-action-card__top">
-              <strong>${escapeHtml(rule.rule_name)}</strong>
+              <strong>${escapeHtml(normalizeActionLabel(rule.rule_name))}</strong>
               ${actionBadge}
             </div>
             <div class="teacher-action-card__points">
@@ -960,7 +1025,7 @@ if (isFileMode) {
               <span class="teacher-badge-state">${escapeHtml(isUnlocked ? '已解锁' : '待解锁')}</span>
             </div>
             <strong>${escapeHtml(badge.name)}</strong>
-            <p>${escapeHtml(badge.event_label)}</p>
+            <p>${escapeHtml(normalizeActionLabel(badge.event_label))}</p>
             <div class="teacher-badge-action-card__meta">
               <span>${escapeHtml(helperText)}</span>
               <span>${escapeHtml(actionState)}</span>
@@ -999,7 +1064,7 @@ if (isFileMode) {
         const remainingCount = Math.max(Number(row.remaining_count || 0), 0);
         const isUnlocked = Boolean(row.unlocked_at);
         const progressPercent = Math.max(8, Math.min(100, Math.round((eventCount / threshold) * 100)));
-        const description = row.description || `${row.event_label} 累计达到阈值后解锁`;
+        const description = normalizeActionCopy(row.description || `${row.event_label} 累计达到阈值后解锁`);
 
         return `
           <article class="teacher-badge-progress-item ${isUnlocked ? 'is-unlocked' : ''}">
@@ -1012,7 +1077,7 @@ if (isFileMode) {
               <span style="width:${isUnlocked ? 100 : progressPercent}%"></span>
             </div>
             <div class="teacher-badge-progress-item__meta">
-              <span>${escapeHtml(row.event_label)}</span>
+              <span>${escapeHtml(normalizeActionLabel(row.event_label))}</span>
               <span>${escapeHtml(isUnlocked ? `首解锁于第 ${row.source_event_count || threshold} 次` : `还差 ${remainingCount} 次`)}</span>
             </div>
           </article>
@@ -1043,16 +1108,16 @@ if (isFileMode) {
         const score = Number(record.points_delta || 0);
         const scoreText = `${score > 0 ? '+' : ''}${score}`;
         const typeLabel = ACTION_TYPE_META[record.action_type] || record.action_type || '记录';
-        const detail = record.remark && record.remark !== record.rule_name_snapshot
-          ? `<p class="teacher-record-detail">${escapeHtml(record.remark)}</p>`
+        const detailText = record.remark && record.remark !== record.rule_name_snapshot
+          ? normalizeActionCopy(record.remark)
           : '';
 
         return `
           <article class="teacher-record-item">
             <div class="teacher-record-text">
-              <h4>${escapeHtml(record.rule_name_snapshot)}</h4>
+              <h4>${escapeHtml(normalizeActionLabel(record.rule_name_snapshot))}</h4>
               <p>${escapeHtml(categoryLabel)} · ${escapeHtml(formatDateTime(record.created_at))}</p>
-              ${detail}
+              ${detailText ? `<p class="teacher-record-detail">${escapeHtml(detailText)}</p>` : ''}
             </div>
             <div class="teacher-record-score ${score < 0 ? 'is-negative' : ''}">
               <strong>${escapeHtml(scoreText)}</strong>
@@ -1219,6 +1284,7 @@ if (isFileMode) {
       renderPanel();
       renderSearchResults();
       updatePanelVisibility();
+      updateTeacherCommandState();
     }
     async function initializeData() {
       if (!isSupabaseConfigured) {
@@ -1345,7 +1411,7 @@ if (isFileMode) {
           pointsDelta: Number(rule.points),
           leveledUp: beforeProgress.currentTier.name !== afterProgress.currentTier.name,
           newTierName: afterProgress.currentTier.name,
-          note: `${CATEGORY_META[rule.category]?.label || rule.category} · ${rule.rule_name} +${rule.points} 分`,
+          note: `${CATEGORY_META[rule.category]?.label || rule.category} · ${normalizeActionLabel(rule.rule_name)} +${rule.points} 分`,
           timestamp: Date.now()
         };
         renderAll();
@@ -1405,12 +1471,12 @@ if (isFileMode) {
           badgeName: badgeDefinition.name,
           unlockedJustNow,
           note: unlockedJustNow
-            ? `${badgeDefinition.name} 已解锁，${badgeDefinition.event_label} 已累计到 ${eventCount} 次`
-            : `${badgeDefinition.event_label} 已记录，当前 ${eventCount} / ${threshold}`,
+            ? `${badgeDefinition.name} 已解锁，${normalizeActionLabel(badgeDefinition.event_label)} 已累计到 ${eventCount} 次`
+            : `${normalizeActionLabel(badgeDefinition.event_label)} 已记录，当前 ${eventCount} / ${threshold}`,
           timestamp: Date.now()
         };
         renderPanel();
-        showToast(unlockedJustNow ? `${studentName} 解锁 ${badgeDefinition.name}` : `${studentName} 已记录“${badgeDefinition.event_label}”`);
+        showToast(unlockedJustNow ? `${studentName} 解锁 ${badgeDefinition.name}` : `${studentName} 已记录“${normalizeActionLabel(badgeDefinition.event_label)}”`);
         clearFeedbackLater();
       } catch (error) {
         showInlineNotice(`记录行为失败：${error.message}`, 'error');
@@ -1913,7 +1979,13 @@ if (isFileMode) {
       state.activeCategory = button.dataset.category;
       renderTabs();
       renderActionCards();
-      resetPanelScroll();
+    });
+
+    elements.teacherFocusToggleButton?.addEventListener('click', function () {
+      state.isClassFocusMode = !state.isClassFocusMode;
+      persistTeacherFocusMode(state.isClassFocusMode);
+      updateTeacherCommandState();
+      refreshRailControls();
     });
 
     elements.actionCards.addEventListener('click', function (event) {

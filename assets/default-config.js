@@ -11,8 +11,8 @@
 ];
 
 export const DEFAULT_POINT_RULES = [
-  { id: '81111111-1111-1111-1111-111111111111', category: 'classroom', rule_name: '专注听讲', points: 1, sort_order: 10, is_active: true, is_common: true },
-  { id: '81111111-1111-1111-1111-111111111112', category: 'classroom', rule_name: '积极发言', points: 2, sort_order: 20, is_active: true, is_common: true },
+  { id: '81111111-1111-1111-1111-111111111111', category: 'classroom', rule_name: '专注听课', points: 1, sort_order: 10, is_active: true, is_common: true },
+  { id: '81111111-1111-1111-1111-111111111112', category: 'classroom', rule_name: '积极表达', points: 2, sort_order: 20, is_active: true, is_common: true },
   { id: '81111111-1111-1111-1111-111111111113', category: 'classroom', rule_name: '勇敢尝试', points: 1, sort_order: 30, is_active: true, is_common: true },
   { id: '81111111-1111-1111-1111-111111111114', category: 'classroom', rule_name: '主动协作', points: 2, sort_order: 40, is_active: true, is_common: true },
   { id: '81111111-1111-1111-1111-111111111115', category: 'classroom', rule_name: '课堂之星', points: 3, sort_order: 50, is_active: true, is_common: false },

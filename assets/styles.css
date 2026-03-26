@@ -6023,6 +6023,62 @@ input:disabled {
   background: rgba(29, 111, 215, 0.08);
 }
 
+/* Trial-run teacher console: stable scroll, compact class focus, clearer badge copy */
+.teacher-focus-toggle {
+  min-height: 44px;
+  padding-inline: 16px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.teacher-console .teacher-command.is-class-focused {
+  padding-bottom: 16px;
+}
+
+.teacher-console .teacher-command.is-class-focused .teacher-campus-field,
+.teacher-console .teacher-command.is-class-focused .teacher-rail-shell--campus,
+.teacher-console .teacher-command.is-class-focused .teacher-rail-shell--classes,
+.teacher-console .teacher-command.is-class-focused .teacher-class-meta {
+  display: none;
+}
+
+.teacher-console .teacher-command.is-class-focused .teacher-filters-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.teacher-console .teacher-command.is-class-focused .teacher-command-summary--compact {
+  align-items: center;
+}
+
+.teacher-console .teacher-panel {
+  overflow: visible;
+}
+
+.teacher-console .teacher-panel-content {
+  max-height: none !important;
+  overflow: visible !important;
+  padding-right: 0;
+}
+
+.teacher-console .teacher-badge-summary-line,
+.teacher-console .teacher-feedback-line {
+  color: rgba(247, 250, 255, 0.9);
+}
+
+.teacher-console .teacher-feedback-line--badge {
+  color: rgba(255, 244, 204, 0.96);
+}
+
+@media (max-width: 1023px) {
+  .teacher-console .teacher-panel {
+    overflow: hidden;
+  }
+
+  .teacher-console .teacher-panel-content {
+    overflow: auto !important;
+  }
+}
+
 .teacher-badge-action-card__track span,
 .teacher-badge-progress-item__track span {
   display: block;

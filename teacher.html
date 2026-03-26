@@ -37,14 +37,14 @@
         </div>
       </header>
 
-      <section class="teacher-command surface-card teacher-command--v1">
+      <section id="teacherCommandPanel" class="teacher-command surface-card teacher-command--v1">
         <div class="teacher-command-main teacher-command-main--compact">
           <div class="filters-grid teacher-filters-grid">
-            <label class="field-group">
+            <label class="field-group teacher-campus-field">
               <span>校区</span>
               <select id="campusSelect"></select>
             </label>
-            <label class="field-group">
+            <label class="field-group teacher-class-field">
               <span>班级</span>
               <select id="classSelect"></select>
             </label>
@@ -59,6 +59,7 @@
               <span class="metric-label">班级总分</span>
               <strong id="classPoints">0</strong>
             </div>
+            <button id="teacherFocusToggleButton" class="ghost-button teacher-focus-toggle" type="button" hidden>切换班级/校区</button>
             <strong id="selectedState" class="sr-only">等待选学生</strong>
           </div>
         </div>

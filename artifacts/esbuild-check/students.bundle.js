@@ -13428,24 +13428,8 @@ function mountSessionActions(container, context) {
 }
 
 // assets/supabase-service.js
-var ACTIVE_POINT_RULE_FIELDS = "id, category, rule_name, points, sort_order, is_active, is_common, created_at";
-var LEVEL_TIER_FIELDS = "id, level_no, level_name, threshold, is_active, created_at, updated_at";
-var BADGE_DEFINITION_FIELDS = "id, code, name, description, event_label, icon_token, threshold, is_active, sort_order, created_at, updated_at";
-var CLASS_SELECT_FIELDS = `
-  id,
-  class_name,
-  campus_id,
-  subject_id,
-  teacher_id,
-  schedule_text,
-  class_type,
-  status,
-  created_by_id,
-  created_at,
-  campuses:campus_id ( id, name, code ),
-  subjects:subject_id ( id, name, code ),
-  teachers:teacher_id ( id, name, display_name )
-`;
+var STUDENT_FIELDS = "id, student_code, legal_name, display_name, gender, grade, birth_year, parent_name, parent_phone, avatar_url, status, created_by_role, created_by_id, notes, created_at, updated_at";
+var STUDENT_DUPLICATE_FIELDS = "id, student_code, legal_name, display_name, grade, parent_name, parent_phone, status, created_at";
 function buildErrorMessage(prefix, message) {
   const normalizedPrefix = String(prefix || "").trim();
   const normalizedMessage = String(message || "").trim();
@@ -13475,134 +13459,87 @@ async function runQuery(builder, context) {
   }
   return data;
 }
+function chunkValues(values, size = 50) {
+  const chunks = [];
+  for (let index = 0; index < values.length; index += size) {
+    chunks.push(values.slice(index, index + size));
+  }
+  return chunks;
+}
+function uniqueTruthy(values) {
+  return Array.from(new Set((values || []).map(function(value) {
+    return String(value || "").trim();
+  }).filter(Boolean)));
+}
+function mergeRowsById(rows) {
+  const rowMap = /* @__PURE__ */ new Map();
+  rows.forEach(function(row) {
+    if (row?.id) {
+      rowMap.set(row.id, row);
+    }
+  });
+  return Array.from(rowMap.values());
+}
 async function fetchCampuses() {
   const supabase2 = ensureSupabase();
   return runQuery(
     supabase2.from("campuses").select("id, name, code, status, created_at").eq("status", "active").order("name")
   );
 }
-async function fetchSubjects() {
+async function fetchStudentsList(options = {}) {
   const supabase2 = ensureSupabase();
-  return runQuery(
-    supabase2.from("subjects").select("id, name, code, status, created_at").eq("status", "active").order("name")
-  );
-}
-async function fetchTeachers(campusId) {
-  const supabase2 = ensureSupabase();
-  let query = supabase2.from("teachers").select("id, name, display_name, phone, role, campus_id, status, created_at").eq("status", "active").order("created_at", { ascending: true });
-  if (campusId) {
-    query = query.eq("campus_id", campusId);
+  const search = String(options.search || "").trim();
+  const status = String(options.status || "").trim();
+  const limit = Math.max(1, Math.min(Number(options.limit || 200), 500));
+  let query = supabase2.from("students").select(STUDENT_FIELDS).order("created_at", { ascending: false }).limit(limit);
+  if (status && status !== "all") {
+    query = query.eq("status", status);
   }
-  return runQuery(query);
-}
-async function fetchClasses(options = {}) {
-  const supabase2 = ensureSupabase();
-  const statuses = Array.isArray(options.statuses) && options.statuses.length ? options.statuses : ["draft", "active"];
-  let query = supabase2.from("classes").select(CLASS_SELECT_FIELDS).in("status", statuses).order("created_at", { ascending: true });
-  if (options.teacherId) {
-    query = query.eq("teacher_id", options.teacherId);
-  }
-  return runQuery(query);
-}
-async function fetchPointRules() {
-  const supabase2 = ensureSupabase();
-  return runQuery(
-    supabase2.from("point_rules").select(ACTIVE_POINT_RULE_FIELDS).eq("is_active", true).order("category", { ascending: true }).order("is_common", { ascending: false }).order("sort_order", { ascending: true }).order("created_at", { ascending: true })
-  );
-}
-async function fetchLevelTiers() {
-  const supabase2 = ensureSupabase();
-  return runQuery(
-    supabase2.from("level_tiers").select(LEVEL_TIER_FIELDS).order("level_no", { ascending: true })
-  );
-}
-async function fetchBadgeDefinitions(options = {}) {
-  const supabase2 = ensureSupabase();
-  const activeOnly = options.activeOnly !== false;
-  let query = supabase2.from("badge_definitions").select(BADGE_DEFINITION_FIELDS).order("sort_order", { ascending: true }).order("created_at", { ascending: true });
-  if (activeOnly) {
-    query = query.eq("is_active", true);
-  }
-  return runQuery(query, "\u8BFB\u53D6\u5FBD\u7AE0\u89C4\u5219\u5931\u8D25");
-}
-async function fetchClassRoster(classId) {
-  const supabase2 = ensureSupabase();
-  return runQuery(
-    supabase2.from("class_student_roster").select("*").eq("class_id", classId).eq("member_status", "active").order("joined_at", { ascending: true })
-  );
-}
-async function fetchStudentLedger(studentId, limit = 6) {
-  const supabase2 = ensureSupabase();
-  return runQuery(
-    supabase2.from("point_ledger").select("id, student_id, class_id, campus_id, subject_id, teacher_id, rule_id, rule_name_snapshot, category_snapshot, points_delta, action_type, remark, created_at").eq("student_id", studentId).order("created_at", { ascending: false }).limit(limit)
-  );
-}
-async function fetchStudentBadgeProgress(studentId) {
-  const supabase2 = ensureSupabase();
-  const ids = Array.isArray(studentId) ? studentId.filter(Boolean) : [studentId].filter(Boolean);
-  let query = supabase2.from("student_badge_progress").select("*").order("sort_order", { ascending: true }).order("badge_name", { ascending: true });
-  if (ids.length === 1) {
-    query = query.eq("student_id", ids[0]);
-  } else if (ids.length > 1) {
-    query = query.in("student_id", ids);
-  }
-  return runQuery(query, "\u8BFB\u53D6\u5B66\u751F\u5FBD\u7AE0\u8FDB\u5EA6\u5931\u8D25");
-}
-async function insertStudentBadgeEvent(payload) {
-  const supabase2 = ensureSupabase();
-  return runQuery(
-    supabase2.from("student_badge_events").insert(Array.isArray(payload) ? payload : [payload]).select("id, student_id, badge_definition_id, teacher_id, class_id, note, created_at"),
-    "\u5199\u5165\u5FBD\u7AE0\u884C\u4E3A\u8BB0\u5F55\u5931\u8D25"
-  );
-}
-async function createClass(payload) {
-  const supabase2 = ensureSupabase();
-  return runQuery(
-    supabase2.from("classes").insert(payload).select(CLASS_SELECT_FIELDS).single()
-  );
-}
-async function searchStudents(keyword) {
-  const supabase2 = ensureSupabase();
-  const trimmed = keyword.trim();
-  let query = supabase2.from("students").select("id, student_code, legal_name, display_name, grade, parent_name, parent_phone, status, created_at").neq("status", "merged").order("created_at", { ascending: false }).limit(20);
-  if (trimmed) {
+  if (search) {
     query = query.or([
-      `display_name.ilike.%${trimmed}%`,
-      `legal_name.ilike.%${trimmed}%`,
-      `student_code.ilike.%${trimmed}%`,
-      `parent_phone.ilike.%${trimmed}%`
+      `display_name.ilike.%${search}%`,
+      `legal_name.ilike.%${search}%`,
+      `parent_phone.ilike.%${search}%`,
+      `student_code.ilike.%${search}%`
     ].join(","));
   }
-  return runQuery(query, "\u8BFB\u53D6\u5FBD\u7AE0\u699C\u5931\u8D25");
+  return runQuery(query);
 }
-async function addStudentToClass(payload) {
+async function createStudents(rows) {
   const supabase2 = ensureSupabase();
-  const row = Array.isArray(payload) ? payload[0] : payload;
+  const payload = Array.isArray(rows) ? rows : [rows];
   return runQuery(
-    supabase2.from("class_students").upsert({
-      ...row,
-      joined_at: row?.joined_at || (/* @__PURE__ */ new Date()).toISOString(),
-      member_status: row?.member_status || "active"
-    }, { onConflict: "class_id,student_id" }).select("id, class_id, student_id, joined_at, member_status, joined_by_id, notes").single()
+    supabase2.from("students").insert(payload).select(STUDENT_FIELDS)
   );
 }
-async function removeStudentFromClass(payload) {
+async function updateStudent(studentId, payload) {
   const supabase2 = ensureSupabase();
-  const classId = String(payload?.classId || payload?.class_id || "").trim();
-  const studentId = String(payload?.studentId || payload?.student_id || "").trim();
-  const notes = String(payload?.notes || "").trim();
   return runQuery(
-    supabase2.from("class_students").update({
-      member_status: "removed",
-      notes: notes || "\u79FB\u51FA\u73ED\u7EA7"
-    }).eq("class_id", classId).eq("student_id", studentId).eq("member_status", "active").select("id, class_id, student_id, joined_at, member_status, joined_by_id, notes").single()
+    supabase2.from("students").update(payload).eq("id", studentId).select(STUDENT_FIELDS).single()
   );
 }
-async function insertPointLedger(rows) {
+async function fetchStudentDuplicateCandidates(options = {}) {
   const supabase2 = ensureSupabase();
-  return runQuery(
-    supabase2.from("point_ledger").insert(Array.isArray(rows) ? rows : [rows]).select("id, student_id, points_delta, created_at, action_type")
-  );
+  const legalNames = uniqueTruthy(options.legalNames);
+  const parentPhones = uniqueTruthy(options.parentPhones);
+  const builders = [];
+  chunkValues(legalNames).forEach(function(namesChunk) {
+    builders.push(
+      supabase2.from("students").select(STUDENT_DUPLICATE_FIELDS).neq("status", "merged").in("legal_name", namesChunk)
+    );
+  });
+  chunkValues(parentPhones).forEach(function(phonesChunk) {
+    builders.push(
+      supabase2.from("students").select(STUDENT_DUPLICATE_FIELDS).neq("status", "merged").in("parent_phone", phonesChunk)
+    );
+  });
+  if (!builders.length) {
+    return [];
+  }
+  const resultSets = await Promise.all(builders.map(function(builder) {
+    return runQuery(builder);
+  }));
+  return mergeRowsById(resultSets.flat());
 }
 
 // assets/default-config.js
@@ -14704,12 +14641,6 @@ function getLibraryAvatarForStudent(student) {
 var LEVEL_TIERS = DEFAULT_LEVEL_TIERS.map(function(tier) {
   return { name: tier.level_name, threshold: tier.threshold };
 });
-var CATEGORY_META = {
-  classroom: { label: "\u8BFE\u5802\u8868\u73B0", shortLabel: "\u8BFE\u5802", tip: "\u4E0A\u8BFE\u5C31\u70B9\uFF0C\u53CD\u9988\u6700\u76F4\u63A5" },
-  homework: { label: "\u4F5C\u4E1A\u7EC3\u4E60", shortLabel: "\u4F5C\u4E1A", tip: "\u8BFE\u540E\u8865\u5206\uFF0C\u8282\u594F\u5F88\u5FEB" },
-  project: { label: "\u4F5C\u54C1\u5C55\u793A", shortLabel: "\u4F5C\u54C1", tip: "\u4F5C\u54C1\u5B8C\u6210\u5C31\u80FD\u7ACB\u523B\u9F13\u52B1" },
-  habits: { label: "\u4E60\u60EF\u8BC4\u4F30", shortLabel: "\u4E60\u60EF", tip: "\u628A\u7A33\u5B9A\u7684\u597D\u4E60\u60EF\u8BB0\u4E0B\u6765" }
-};
 var LEGACY_AVATAR_PRESETS = [
   { key: "dog-shiba", icon: "\u{1F436}", accent: "\u2726", background: "linear-gradient(135deg, #ffbe78 0%, #ff8f61 100%)" },
   { key: "dog-cocoa", icon: "\u{1F436}", accent: "\u2605", background: "linear-gradient(135deg, #c98a67 0%, #8f5e49 100%)" },
@@ -14800,43 +14731,6 @@ function formatDateTime(isoString) {
 function getStudentDisplayName(student) {
   return student?.display_name || student?.legal_name || student?.nickname || "\u672A\u547D\u540D\u5B66\u751F";
 }
-function normalizeTierList(rows) {
-  if (!Array.isArray(rows) || !rows.length) {
-    return LEVEL_TIERS;
-  }
-  return rows.slice().sort(function(left, right) {
-    return Number(left.level_no || 0) - Number(right.level_no || 0);
-  }).map(function(tier, index) {
-    return {
-      name: String(tier.level_name || `${index + 1}\u6BB5`).trim(),
-      threshold: Number(tier.threshold || 0)
-    };
-  });
-}
-function resolveTier(points, tiers = LEVEL_TIERS) {
-  return tiers.reduce(function(current, tier) {
-    return points >= Number(tier.threshold || 0) ? tier : current;
-  }, tiers[0]);
-}
-function getTierProgress(points, tiers = LEVEL_TIERS) {
-  const currentTier = resolveTier(points, tiers);
-  const nextTier = tiers.find(function(tier) {
-    return points < Number(tier.threshold || 0);
-  }) || null;
-  const currentThreshold = Number(currentTier.threshold || 0);
-  const nextThreshold = nextTier ? Number(nextTier.threshold || 0) : currentThreshold;
-  const distance = nextTier ? Math.max(0, nextThreshold - points) : 0;
-  let progress = 100;
-  if (nextTier && nextThreshold > currentThreshold) {
-    progress = (points - currentThreshold) / (nextThreshold - currentThreshold) * 100;
-  }
-  return {
-    currentTier,
-    nextTier,
-    distance,
-    progress: Math.max(6, Math.min(100, progress))
-  };
-}
 function getAvatarSeed(student) {
   return student?.avatar_url || student?.id || student?.student_id || student?.student_code || getStudentDisplayName(student);
 }
@@ -14902,340 +14796,289 @@ function createAvatarHtml(student, extraClass = "") {
     </span>
   `.trim();
 }
-function groupRulesByCategory(rules) {
-  return rules.reduce(function(groups, rule) {
-    if (!groups[rule.category]) {
-      groups[rule.category] = [];
-    }
-    groups[rule.category].push(rule);
-    return groups;
-  }, {});
-}
 
-// assets/teacher.js
-var ACTION_TYPE_META = {
-  add: "\u52A0\u5206",
-  batch_add: "\u6574\u73ED\u52A0\u5206",
-  deduct: "\u5151\u6362\u6263\u5206",
-  seed: "\u8865\u5F55\u79EF\u5206"
+// assets/students.js
+var CSV_FIELDS = ["legal_name", "display_name", "grade", "parent_name", "parent_phone", "avatar_url", "notes"];
+var STATUS_META = {
+  normal: "\u6B63\u5E38",
+  temporary: "\u4E34\u65F6",
+  pending_merge: "\u5F85\u5408\u5E76",
+  merged: "\u5DF2\u5408\u5E76"
 };
-var TEACHER_FOCUS_MODE_STORAGE_KEY = "teacher:class-focus-mode";
-var ACTION_LABEL_ALIASES = Object.freeze({
-  "\u4E13\u6CE8\u542C\u8BB2": "\u4E13\u6CE8\u542C\u8BFE",
-  "\u79EF\u6781\u53D1\u8A00": "\u79EF\u6781\u8868\u8FBE"
-});
-function normalizeActionLabel(value) {
-  const normalized = String(value || "").trim();
-  return ACTION_LABEL_ALIASES[normalized] || normalized;
+function normalizeText2(value) {
+  return String(value || "").trim();
 }
-function normalizeActionCopy(value) {
-  return Object.entries(ACTION_LABEL_ALIASES).reduce(function(text, entry) {
-    const [source, target] = entry;
-    return String(text || "").split(source).join(target);
-  }, String(value || "").trim());
+function normalizePhone(value) {
+  return normalizeText2(value).replace(/[\s-]/g, "");
 }
-function getInitialTeacherFocusMode() {
-  try {
-    return window.localStorage.getItem(TEACHER_FOCUS_MODE_STORAGE_KEY) !== "off";
-  } catch (error) {
-    return true;
-  }
+function buildStudentCode(index = 0) {
+  const now = /* @__PURE__ */ new Date();
+  const stamp = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+    String(now.getHours()).padStart(2, "0"),
+    String(now.getMinutes()).padStart(2, "0"),
+    String(now.getSeconds()).padStart(2, "0"),
+    String(now.getMilliseconds()).padStart(3, "0")
+  ].join("");
+  const randomToken = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `STU${stamp}${String(index).padStart(3, "0")}${randomToken}`;
 }
-function persistTeacherFocusMode(enabled) {
-  try {
-    window.localStorage.setItem(TEACHER_FOCUS_MODE_STORAGE_KEY, enabled ? "on" : "off");
-  } catch (error) {
+function parseCsv(text) {
+  const rows = [];
+  let current = "";
+  let row = [];
+  let inQuotes = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const next = text[index + 1];
+    if (char === '"') {
+      if (inQuotes && next === '"') {
+        current += '"';
+        index += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+    if (char === "," && !inQuotes) {
+      row.push(current);
+      current = "";
+      continue;
+    }
+    if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && next === "\n") {
+        index += 1;
+      }
+      row.push(current);
+      rows.push(row);
+      row = [];
+      current = "";
+      continue;
+    }
+    current += char;
   }
+  if (current.length || row.length) {
+    row.push(current);
+    rows.push(row);
+  }
+  return rows;
 }
-var isFileMode = window.location.protocol === "file:";
-var authContext = isFileMode ? null : await requirePageAuth({ allowedRoles: ["admin", "teacher"] });
-function mountFileModeFallback() {
-  const fileNotice = document.getElementById("fileModeNotice");
-  const campusSelect = document.getElementById("campusSelect");
-  const classSelect = document.getElementById("classSelect");
-  const selectedState = document.getElementById("selectedState");
-  const selectionHint = document.getElementById("selectionHint");
-  if (fileNotice) {
-    fileNotice.hidden = false;
+async function decodeCsvFile(file) {
+  const buffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  const hasUtf8Bom = bytes.length >= 3 && bytes[0] === 239 && bytes[1] === 187 && bytes[2] === 191;
+  const decoders = hasUtf8Bom ? [{ label: "utf-8", fatal: false }] : [
+    { label: "utf-8", fatal: true },
+    { label: "gb18030", fatal: false },
+    { label: "utf-8", fatal: false }
+  ];
+  for (const decoder of decoders) {
+    try {
+      const text = new TextDecoder(decoder.label, { fatal: decoder.fatal }).decode(buffer);
+      if (text) {
+        return text.replace(/^\uFEFF/u, "");
+      }
+    } catch (error) {
+      continue;
+    }
   }
-  if (campusSelect) {
-    campusSelect.innerHTML = '<option value="">Use http://127.0.0.1:4175</option>';
-    campusSelect.disabled = true;
+  throw new Error("CSV \u6587\u4EF6\u7F16\u7801\u65E0\u6CD5\u8BC6\u522B\uFF0C\u8BF7\u4FDD\u5B58\u4E3A UTF-8 \u6216 Excel CSV \u540E\u91CD\u8BD5");
+}
+function createCsvTemplate() {
+  const sampleRow = ["\u5F20\u660E", "\u5C0F\u660E", "\u4E09\u5E74\u7EA7", "\u5F20\u5973\u58EB", "13800001234", "", "\u6625\u5B63\u65B0\u73ED\u9884\u5907\u751F"];
+  return "\uFEFF" + [CSV_FIELDS.join(","), sampleRow.join(",")].join("\r\n");
+}
+function buildStatusLabel(status) {
+  return STATUS_META[status] || status || "\u672A\u8BBE\u7F6E";
+}
+function buildStudentInsertRow(draft, index) {
+  const studentCode = buildStudentCode(index);
+  const legalName = normalizeText2(draft.legal_name);
+  const displayName = normalizeText2(draft.display_name) || legalName;
+  const grade = normalizeText2(draft.grade);
+  const parentName = normalizeText2(draft.parent_name);
+  const parentPhone = normalizeText2(draft.parent_phone);
+  const explicitAvatarUrl = normalizeText2(draft.avatar_url);
+  const defaultAvatar = explicitAvatarUrl ? null : pickImportedAvatar({
+    student_code: studentCode,
+    legal_name: legalName,
+    display_name: displayName,
+    grade,
+    parent_name: parentName,
+    parent_phone: parentPhone
+  }, index);
+  return {
+    student_code: studentCode,
+    legal_name: legalName,
+    display_name: displayName,
+    grade,
+    parent_name: parentName,
+    parent_phone: parentPhone,
+    avatar_url: explicitAvatarUrl || defaultAvatar?.image_path || "",
+    notes: normalizeText2(draft.notes),
+    status: normalizeText2(draft.status) || "normal",
+    created_by_role: "admin",
+    created_by_id: null
+  };
+}
+function pickImportedAvatar(studentDraft, index = 0) {
+  const preferredAvatar = getLibraryAvatarForStudent(studentDraft);
+  if (!AVATAR_LIBRARY_LIST.length) {
+    return preferredAvatar;
   }
-  if (classSelect) {
-    classSelect.innerHTML = '<option value="">File mode disabled</option>';
-    classSelect.disabled = true;
+  const preferredIndex = preferredAvatar ? AVATAR_LIBRARY_LIST.findIndex(function(entry) {
+    return entry.code === preferredAvatar.code;
+  }) : -1;
+  const startIndex = preferredIndex >= 0 ? preferredIndex : 0;
+  return AVATAR_LIBRARY_LIST[(startIndex + Math.max(index - 1, 0)) % AVATAR_LIBRARY_LIST.length] || preferredAvatar || null;
+}
+function buildStudentUpdateRow(draft) {
+  const legalName = normalizeText2(draft.legal_name);
+  const displayName = normalizeText2(draft.display_name) || legalName;
+  return {
+    legal_name: legalName,
+    display_name: displayName,
+    grade: normalizeText2(draft.grade),
+    parent_name: normalizeText2(draft.parent_name),
+    parent_phone: normalizeText2(draft.parent_phone),
+    avatar_url: normalizeText2(draft.avatar_url),
+    notes: normalizeText2(draft.notes),
+    status: normalizeText2(draft.status) || "normal"
+  };
+}
+function buildDuplicateAssessment(draft, candidates, batchRows, currentRowNumber) {
+  const legalName = normalizeText2(draft.legal_name);
+  const grade = normalizeText2(draft.grade);
+  const phone = normalizePhone(draft.parent_phone);
+  const highMessages = /* @__PURE__ */ new Set();
+  const mediumMessages = /* @__PURE__ */ new Set();
+  function collectMessage(message, level) {
+    if (level === "high") {
+      highMessages.add(message);
+      return;
+    }
+    mediumMessages.add(message);
   }
-  if (selectedState) {
-    selectedState.textContent = "Use local server URL";
-  }
-  if (selectionHint) {
-    selectionHint.textContent = "file:// mode is disabled for real data.";
-  }
-  ["openCreateClassButton", "openAddStudentButton", "classBoostToggleButton", "removeSelectedStudentButton", "openSeedDialogButton", "openRedeemButton"].forEach(function(id) {
-    const button = document.getElementById(id);
-    if (button) {
-      button.disabled = true;
+  (candidates || []).forEach(function(student) {
+    if (draft.id && student.id === draft.id) {
+      return;
+    }
+    const sameLegalName = normalizeText2(student.legal_name) === legalName;
+    if (!sameLegalName) {
+      return;
+    }
+    const samePhone = phone && normalizePhone(student.parent_phone) === phone;
+    const sameGrade = grade && normalizeText2(student.grade) === grade;
+    if (samePhone) {
+      collectMessage(`\u7CFB\u7EDF\u5DF2\u6709\uFF1A${student.legal_name} / ${student.parent_phone || "\u672A\u586B\u624B\u673A\u53F7"}\uFF0C\u9AD8\u5EA6\u7591\u4F3C\u91CD\u590D`, "high");
+      return;
+    }
+    if (sameGrade) {
+      collectMessage(`\u7CFB\u7EDF\u5DF2\u6709\uFF1A${student.legal_name} / ${student.grade || "\u672A\u586B\u5E74\u7EA7"}\uFF0C\u4E2D\u5EA6\u7591\u4F3C\u91CD\u590D`, "medium");
     }
   });
+  (batchRows || []).forEach(function(row) {
+    if (row.rowNumber === currentRowNumber) {
+      return;
+    }
+    const sameLegalName = normalizeText2(row.legal_name) === legalName;
+    if (!sameLegalName) {
+      return;
+    }
+    const samePhone = phone && normalizePhone(row.parent_phone) === phone;
+    const sameGrade = grade && normalizeText2(row.grade) === grade;
+    if (samePhone) {
+      collectMessage(`\u5BFC\u5165\u6587\u4EF6\u7B2C ${row.rowNumber} \u884C\u4E0E\u5F53\u524D\u884C legal_name + parent_phone \u76F8\u540C`, "high");
+      return;
+    }
+    if (sameGrade) {
+      collectMessage(`\u5BFC\u5165\u6587\u4EF6\u7B2C ${row.rowNumber} \u884C\u4E0E\u5F53\u524D\u884C legal_name + grade \u76F8\u540C`, "medium");
+    }
+  });
+  return {
+    level: highMessages.size ? "high" : mediumMessages.size ? "medium" : "none",
+    highMessages: Array.from(highMessages),
+    mediumMessages: Array.from(mediumMessages)
+  };
 }
-if (isFileMode) {
-  mountFileModeFallback();
-} else if (authContext) {
-  const initTeacherPage = function() {
-    const desktopMedia = window.matchMedia("(min-width: 1024px)");
+var authContext = await requirePageAuth({ allowedRoles: ["admin"] });
+if (authContext) {
+  const initStudentsPage = function() {
     const elements = {
-      teacherCommandPanel: document.getElementById("teacherCommandPanel"),
-      campusSelect: document.getElementById("campusSelect"),
-      classSelect: document.getElementById("classSelect"),
-      teacherFocusToggleButton: document.getElementById("teacherFocusToggleButton"),
-      campusRailShell: document.getElementById("campusRailShell"),
-      campusRail: document.getElementById("campusRail"),
-      campusRailPrevButton: document.getElementById("campusRailPrevButton"),
-      campusRailNextButton: document.getElementById("campusRailNextButton"),
-      classRailShell: document.getElementById("classRailShell"),
-      classRail: document.getElementById("classRail"),
-      classRailPrevButton: document.getElementById("classRailPrevButton"),
-      classRailNextButton: document.getElementById("classRailNextButton"),
-      classMeta: document.getElementById("classMeta"),
-      studentGrid: document.getElementById("studentGrid"),
-      studentCount: document.getElementById("studentCount"),
-      classPoints: document.getElementById("classPoints"),
-      selectedState: document.getElementById("selectedState"),
-      selectionHint: document.getElementById("selectionHint"),
-      classBoostToggleButton: document.getElementById("classBoostToggleButton"),
-      classBoostDialog: document.getElementById("classBoostDialog"),
-      classBoostDialogText: document.getElementById("classBoostDialogText"),
-      classBoostDialogConfirmButton: document.getElementById("classBoostDialogConfirmButton"),
-      classBoostDialogCancelButton: document.getElementById("classBoostDialogCancelButton"),
-      classBoostDialogCloseButton: document.getElementById("classBoostDialogCloseButton"),
-      classBoostConfirmBar: document.getElementById("classBoostConfirmBar"),
-      classBoostPrompt: document.getElementById("classBoostPrompt"),
-      classBoostConfirmButton: document.getElementById("classBoostConfirmButton"),
-      classBoostCancelButton: document.getElementById("classBoostCancelButton"),
-      teacherInlineNotice: document.getElementById("teacherInlineNotice"),
-      openCreateClassButton: document.getElementById("openCreateClassButton"),
-      openAddStudentButton: document.getElementById("openAddStudentButton"),
-      teacherPanel: document.getElementById("teacherPanel"),
-      panelEmptyState: document.getElementById("panelEmptyState"),
-      panelContent: document.getElementById("panelContent"),
-      panelBackButton: document.getElementById("panelBackButton"),
-      closeSheetButton: document.getElementById("closeSheetButton"),
-      sheetOverlay: document.getElementById("sheetOverlay"),
-      studentSpotlight: document.getElementById("studentSpotlight"),
-      removeSelectedStudentButton: document.getElementById("removeSelectedStudentButton"),
-      openSeedDialogButton: document.getElementById("openSeedDialogButton"),
-      openRedeemButton: document.getElementById("openRedeemButton"),
-      redeemHint: document.getElementById("redeemHint"),
-      categoryTabs: document.getElementById("categoryTabs"),
-      activeCategoryTitle: document.getElementById("activeCategoryTitle"),
-      activeCategoryTip: document.getElementById("activeCategoryTip"),
-      actionCards: document.getElementById("actionCards"),
-      badgeActionCards: document.getElementById("badgeActionCards"),
-      badgeProgressList: document.getElementById("badgeProgressList"),
-      studentRecordList: document.getElementById("studentRecordList"),
-      toast: document.getElementById("toast"),
-      fileModeNotice: document.getElementById("fileModeNotice"),
-      createClassDialog: document.getElementById("createClassDialog"),
-      createClassForm: document.getElementById("createClassForm"),
-      closeCreateClassButton: document.getElementById("closeCreateClassButton"),
-      cancelCreateClassButton: document.getElementById("cancelCreateClassButton"),
-      createClassNameInput: document.getElementById("createClassNameInput"),
-      createClassCampusSelect: document.getElementById("createClassCampusSelect"),
-      createClassSubjectSelect: document.getElementById("createClassSubjectSelect"),
-      createClassTeacherSelect: document.getElementById("createClassTeacherSelect"),
-      createClassTypeSelect: document.getElementById("createClassTypeSelect"),
-      createClassScheduleInput: document.getElementById("createClassScheduleInput"),
-      createClassTeacherHint: document.getElementById("createClassTeacherHint"),
-      addStudentDialog: document.getElementById("addStudentDialog"),
-      closeAddStudentButton: document.getElementById("closeAddStudentButton"),
-      studentSearchForm: document.getElementById("studentSearchForm"),
-      studentSearchInput: document.getElementById("studentSearchInput"),
-      studentSearchHint: document.getElementById("studentSearchHint"),
-      studentSearchResults: document.getElementById("studentSearchResults"),
-      seedDialog: document.getElementById("seedDialog"),
-      seedForm: document.getElementById("seedForm"),
-      closeSeedDialogButton: document.getElementById("closeSeedDialogButton"),
-      cancelSeedButton: document.getElementById("cancelSeedButton"),
-      seedStudentMeta: document.getElementById("seedStudentMeta"),
-      seedPointsInput: document.getElementById("seedPointsInput"),
-      seedRemarkInput: document.getElementById("seedRemarkInput"),
-      seedPreview: document.getElementById("seedPreview"),
-      seedSubmitButton: document.getElementById("seedSubmitButton"),
-      redeemDialog: document.getElementById("redeemDialog"),
-      redeemForm: document.getElementById("redeemForm"),
-      closeRedeemButton: document.getElementById("closeRedeemButton"),
-      cancelRedeemButton: document.getElementById("cancelRedeemButton"),
-      redeemStudentMeta: document.getElementById("redeemStudentMeta"),
-      redeemItemInput: document.getElementById("redeemItemInput"),
-      redeemPointsInput: document.getElementById("redeemPointsInput"),
-      redeemPreview: document.getElementById("redeemPreview"),
-      redeemSubmitButton: document.getElementById("redeemSubmitButton")
+      studentsSearchForm: document.getElementById("studentsSearchForm"),
+      studentsSearchInput: document.getElementById("studentsSearchInput"),
+      clearStudentsSearchButton: document.getElementById("clearStudentsSearchButton"),
+      studentsStatusFilter: document.getElementById("studentsStatusFilter"),
+      studentsCampusFilter: document.getElementById("studentsCampusFilter"),
+      studentTotalCount: document.getElementById("studentTotalCount"),
+      studentStatusSummary: document.getElementById("studentStatusSummary"),
+      studentSearchSummary: document.getElementById("studentSearchSummary"),
+      studentsInlineNotice: document.getElementById("studentsInlineNotice"),
+      studentsTableBody: document.getElementById("studentsTableBody"),
+      studentsNotice: document.getElementById("studentsNotice"),
+      openCreateStudentButton: document.getElementById("openCreateStudentButton"),
+      openImportDialogButton: document.getElementById("openImportDialogButton"),
+      downloadTemplateButton: document.getElementById("downloadTemplateButton"),
+      studentDetailDialog: document.getElementById("studentDetailDialog"),
+      closeStudentDetailButton: document.getElementById("closeStudentDetailButton"),
+      editStudentFromDetailButton: document.getElementById("editStudentFromDetailButton"),
+      studentDetailContent: document.getElementById("studentDetailContent"),
+      createStudentDialog: document.getElementById("createStudentDialog"),
+      createStudentForm: document.getElementById("createStudentForm"),
+      editingStudentIdInput: document.getElementById("editingStudentIdInput"),
+      studentFormTitle: document.getElementById("studentFormTitle"),
+      studentFormHint: document.getElementById("studentFormHint"),
+      closeCreateStudentButton: document.getElementById("closeCreateStudentButton"),
+      cancelCreateStudentButton: document.getElementById("cancelCreateStudentButton"),
+      submitCreateStudentButton: document.getElementById("submitCreateStudentButton"),
+      createLegalNameInput: document.getElementById("createLegalNameInput"),
+      createDisplayNameInput: document.getElementById("createDisplayNameInput"),
+      createGradeInput: document.getElementById("createGradeInput"),
+      createStudentStatusSelect: document.getElementById("createStudentStatusSelect"),
+      createParentNameInput: document.getElementById("createParentNameInput"),
+      createParentPhoneInput: document.getElementById("createParentPhoneInput"),
+      createAvatarUrlInput: document.getElementById("createAvatarUrlInput"),
+      createNotesInput: document.getElementById("createNotesInput"),
+      manualDuplicateBox: document.getElementById("manualDuplicateBox"),
+      importStudentsDialog: document.getElementById("importStudentsDialog"),
+      closeImportDialogButton: document.getElementById("closeImportDialogButton"),
+      cancelImportButton: document.getElementById("cancelImportButton"),
+      importFileInput: document.getElementById("importFileInput"),
+      importPreviewSummary: document.getElementById("importPreviewSummary"),
+      importPreviewTableBody: document.getElementById("importPreviewTableBody"),
+      confirmImportButton: document.getElementById("confirmImportButton")
     };
     const state = {
       campuses: [],
-      subjects: [],
-      teachers: [],
-      classes: [],
-      pointRules: [],
-      badgeDefinitions: [],
-      levelTiers: normalizeTierList([]),
-      campusId: "",
-      classId: "",
-      roster: [],
-      selectedStudentId: null,
-      studentRecords: [],
-      studentBadgeProgress: [],
-      activeCategory: "classroom",
-      isMobilePanelOpen: false,
-      classBoostArmed: false,
-      feedback: null,
-      badgeFeedback: null,
-      searchResults: [],
-      loadingRoster: false,
-      loadingStudentDetails: false,
-      authContext,
-      isSavingClass: false,
-      isRedeeming: false,
-      isSeeding: false,
-      isSavingBadgeEvent: false,
-      savingBadgeDefinitionId: "",
-      isClassFocusMode: getInitialTeacherFocusMode(),
-      isCreatingTempStudent: false,
-      lastSearchKeyword: ""
+      students: [],
+      search: "",
+      status: "all",
+      selectedStudent: null,
+      importRows: [],
+      manualDuplicateAssessment: null,
+      manualDuplicateTimer: null,
+      isLoadingStudents: false,
+      isSaving: false
     };
-    function getSelectedClass() {
-      return state.classes.find(function(item) {
-        return item.id === state.classId;
-      }) || null;
-    }
-    function getSelectedStudent() {
-      return state.roster.find(function(item) {
-        return item.student_id === state.selectedStudentId;
-      }) || null;
-    }
-    function getCurrentRules() {
-      return groupRulesByCategory(state.pointRules);
-    }
-    function getSelectedBadgeProgress() {
-      return state.studentBadgeProgress.filter(function(row) {
-        return row.student_id === state.selectedStudentId;
-      });
-    }
-    function getBadgeProgressRow(badgeDefinitionId) {
-      return getSelectedBadgeProgress().find(function(row) {
-        return row.badge_definition_id === badgeDefinitionId;
-      }) || null;
-    }
-    function getBadgeSummary(rows) {
-      const progressRows = Array.isArray(rows) ? rows : [];
-      const unlockedRows = progressRows.filter(function(row) {
-        return Boolean(row.unlocked_at);
-      });
-      const latestUnlocked = unlockedRows.slice().sort(function(left, right) {
-        return new Date(right.unlocked_at).getTime() - new Date(left.unlocked_at).getTime();
-      })[0] || null;
-      const nextLocked = progressRows.filter(function(row) {
-        return !row.unlocked_at;
-      }).sort(function(left, right) {
-        if (Number(left.remaining_count || 0) !== Number(right.remaining_count || 0)) {
-          return Number(left.remaining_count || 0) - Number(right.remaining_count || 0);
-        }
-        return Number(left.sort_order || 0) - Number(right.sort_order || 0);
-      })[0] || null;
-      return {
-        unlockedCount: unlockedRows.length,
-        totalCount: progressRows.length,
-        latestUnlocked,
-        nextLocked
-      };
-    }
-    function getCampusName(campusId) {
-      const campus = state.campuses.find(function(item) {
-        return item.id === campusId;
-      });
-      return campus ? campus.name : "";
-    }
-    function getTeacherDisplayName(teacher) {
-      return teacher?.display_name || teacher?.name || "\u672A\u5206\u914D\u8001\u5E08";
-    }
-    function getTeachersByCampus(campusId) {
-      return state.teachers.filter(function(teacher) {
-        return !campusId || teacher.campus_id === campusId;
-      });
-    }
-    function getAvailableCampuses() {
-      if (!state.authContext?.isTeacher) {
-        return state.campuses;
-      }
-      const campusIds = new Set(
-        state.classes.map(function(classItem) {
-          return classItem.campus_id;
-        }).filter(Boolean)
-      );
-      const teacherCampusId = state.authContext.profile?.teacher?.campus_id || "";
-      if (teacherCampusId) {
-        campusIds.add(teacherCampusId);
-      }
-      if (!campusIds.size) {
-        return state.campuses;
-      }
-      return state.campuses.filter(function(campus) {
-        return campusIds.has(campus.id);
-      });
-    }
-    function getClassQueryOptions() {
-      if (state.authContext?.isTeacher) {
-        return { teacherId: state.authContext.teacherId };
-      }
-      return {};
-    }
-    function filteredClasses() {
-      return state.classes.filter(function(classItem) {
-        return !state.campusId || classItem.campus_id === state.campusId;
-      });
-    }
-    function ensureCategorySelection() {
-      const rules = getCurrentRules();
-      const categoryKeys = Object.keys(rules);
-      if (!categoryKeys.includes(state.activeCategory)) {
-        state.activeCategory = categoryKeys[0] || "classroom";
-      }
-    }
-    function clearFeedbackLater() {
-      window.clearTimeout(clearFeedbackLater.timer);
-      clearFeedbackLater.timer = window.setTimeout(function() {
-        state.feedback = null;
-        state.badgeFeedback = null;
-        renderAll();
-      }, 1800);
-    }
-    function showToast(message) {
-      elements.toast.textContent = message;
-      elements.toast.hidden = false;
-      window.clearTimeout(showToast.timer);
-      showToast.timer = window.setTimeout(function() {
-        elements.toast.hidden = true;
-      }, 2200);
-    }
-    function showInlineNotice(message, type) {
-      if (!message) {
-        elements.teacherInlineNotice.hidden = true;
-        elements.teacherInlineNotice.textContent = "";
-        elements.teacherInlineNotice.dataset.type = "";
-        return;
-      }
-      elements.teacherInlineNotice.hidden = false;
-      elements.teacherInlineNotice.dataset.type = type || "info";
-      elements.teacherInlineNotice.textContent = message;
-    }
     function openDialog(dialog) {
-      if (!dialog) {
+      if (!dialog || dialog.open) {
         return;
       }
       if (typeof dialog.showModal === "function") {
-        dialog.showModal();
-        return;
+        try {
+          dialog.showModal();
+          return;
+        } catch (error) {
+          if (typeof dialog.show === "function") {
+            try {
+              dialog.show();
+              return;
+            } catch (fallbackError) {
+            }
+          }
+        }
       }
       dialog.setAttribute("open", "open");
     }
@@ -15249,1481 +15092,539 @@ if (isFileMode) {
       }
       dialog.removeAttribute("open");
     }
-    function openClassBoostDialog() {
-      const selectedClass = getSelectedClass();
-      if (!selectedClass || !state.roster.length) {
+    function showInlineNotice(message, type) {
+      if (!message) {
+        elements.studentsInlineNotice.hidden = true;
+        elements.studentsInlineNotice.textContent = "";
+        elements.studentsInlineNotice.dataset.type = "";
         return;
       }
-      if (elements.classBoostDialogText) {
-        elements.classBoostDialogText.textContent = `${selectedClass.class_name} \u5168\u73ED ${state.roster.length} \u4EBA\u7EDF\u4E00 +1`;
-      }
-      if (elements.classBoostDialogConfirmButton) {
-        elements.classBoostDialogConfirmButton.disabled = false;
-        elements.classBoostDialogConfirmButton.textContent = "\u786E\u8BA4\u52A0\u5206";
-      }
-      openDialog(elements.classBoostDialog);
+      elements.studentsInlineNotice.hidden = false;
+      elements.studentsInlineNotice.dataset.type = type || "info";
+      elements.studentsInlineNotice.textContent = message;
     }
-    function closeClassBoostDialog() {
-      closeDialog(elements.classBoostDialog);
-      if (elements.classBoostDialogConfirmButton) {
-        elements.classBoostDialogConfirmButton.disabled = false;
-        elements.classBoostDialogConfirmButton.textContent = "\u786E\u8BA4\u52A0\u5206";
-      }
+    function showNotice(message, type) {
+      elements.studentsNotice.textContent = message;
+      elements.studentsNotice.hidden = false;
+      elements.studentsNotice.dataset.type = type || "info";
+      window.clearTimeout(showNotice.timer);
+      showNotice.timer = window.setTimeout(function() {
+        elements.studentsNotice.hidden = true;
+      }, 2800);
     }
-    function openSeedDialog() {
-      const student = getSelectedStudent();
-      if (!student) {
-        showToast("\u8BF7\u5148\u9009\u62E9\u5B66\u751F");
-        return;
-      }
-      elements.seedForm.reset();
-      elements.seedRemarkInput.value = "\u5386\u53F2\u79EF\u5206\u8865\u5F55";
-      updateSeedPreview();
-      openDialog(elements.seedDialog);
-      elements.seedPointsInput.focus();
+    function getCurrentStatusText() {
+      return state.status === "all" ? "\u5168\u90E8\u72B6\u6001" : buildStatusLabel(state.status);
     }
-    function closeSeedDialog() {
-      closeDialog(elements.seedDialog);
-      state.isSeeding = false;
-      updateSeedPreview();
-    }
-    function normalizeText2(value) {
-      return String(value || "").trim();
-    }
-    function resetPanelScroll() {
-      window.requestAnimationFrame(function() {
-        elements.teacherPanel.scrollTop = 0;
-        elements.panelContent.scrollTop = 0;
-      });
-    }
-    function shouldUseClassFocusMode() {
-      return Boolean(state.classId) && state.isClassFocusMode;
-    }
-    function updateTeacherCommandState() {
-      const isFocused = shouldUseClassFocusMode();
-      if (elements.teacherCommandPanel) {
-        elements.teacherCommandPanel.classList.toggle("is-class-focused", isFocused);
-      }
-      if (elements.teacherFocusToggleButton) {
-        elements.teacherFocusToggleButton.hidden = !state.classId;
-        elements.teacherFocusToggleButton.textContent = isFocused ? "\u5207\u6362\u73ED\u7EA7/\u6821\u533A" : "\u6536\u8D77\u9876\u90E8";
-        elements.teacherFocusToggleButton.setAttribute("aria-pressed", isFocused ? "true" : "false");
-      }
-    }
-    function centerRailOnActiveChip(rail, chip) {
-      if (!rail || !chip) {
-        return;
-      }
-      const maxScroll = Math.max(0, rail.scrollWidth - rail.clientWidth);
-      const idealLeft = chip.offsetLeft - Math.max(0, (rail.clientWidth - chip.offsetWidth) / 2);
-      rail.scrollLeft = Math.max(0, Math.min(idealLeft, maxScroll));
-    }
-    function getRailControlSet(type) {
-      return type === "campus" ? {
-        shell: elements.campusRailShell,
-        rail: elements.campusRail,
-        prev: elements.campusRailPrevButton,
-        next: elements.campusRailNextButton
-      } : {
-        shell: elements.classRailShell,
-        rail: elements.classRail,
-        prev: elements.classRailPrevButton,
-        next: elements.classRailNextButton
-      };
-    }
-    function updateRailControlState(type) {
-      const config = getRailControlSet(type);
-      if (!config.shell || !config.rail || !config.prev || !config.next) {
-        return;
-      }
-      const maxScroll = Math.max(0, config.rail.scrollWidth - config.rail.clientWidth);
-      const scrollLeft = Math.max(0, config.rail.scrollLeft);
-      const isScrollable = maxScroll > 8;
-      config.shell.classList.toggle("is-scrollable", isScrollable);
-      config.shell.classList.toggle("is-at-start", scrollLeft <= 4);
-      config.shell.classList.toggle("is-at-end", scrollLeft >= maxScroll - 4);
-      config.prev.hidden = !isScrollable;
-      config.next.hidden = !isScrollable;
-      config.prev.disabled = !isScrollable || scrollLeft <= 4;
-      config.next.disabled = !isScrollable || scrollLeft >= maxScroll - 4;
-    }
-    function syncRailFocus(type) {
-      const config = getRailControlSet(type);
-      if (!config.rail) {
-        return;
-      }
-      window.requestAnimationFrame(function() {
-        const activeChip = config.rail.querySelector(".is-active");
-        if (activeChip) {
-          centerRailOnActiveChip(config.rail, activeChip);
-        }
-        updateRailControlState(type);
-      });
-    }
-    function scrollRailByPage(type, direction) {
-      const config = getRailControlSet(type);
-      if (!config.rail) {
-        return;
-      }
-      const distance = Math.max(180, Math.round(config.rail.clientWidth * 0.72)) * direction;
-      config.rail.scrollBy({ left: distance, behavior: "smooth" });
-      window.setTimeout(function() {
-        updateRailControlState(type);
-      }, 280);
-    }
-    function refreshRailControls() {
-      updateRailControlState("campus");
-      updateRailControlState("class");
-    }
-    function renderCampusOptions() {
-      const campuses = getAvailableCampuses();
-      if (campuses.length && !campuses.some(function(campus) {
-        return campus.id === state.campusId;
-      })) {
-        state.campusId = campuses[0].id;
-      }
-      const options = campuses.map(function(campus) {
-        return `<option value="${escapeHtml(campus.id)}">${escapeHtml(campus.name)}</option>`;
-      }).join("");
-      elements.campusSelect.innerHTML = options || '<option value="">\u6682\u65E0\u6821\u533A</option>';
-      elements.createClassCampusSelect.innerHTML = options || '<option value="">\u6682\u65E0\u6821\u533A</option>';
-      elements.campusSelect.value = state.campusId;
-      elements.createClassCampusSelect.value = state.campusId || campuses[0]?.id || "";
-    }
-    function renderCampusRail() {
-      const campuses = getAvailableCampuses();
-      if (!campuses.length) {
-        elements.campusRail.innerHTML = "";
-        updateRailControlState("campus");
-        return;
-      }
-      elements.campusRail.innerHTML = campuses.map(function(campus) {
-        const isActive = campus.id === state.campusId;
-        return `<button class="teacher-filter-chip ${isActive ? "is-active" : ""}" type="button" data-campus-id="${escapeHtml(campus.id)}">${escapeHtml(campus.name)}</button>`;
-      }).join("");
-      syncRailFocus("campus");
-    }
-    function renderClassOptions() {
-      const classes = filteredClasses();
-      if (classes.length && !classes.some(function(classItem) {
-        return classItem.id === state.classId;
-      })) {
-        state.classId = classes[0].id;
-      }
-      elements.classSelect.innerHTML = classes.length ? classes.map(function(classItem) {
-        const subjectName = classItem.subjects?.name ? ` \xB7 ${classItem.subjects.name}` : "";
-        return `<option value="${escapeHtml(classItem.id)}">${escapeHtml(classItem.class_name)}${escapeHtml(subjectName)}</option>`;
-      }).join("") : '<option value="">\u5F53\u524D\u6821\u533A\u6682\u65E0\u73ED\u7EA7</option>';
-      if (state.classId) {
-        elements.classSelect.value = state.classId;
-      }
-    }
-    function renderClassRail() {
-      const classes = filteredClasses();
-      if (!classes.length) {
-        elements.classRail.innerHTML = '<span class="teacher-filter-empty">????????</span>';
-        updateRailControlState("class");
-        return;
-      }
-      elements.classRail.innerHTML = classes.map(function(classItem) {
-        const isActive = classItem.id === state.classId;
-        const label = classItem.subjects?.name || classItem.class_type || classItem.class_name;
-        return `
-            <button class="teacher-filter-chip teacher-filter-chip--class ${isActive ? "is-active" : ""}" type="button" data-class-id="${escapeHtml(classItem.id)}">
-              <strong>${escapeHtml(classItem.class_name)}</strong>
-              <span>${escapeHtml(label)}</span>
-            </button>
-          `;
-      }).join("");
-      syncRailFocus("class");
-    }
-    function renderDialogOptions() {
-      elements.createClassSubjectSelect.innerHTML = state.subjects.map(function(subject) {
-        return `<option value="${escapeHtml(subject.id)}">${escapeHtml(subject.name)}</option>`;
-      }).join("");
-      const teacherCampusId = elements.createClassCampusSelect.value || state.campusId || getAvailableCampuses()[0]?.id || "";
-      if (state.authContext?.isTeacher) {
-        const currentTeacher = state.authContext.profile?.teacher || state.teachers.find(function(teacher) {
-          return teacher.id === state.authContext.teacherId;
-        });
-        const teacherName = getTeacherDisplayName(currentTeacher);
-        elements.createClassTeacherSelect.innerHTML = currentTeacher ? `<option value="${escapeHtml(currentTeacher.id)}">${escapeHtml(teacherName)}</option>` : '<option value="">\u5F53\u524D\u8D26\u53F7\u672A\u7ED1\u5B9A\u8001\u5E08</option>';
-        elements.createClassTeacherSelect.disabled = true;
-        elements.createClassTeacherHint.textContent = currentTeacher ? `\u5C06\u81EA\u52A8\u5F52\u5C5E\u7ED9 ${teacherName}` : "\u5F53\u524D\u8D26\u53F7\u672A\u7ED1\u5B9A\u8001\u5E08\uFF0C\u8BF7\u5148\u8865\u9F50 teacher_id\u3002";
-        return;
-      }
-      const teachers = getTeachersByCampus(teacherCampusId);
-      elements.createClassTeacherSelect.innerHTML = ['<option value="">\u6682\u4E0D\u5206\u914D\u8001\u5E08</option>'].concat(
-        teachers.map(function(teacher) {
-          return `<option value="${escapeHtml(teacher.id)}">${escapeHtml(getTeacherDisplayName(teacher))}</option>`;
-        })
-      ).join("");
-      elements.createClassTeacherSelect.disabled = false;
-      elements.createClassTeacherHint.textContent = "\u53EF\u76F4\u63A5\u9009\u8001\u5E08\uFF0C\u4E5F\u53EF\u5148\u7A7A\u7740\u3002";
-    }
-    function syncClassSelection() {
-      const classes = filteredClasses();
-      if (!classes.length) {
-        state.classId = "";
-        state.roster = [];
-        state.selectedStudentId = null;
-        state.studentRecords = [];
-        state.studentBadgeProgress = [];
-        state.badgeFeedback = null;
-        return;
-      }
-      const exists = classes.some(function(classItem) {
-        return classItem.id === state.classId;
-      });
-      if (!exists) {
-        state.classId = classes[0].id;
-      }
-    }
-    function syncStudentSelection() {
-      const exists = state.roster.some(function(student) {
-        return student.student_id === state.selectedStudentId;
-      });
-      if (desktopMedia.matches) {
-        if (!exists) {
-          state.selectedStudentId = state.roster[0]?.student_id || null;
-        }
-        state.isMobilePanelOpen = false;
-        return;
-      }
-      if (!exists) {
-        state.selectedStudentId = null;
-        state.isMobilePanelOpen = false;
-      }
-    }
-    async function loadRosterAndRecords() {
-      if (!state.classId) {
-        state.roster = [];
-        state.studentRecords = [];
-        state.studentBadgeProgress = [];
-        state.selectedStudentId = null;
-        state.loadingStudentDetails = false;
-        renderAll();
-        return;
-      }
-      state.loadingRoster = true;
-      state.studentRecords = [];
-      state.studentBadgeProgress = [];
-      state.loadingStudentDetails = Boolean(state.selectedStudentId);
-      renderAll();
-      try {
-        state.roster = await fetchClassRoster(state.classId);
-        syncStudentSelection();
-        if (state.selectedStudentId) {
-          const [studentRecords, studentBadgeProgress] = await Promise.all([
-            fetchStudentLedger(state.selectedStudentId, desktopMedia.matches ? 6 : 5),
-            fetchStudentBadgeProgress(state.selectedStudentId)
-          ]);
-          state.studentRecords = studentRecords;
-          state.studentBadgeProgress = studentBadgeProgress;
-        } else {
-          state.studentRecords = [];
-          state.studentBadgeProgress = [];
-        }
-        showInlineNotice("");
-      } catch (error) {
-        state.roster = [];
-        state.studentRecords = [];
-        state.studentBadgeProgress = [];
-        showInlineNotice(`\u73ED\u7EA7\u6570\u636E\u8BFB\u53D6\u5931\u8D25\uFF1A${error.message}`, "error");
-      } finally {
-        state.loadingRoster = false;
-        state.loadingStudentDetails = false;
-        renderAll();
-      }
-    }
-    async function loadStudentRecords(studentId) {
-      if (!studentId) {
-        state.studentRecords = [];
-        state.studentBadgeProgress = [];
-        state.loadingStudentDetails = false;
-        renderPanel();
-        return;
-      }
-      state.loadingStudentDetails = true;
-      renderPanel();
-      const requestedStudentId = studentId;
-      try {
-        const [studentRecords, studentBadgeProgress] = await Promise.all([
-          fetchStudentLedger(studentId, desktopMedia.matches ? 6 : 5),
-          fetchStudentBadgeProgress(studentId)
-        ]);
-        if (requestedStudentId !== state.selectedStudentId) {
-          return;
-        }
-        state.studentRecords = studentRecords;
-        state.studentBadgeProgress = studentBadgeProgress;
-      } catch (error) {
-        if (requestedStudentId === state.selectedStudentId) {
-          state.studentRecords = [];
-          state.studentBadgeProgress = [];
-          showInlineNotice(`\u5B66\u751F\u8BE6\u60C5\u8BFB\u53D6\u5931\u8D25\uFF1A${error.message}`, "error");
-        }
-      } finally {
-        if (requestedStudentId === state.selectedStudentId) {
-          state.loadingStudentDetails = false;
-        }
-      }
-      renderPanel();
+    function getCurrentSearchText() {
+      return state.search ? `\u5173\u952E\u8BCD\uFF1A${state.search}` : "\u5168\u90E8\u5B66\u751F";
     }
     function renderSummary() {
-      const selectedStudent = getSelectedStudent();
-      const totalClassPoints = state.roster.reduce(function(sum, student) {
-        return sum + Number(student.total_points || 0);
-      }, 0);
-      elements.studentCount.textContent = String(state.roster.length);
-      elements.classPoints.textContent = String(totalClassPoints);
-      if (elements.selectedState) {
-        elements.selectedState.textContent = "";
-      }
-      if (elements.selectionHint) {
-        elements.selectionHint.textContent = "";
-      }
+      elements.studentTotalCount.textContent = String(state.students.length);
+      elements.studentStatusSummary.textContent = getCurrentStatusText();
+      elements.studentSearchSummary.textContent = getCurrentSearchText();
     }
-    function renderClassMeta() {
-      const selectedClass = getSelectedClass();
-      if (!selectedClass) {
-        elements.classMeta.innerHTML = '<span class="teacher-class-chip">\u5148\u5EFA\u4E00\u4E2A\u73ED\u7EA7</span>';
-        return;
-      }
-      const scheduleText = selectedClass.schedule_text || "\u65F6\u95F4\u5F85\u5B9A";
-      const subjectName = selectedClass.subjects?.name || "\u672A\u8BBE\u7F6E\u5B66\u79D1";
-      elements.classMeta.innerHTML = `
-        <span class="teacher-class-chip">${escapeHtml(selectedClass.class_name)}</span>
-        <span class="teacher-class-chip">${escapeHtml(subjectName)}</span>
-        <span class="teacher-class-chip">${escapeHtml(scheduleText)}</span>
-      `;
+    function renderCampusOptions() {
+      const options = ['<option value="">\u5168\u90E8\u6821\u533A\uFF08\u4E3B\u6863\u65E0\u56FA\u5B9A\u6821\u533A\uFF09</option>'].concat(
+        state.campuses.map(function(campus) {
+          return `<option value="${escapeHtml(campus.id)}">${escapeHtml(campus.name)}</option>`;
+        })
+      );
+      elements.studentsCampusFilter.innerHTML = options.join("");
     }
-    function renderClassBoostState() {
-      const disabled = !state.classId || !state.roster.length;
-      elements.classBoostToggleButton.disabled = disabled;
-      elements.classBoostToggleButton.textContent = "\u6574\u73ED +1";
-      if (elements.classBoostConfirmBar) {
-        elements.classBoostConfirmBar.hidden = true;
-      }
-      if (elements.classBoostPrompt) {
-        elements.classBoostPrompt.textContent = "";
-      }
-      elements.openAddStudentButton.disabled = !state.classId;
-    }
-    function renderStudents() {
-      if (state.loadingRoster) {
-        elements.studentGrid.innerHTML = '<div class="empty-state">\u6B63\u5728\u8BFB\u53D6\u5F53\u524D\u73ED\u7EA7\u5B66\u751F...</div>';
+    function renderStudentsTable() {
+      if (state.isLoadingStudents) {
+        elements.studentsTableBody.innerHTML = '<tr><td colspan="8"><div class="empty-state">\u6B63\u5728\u8BFB\u53D6\u5B66\u751F\u4E3B\u6863\uFF0C\u8BF7\u7A0D\u5019...</div></td></tr>';
         return;
       }
-      if (!state.classId) {
-        elements.studentGrid.innerHTML = '<div class="empty-state">\u5F53\u524D\u6821\u533A\u6682\u65E0\u73ED\u7EA7\uFF0C\u5148\u5EFA\u73ED\u518D\u9009\u5B66\u751F\u3002</div>';
+      if (!state.students.length) {
+        elements.studentsTableBody.innerHTML = `<tr><td colspan="8"><div class="empty-state">${state.search || state.status !== "all" ? "\u6CA1\u6709\u627E\u5230\u7B26\u5408\u6761\u4EF6\u7684\u5B66\u751F\u4E3B\u6863\uFF0C\u8BD5\u8BD5\u6E05\u7A7A\u641C\u7D22\u6216\u8C03\u6574\u7B5B\u9009\u3002" : "\u5F53\u524D\u8FD8\u6CA1\u6709\u5B66\u751F\u4E3B\u6863\uFF0C\u8BF7\u5148\u624B\u52A8\u65B0\u589E\u6216\u6279\u91CF\u5BFC\u5165 CSV\u3002"}</div></td></tr>`;
         return;
       }
-      if (!state.roster.length) {
-        elements.studentGrid.innerHTML = '<div class="empty-state">\u5F53\u524D\u73ED\u7EA7\u8FD8\u6CA1\u6709\u5B66\u751F\uFF0C\u70B9\u201C\u641C\u7D22\u52A0\u4EBA\u201D\u5373\u53EF\u52A0\u5165\u3002</div>';
-        return;
-      }
-      elements.studentGrid.innerHTML = state.roster.map(function(student) {
-        const progress = getTierProgress(Number(student.total_points || 0), state.levelTiers);
-        const isActive = student.student_id === state.selectedStudentId;
-        const isRecent = state.feedback && state.feedback.studentId === student.student_id && Date.now() - state.feedback.timestamp < 1200;
-        const nextTierText = progress.nextTier ? `\u8DDD ${progress.nextTier.name} ${progress.distance} \u5206` : "\u5DF2\u5230\u6700\u9AD8\u6BB5\u4F4D";
-        const gradeText = student.grade || student.student_code || "\u672A\u8BBE\u7F6E\u5E74\u7EA7";
+      elements.studentsTableBody.innerHTML = state.students.map(function(student) {
         return `
-          <button class="student-card teacher-student-card ${isActive ? "is-active" : ""} ${isRecent ? "is-recent" : ""}" type="button" data-student-id="${escapeHtml(student.student_id)}">
-            <div class="teacher-student-header">
-              <div class="teacher-student-main">
-                ${createAvatarHtml(student)}
-                <div>
-                  <h3>${escapeHtml(getStudentDisplayName(student))}</h3>
-                  <p>${escapeHtml(gradeText)}</p>
-                </div>
-              </div>
-              <div class="teacher-student-badges">
-                <span class="tag-pill">${escapeHtml(progress.currentTier.name)}</span>
-                <span class="point-pill">${escapeHtml(student.total_points)} \u5206</span>
+        <tr>
+          <td>
+            <div class="students-name-cell">
+              ${createAvatarHtml(student)}
+              <div>
+                <strong>${escapeHtml(getStudentDisplayName(student))}</strong>
+                <span>${escapeHtml(student.student_code || "\u672A\u751F\u6210\u5B66\u53F7")}</span>
               </div>
             </div>
-            <p class="teacher-student-meta">${escapeHtml(nextTierText)}</p>
-          </button>
-        `;
-      }).join("");
-    }
-    function renderSpotlight(student) {
-      const selectedClass = getSelectedClass();
-      const progress = getTierProgress(Number(student.total_points || 0), state.levelTiers);
-      const badgeRows = getSelectedBadgeProgress();
-      const badgeSummary = getBadgeSummary(badgeRows);
-      const recentFeedback = state.feedback && state.feedback.studentId === student.student_id && Date.now() - state.feedback.timestamp < 1800 ? state.feedback : null;
-      const recentBadgeFeedback = state.badgeFeedback && state.badgeFeedback.studentId === student.student_id && Date.now() - state.badgeFeedback.timestamp < 2200 ? state.badgeFeedback : null;
-      const deltaText = recentFeedback ? `${recentFeedback.pointsDelta > 0 ? "+" : ""}${recentFeedback.pointsDelta}` : "";
-      const levelUpMessage = recentFeedback && recentFeedback.leveledUp ? `\u5347\u7EA7\u5230 ${recentFeedback.newTierName}` : "";
-      const nextLabel = progress.nextTier ? `\u4E0B\u4E00\u6BB5 ${progress.nextTier.name}` : "\u5F53\u524D\u5DF2\u662F\u6700\u9AD8\u6BB5\u4F4D";
-      const distanceLabel = progress.nextTier ? `\u8FD8\u5DEE ${progress.distance} \u5206` : "\u7EE7\u7EED\u4FDD\u6301";
-      const metaLine = [getCampusName(selectedClass?.campus_id), selectedClass?.class_name].filter(Boolean).join(" \xB7 ");
-      const badgeChipText = badgeSummary.totalCount ? `\u5DF2\u89E3\u9501 ${badgeSummary.unlockedCount} / ${badgeSummary.totalCount} \u679A\u5FBD\u7AE0` : "\u6682\u65E0\u5FBD\u7AE0\u89C4\u5219";
-      const badgeSummaryLine = badgeSummary.nextLocked ? `\u4E0B\u4E00\u4E2A\uFF1A${badgeSummary.nextLocked.badge_name}\uFF0C\u518D ${badgeSummary.nextLocked.remaining_count} \u6B21\u201C${normalizeActionLabel(badgeSummary.nextLocked.event_label)}\u201D` : badgeSummary.latestUnlocked ? `\u6700\u8FD1\u89E3\u9501\uFF1A${badgeSummary.latestUnlocked.badge_name}` : "\u8001\u5E08\u8BB0\u5F55\u884C\u4E3A\u540E\u4F1A\u81EA\u52A8\u7D2F\u8BA1\u5FBD\u7AE0\u8FDB\u5EA6";
-      elements.studentSpotlight.innerHTML = `
-        <div class="student-spotlight__hero">
-          <div class="student-spotlight__identity">
-            ${createAvatarHtml(student, "large")}
-            <div>
-              <p class="eyebrow teacher-spotlight-eyebrow">Current Student</p>
-              <h2>${escapeHtml(getStudentDisplayName(student))}</h2>
-              <p>${escapeHtml(metaLine)}</p>
+          </td>
+          <td>${escapeHtml(student.legal_name || "-")}</td>
+          <td>${escapeHtml(student.grade || "-")}</td>
+          <td>${escapeHtml(student.parent_name || "-")}</td>
+          <td>${escapeHtml(student.parent_phone || "-")}</td>
+          <td><span class="student-status-badge is-${escapeHtml(student.status || "normal")}">${escapeHtml(buildStatusLabel(student.status))}</span></td>
+          <td>${escapeHtml(formatDateTime(student.created_at))}</td>
+          <td>
+            <div class="students-table-actions">
+              <button class="ghost-button" type="button" data-edit-student="${escapeHtml(student.id)}">\u7F16\u8F91</button>
+              <button class="inline-button" type="button" data-view-student="${escapeHtml(student.id)}">\u67E5\u770B</button>
             </div>
-          </div>
-          <div class="student-score-card ${recentFeedback ? "is-energized" : ""}">
-            <span class="student-score-card__label">\u5F53\u524D\u603B\u5206</span>
-            <strong>${escapeHtml(student.total_points)}</strong>
-            ${recentFeedback ? `<span class="student-score-card__delta ${recentFeedback.pointsDelta < 0 ? "is-negative" : ""}">${escapeHtml(deltaText)}</span>` : ""}
-          </div>
-        </div>
-        <div class="student-spotlight__chips">
-          <span class="tag-pill teacher-contrast-pill">${escapeHtml(progress.currentTier.name)}</span>
-          <span class="status-pill teacher-contrast-pill">${escapeHtml(distanceLabel)}</span>
-          <span class="status-pill teacher-contrast-pill">${escapeHtml(nextLabel)}</span>
-          <span class="status-pill teacher-contrast-pill">${escapeHtml(badgeChipText)}</span>
-        </div>
-        <div class="student-progress">
-          <div class="student-progress__row">
-            <span>\u5347\u7EA7\u8FDB\u5EA6</span>
-            <strong>${Math.round(progress.progress)}%</strong>
-          </div>
-          <div class="student-progress__track">
-            <span class="student-progress__fill" style="width:${progress.progress}%"></span>
-          </div>
-        </div>
-        <p class="teacher-badge-summary-line">${escapeHtml(badgeSummaryLine)}</p>
-        ${levelUpMessage ? `<div class="teacher-levelup-banner">${escapeHtml(levelUpMessage)}</div>` : ""}
-        ${recentFeedback?.note ? `<p class="teacher-feedback-line">${escapeHtml(normalizeActionCopy(recentFeedback.note))}</p>` : ""}
-        ${recentBadgeFeedback?.note ? `<p class="teacher-feedback-line teacher-feedback-line--badge">${escapeHtml(normalizeActionCopy(recentBadgeFeedback.note))}</p>` : ""}
+          </td>
+        </tr>
       `;
-    }
-    function renderTabs() {
-      const groupedRules = getCurrentRules();
-      const categoryKeys = Object.keys(groupedRules);
-      elements.categoryTabs.innerHTML = categoryKeys.map(function(category) {
-        const meta = CATEGORY_META[category] || { label: category, shortLabel: category, tip: "" };
-        const isActive = category === state.activeCategory;
-        return `
-          <button class="teacher-tab ${isActive ? "is-active" : ""}" type="button" data-category="${escapeHtml(category)}">
-            <strong>${escapeHtml(meta.shortLabel || meta.label)}</strong>
-            <span>${escapeHtml(meta.label)}</span>
-          </button>
-        `;
-      }).join("");
-      const activeMeta = CATEGORY_META[state.activeCategory] || { label: state.activeCategory, tip: "" };
-      elements.activeCategoryTitle.textContent = activeMeta.label;
-      elements.activeCategoryTip.textContent = desktopMedia.matches ? "\u70B9\u4E00\u4E0B\u7ACB\u5373\u751F\u6548" : "\u70B9\u4E00\u4E0B\u9A6C\u4E0A\u8BB0\u5206";
-    }
-    function renderActionCards() {
-      const groupedRules = getCurrentRules();
-      const rules = groupedRules[state.activeCategory] || [];
-      const recentFeedback = state.feedback && Date.now() - state.feedback.timestamp < 1200 ? state.feedback : null;
-      if (!rules.length) {
-        elements.actionCards.innerHTML = '<div class="empty-state">\u5F53\u524D\u5206\u7C7B\u8FD8\u6CA1\u6709\u542F\u7528\u7684\u79EF\u5206\u89C4\u5219\u3002</div>';
-        return;
-      }
-      elements.actionCards.innerHTML = rules.map(function(rule, index) {
-        const isRecent = recentFeedback && recentFeedback.ruleId === rule.id;
-        const isHighFrequency = rule.is_common || index < 2;
-        const helperText = isRecent ? "\u5DF2\u8BB0\u5206" : isHighFrequency ? "\u9AD8\u9891" : "\u5373\u70B9\u5373\u52A0";
-        const actionBadge = isRecent ? '<span class="teacher-action-feedback">\u5DF2\u52A0\u5206</span>' : isHighFrequency ? '<span class="teacher-action-badge">\u5E38\u7528</span>' : "";
-        return `
-          <button class="teacher-action-card ${isRecent ? "is-ack" : ""} ${isHighFrequency ? "is-high-frequency" : ""}" type="button" data-rule-id="${escapeHtml(rule.id)}" data-category="${escapeHtml(state.activeCategory)}">
-            <div class="teacher-action-card__top">
-              <strong>${escapeHtml(normalizeActionLabel(rule.rule_name))}</strong>
-              ${actionBadge}
-            </div>
-            <div class="teacher-action-card__points">
-              <span>+${escapeHtml(rule.points)}</span>
-              <em>\u5206</em>
-            </div>
-            <p>${escapeHtml(helperText)}</p>
-          </button>
-        `;
       }).join("");
     }
-    function renderBadgeActionCards() {
-      const student = getSelectedStudent();
+    function renderDetail(student) {
       if (!student) {
-        elements.badgeActionCards.innerHTML = '<div class="empty-state">\u5148\u9009\u62E9\u5B66\u751F\uFF0C\u518D\u8BB0\u5F55\u884C\u4E3A\u5FBD\u7AE0\u3002</div>';
+        elements.editStudentFromDetailButton.hidden = true;
+        elements.studentDetailContent.innerHTML = '<div class="empty-state">\u6CA1\u6709\u627E\u5230\u5B66\u751F\u8BE6\u60C5\u3002</div>';
         return;
       }
-      if (state.loadingStudentDetails && !state.studentBadgeProgress.length) {
-        elements.badgeActionCards.innerHTML = '<div class="empty-state">\u6B63\u5728\u8BFB\u53D6\u5F53\u524D\u5B66\u751F\u7684\u5FBD\u7AE0\u8FDB\u5EA6...</div>';
-        return;
-      }
-      if (!state.badgeDefinitions.length) {
-        elements.badgeActionCards.innerHTML = '<div class="empty-state">\u5F53\u524D\u8FD8\u6CA1\u6709\u542F\u7528\u7684\u5FBD\u7AE0\u89C4\u5219\u3002</div>';
-        return;
-      }
-      elements.badgeActionCards.innerHTML = state.badgeDefinitions.map(function(badge) {
-        const progress = getBadgeProgressRow(badge.id);
-        const eventCount = Number(progress?.event_count || 0);
-        const threshold = Number(progress?.threshold || badge.threshold || 1);
-        const remainingCount = Math.max(Number(progress?.remaining_count ?? threshold - eventCount), 0);
-        const isUnlocked = Boolean(progress?.unlocked_at);
-        const progressPercent = Math.max(8, Math.min(100, Math.round(eventCount / threshold * 100)));
-        const helperText = isUnlocked ? `\u5DF2\u89E3\u9501 \xB7 \u7D2F\u8BA1 ${eventCount} \u6B21` : `\u7D2F\u8BA1 ${eventCount} / ${threshold} \xB7 \u518D ${remainingCount} \u6B21\u89E3\u9501`;
-        const actionState = state.isSavingBadgeEvent ? state.savingBadgeDefinitionId === badge.id ? "\u8BB0\u5F55\u4E2D..." : "\u5904\u7406\u4E2D..." : "\u70B9\u51FB\u8BB0\u5F55";
-        return `
-          <button class="teacher-badge-action-card ${isUnlocked ? "is-unlocked" : ""}" type="button" data-badge-definition-id="${escapeHtml(badge.id)}" ${state.isSavingBadgeEvent ? "disabled" : ""}>
-            <div class="teacher-badge-action-card__head">
-              <span class="teacher-badge-token">${escapeHtml(badge.icon_token || "\u{1F3C5}")}</span>
-              <span class="teacher-badge-state">${escapeHtml(isUnlocked ? "\u5DF2\u89E3\u9501" : "\u5F85\u89E3\u9501")}</span>
-            </div>
-            <strong>${escapeHtml(badge.name)}</strong>
-            <p>${escapeHtml(normalizeActionLabel(badge.event_label))}</p>
-            <div class="teacher-badge-action-card__meta">
-              <span>${escapeHtml(helperText)}</span>
-              <span>${escapeHtml(actionState)}</span>
-            </div>
-            <div class="teacher-badge-action-card__track">
-              <span style="width:${isUnlocked ? 100 : progressPercent}%"></span>
-            </div>
-          </button>
-        `;
-      }).join("");
-    }
-    function renderBadgeProgress() {
-      const student = getSelectedStudent();
-      if (!student) {
-        elements.badgeProgressList.innerHTML = '<div class="empty-state">\u9009\u4E2D\u5B66\u751F\u540E\uFF0C\u8FD9\u91CC\u663E\u793A\u771F\u5B9E\u5FBD\u7AE0\u7D2F\u8BA1\u548C\u89E3\u9501\u7ED3\u679C\u3002</div>';
-        return;
-      }
-      if (state.loadingStudentDetails && !state.studentBadgeProgress.length) {
-        elements.badgeProgressList.innerHTML = '<div class="empty-state">\u6B63\u5728\u540C\u6B65\u771F\u5B9E\u5FBD\u7AE0\u7ED3\u679C...</div>';
-        return;
-      }
-      const badgeRows = getSelectedBadgeProgress();
-      if (!badgeRows.length) {
-        elements.badgeProgressList.innerHTML = '<div class="empty-state">\u5F53\u524D\u5B66\u751F\u8FD8\u6CA1\u6709\u5FBD\u7AE0\u8FDB\u5EA6\u3002</div>';
-        return;
-      }
-      elements.badgeProgressList.innerHTML = badgeRows.map(function(row) {
-        const eventCount = Number(row.event_count || 0);
-        const threshold = Math.max(1, Number(row.threshold || 1));
-        const remainingCount = Math.max(Number(row.remaining_count || 0), 0);
-        const isUnlocked = Boolean(row.unlocked_at);
-        const progressPercent = Math.max(8, Math.min(100, Math.round(eventCount / threshold * 100)));
-        const description = normalizeActionCopy(row.description || `${row.event_label} \u7D2F\u8BA1\u8FBE\u5230\u9608\u503C\u540E\u89E3\u9501`);
-        return `
-          <article class="teacher-badge-progress-item ${isUnlocked ? "is-unlocked" : ""}">
-            <div class="teacher-badge-progress-item__head">
-              <strong>${escapeHtml(row.icon_token || "\u{1F3C5}")} ${escapeHtml(row.badge_name)}</strong>
-              <span>${escapeHtml(isUnlocked ? `\u5DF2\u89E3\u9501 \xB7 ${formatDateTime(row.unlocked_at)}` : `\u7D2F\u8BA1 ${eventCount} / ${threshold}`)}</span>
-            </div>
-            <p>${escapeHtml(description)}</p>
-            <div class="teacher-badge-progress-item__track">
-              <span style="width:${isUnlocked ? 100 : progressPercent}%"></span>
-            </div>
-            <div class="teacher-badge-progress-item__meta">
-              <span>${escapeHtml(normalizeActionLabel(row.event_label))}</span>
-              <span>${escapeHtml(isUnlocked ? `\u9996\u89E3\u9501\u4E8E\u7B2C ${row.source_event_count || threshold} \u6B21` : `\u8FD8\u5DEE ${remainingCount} \u6B21`)}</span>
-            </div>
-          </article>
-        `;
-      }).join("");
-    }
-    function renderStudentRecords() {
-      if (!state.selectedStudentId) {
-        elements.studentRecordList.innerHTML = '<div class="empty-state">\u9009\u5B66\u751F\u540E\uFF0C\u8FD9\u91CC\u663E\u793A\u6700\u8FD1\u79EF\u5206\u548C\u5151\u6362\u8BB0\u5F55\u3002</div>';
-        return;
-      }
-      if (state.loadingStudentDetails && !state.studentRecords.length) {
-        elements.studentRecordList.innerHTML = '<div class="empty-state">\u6B63\u5728\u8BFB\u53D6\u6700\u8FD1\u79EF\u5206\u6D41\u6C34...</div>';
-        return;
-      }
-      if (!state.studentRecords.length) {
-        elements.studentRecordList.innerHTML = '<div class="empty-state">\u5F53\u524D\u5B66\u751F\u8FD8\u6CA1\u6709\u79EF\u5206\u6D41\u6C34\u3002</div>';
-        return;
-      }
-      elements.studentRecordList.innerHTML = state.studentRecords.map(function(record) {
-        const categoryLabel = record.action_type === "deduct" ? "\u79EF\u5206\u5151\u6362" : record.action_type === "seed" ? "\u5386\u53F2\u8865\u5F55" : CATEGORY_META[record.category_snapshot]?.label || record.category_snapshot;
-        const score = Number(record.points_delta || 0);
-        const scoreText = `${score > 0 ? "+" : ""}${score}`;
-        const typeLabel = ACTION_TYPE_META[record.action_type] || record.action_type || "\u8BB0\u5F55";
-        const detailText = record.remark && record.remark !== record.rule_name_snapshot ? normalizeActionCopy(record.remark) : "";
-        return `
-          <article class="teacher-record-item">
-            <div class="teacher-record-text">
-              <h4>${escapeHtml(normalizeActionLabel(record.rule_name_snapshot))}</h4>
-              <p>${escapeHtml(categoryLabel)} \xB7 ${escapeHtml(formatDateTime(record.created_at))}</p>
-              ${detailText ? `<p class="teacher-record-detail">${escapeHtml(detailText)}</p>` : ""}
-            </div>
-            <div class="teacher-record-score ${score < 0 ? "is-negative" : ""}">
-              <strong>${escapeHtml(scoreText)}</strong>
-              <span>${escapeHtml(typeLabel)}</span>
-            </div>
-          </article>
-        `;
-      }).join("");
-    }
-    function renderPanel() {
-      const selectedStudent = getSelectedStudent();
-      const hasStudent = Boolean(selectedStudent);
-      elements.panelEmptyState.hidden = hasStudent;
-      elements.panelContent.hidden = !hasStudent;
-      elements.removeSelectedStudentButton.disabled = !hasStudent;
-      elements.openSeedDialogButton.disabled = !hasStudent;
-      elements.openRedeemButton.disabled = !hasStudent;
-      if (elements.redeemHint) {
-        elements.redeemHint.hidden = true;
-        elements.redeemHint.textContent = "";
-      }
-      if (!hasStudent) {
-        return;
-      }
-      renderSpotlight(selectedStudent);
-      renderTabs();
-      renderActionCards();
-      renderBadgeActionCards();
-      renderBadgeProgress();
-      renderStudentRecords();
-      updateSeedPreview();
-      updateRedeemPreview();
-    }
-    function updatePanelVisibility() {
-      const shouldShowPanel = desktopMedia.matches || state.isMobilePanelOpen;
-      elements.teacherPanel.classList.toggle("is-open", shouldShowPanel);
-      elements.teacherPanel.classList.toggle("is-docked", desktopMedia.matches);
-      elements.teacherPanel.setAttribute("aria-hidden", shouldShowPanel ? "false" : "true");
-      elements.sheetOverlay.hidden = desktopMedia.matches || !state.isMobilePanelOpen;
-      document.body.classList.toggle("teacher-panel-open", !desktopMedia.matches && state.isMobilePanelOpen);
-    }
-    function renderSearchResults() {
-      if (!state.classId) {
-        elements.studentSearchResults.innerHTML = '<div class="empty-state">\u5148\u9009\u73ED\u7EA7\uFF0C\u518D\u4ECE\u5B66\u751F\u4E3B\u6863\u641C\u7D22\u52A0\u5165\u3002</div>';
-        return;
-      }
-      if (!state.searchResults.length) {
-        elements.studentSearchResults.innerHTML = '<div class="empty-state">\u6CA1\u6709\u627E\u5230\u5339\u914D\u7684\u5B66\u751F\u4E3B\u6863\uFF0C\u53EF\u6362\u5173\u952E\u5B57\u540E\u91CD\u8BD5\u3002</div>';
-        return;
-      }
-      elements.studentSearchResults.innerHTML = state.searchResults.map(function(student) {
-        const alreadyJoined = state.roster.some(function(member) {
-          return member.student_id === student.id;
-        });
-        const statusLabel = student.status === "temporary" ? "\u4E34\u65F6\u5B66\u751F" : "\u6B63\u5F0F\u5B66\u751F";
-        const legalName = student.legal_name && student.legal_name !== student.display_name ? `\uFF08${student.legal_name}\uFF09` : "";
-        return `
-          <article class="teacher-search-card">
-            <div class="teacher-search-card__text">
-              <h3>${escapeHtml(getStudentDisplayName(student))} ${escapeHtml(legalName)}</h3>
-              <p>${escapeHtml(student.grade || "\u672A\u8BBE\u7F6E\u5E74\u7EA7")} \xB7 ${escapeHtml(student.student_code || "\u672A\u751F\u6210\u5B66\u53F7")} \xB7 ${escapeHtml(statusLabel)}</p>
-              <p>\u5BB6\u957F\uFF1A${escapeHtml(student.parent_name || "\u672A\u586B\u5199")} \xB7 ${escapeHtml(student.parent_phone || "\u672A\u586B\u5199")}</p>
-            </div>
-            <button class="${alreadyJoined ? "ghost-button" : "primary-button"}" type="button" data-add-student-id="${escapeHtml(student.id)}" ${alreadyJoined ? "disabled" : ""}>
-              ${alreadyJoined ? "\u5DF2\u5728\u73ED\u7EA7\u4E2D" : "\u52A0\u5165\u73ED\u7EA7"}
-            </button>
-          </article>
-        `;
-      }).join("");
-    }
-    function resetTempStudentForm() {
-      state.isCreatingTempStudent = false;
-    }
-    function updateSeedPreview() {
-      const student = getSelectedStudent();
-      if (!student) {
-        elements.seedStudentMeta.innerHTML = "";
-        elements.seedPreview.innerHTML = '<div class="teacher-redeem-preview__row"><span>\u5148\u9009\u62E9\u5B66\u751F</span><strong>-</strong></div>';
-        elements.seedSubmitButton.disabled = true;
-        elements.seedSubmitButton.textContent = state.isSeeding ? "\u8865\u5F55\u4E2D..." : "\u786E\u8BA4\u8865\u5F55";
-        return;
-      }
-      const rawPoints = Number(elements.seedPointsInput.value || 0);
-      const seedPoints = Math.floor(rawPoints);
-      const remark = normalizeText2(elements.seedRemarkInput.value) || "\u5386\u53F2\u79EF\u5206\u8865\u5F55";
-      const currentPoints = Number(student.total_points || 0);
-      const nextPoints = currentPoints + Math.max(0, seedPoints);
-      const invalid = !Number.isInteger(seedPoints) || seedPoints <= 0 || seedPoints > 5e3 || !remark;
-      elements.seedStudentMeta.innerHTML = '<div class="teacher-dialog-meta__student">' + createAvatarHtml(student) + "<div><strong>" + escapeHtml(getStudentDisplayName(student)) + "</strong><span>\u5F53\u524D\u79EF\u5206 " + escapeHtml(currentPoints) + " \u5206</span></div></div>";
-      elements.seedPreview.innerHTML = [
-        '<div class="teacher-redeem-preview__row"><span>\u5F53\u524D\u79EF\u5206</span><strong>' + escapeHtml(currentPoints) + " \u5206</strong></div>",
-        '<div class="teacher-redeem-preview__row"><span>\u672C\u6B21\u8865\u5F55</span><strong>' + (seedPoints > 0 ? "+" + escapeHtml(seedPoints) + " \u5206" : "\u5F85\u586B\u5199") + "</strong></div>",
-        '<div class="teacher-redeem-preview__row ' + (seedPoints > 5e3 ? "is-warning" : "") + '"><span>\u8865\u5F55\u540E\u603B\u5206</span><strong>' + (seedPoints > 0 ? escapeHtml(nextPoints) + " \u5206" : "\u5F85\u8BA1\u7B97") + "</strong></div>",
-        '<div class="teacher-redeem-preview__row"><span>\u5907\u6CE8</span><strong>' + escapeHtml(remark) + "</strong></div>"
-      ].join("");
-      elements.seedSubmitButton.disabled = invalid || state.isSeeding;
-      elements.seedSubmitButton.textContent = state.isSeeding ? "\u8865\u5F55\u4E2D..." : "\u786E\u8BA4\u8865\u5F55";
-    }
-    function updateRedeemPreview() {
-      const student = getSelectedStudent();
-      if (!student) {
-        elements.redeemStudentMeta.innerHTML = "";
-        elements.redeemPreview.innerHTML = '<div class="teacher-redeem-preview__row"><span>\u5148\u9009\u62E9\u5B66\u751F</span><strong>-</strong></div>';
-        elements.redeemSubmitButton.disabled = true;
-        return;
-      }
-      const redeemPoints = Math.max(0, Number(elements.redeemPointsInput.value || 0));
-      const currentPoints = Number(student.total_points || 0);
-      const remainingPoints = Math.max(0, currentPoints - redeemPoints);
-      const itemName = elements.redeemItemInput.value.trim();
-      const invalid = !itemName || !redeemPoints || redeemPoints > currentPoints;
-      elements.redeemStudentMeta.innerHTML = `
-        <div class="teacher-dialog-meta__student">
-          ${createAvatarHtml(student)}
-          <div>
-            <strong>${escapeHtml(getStudentDisplayName(student))}</strong>
-            <span>\u5F53\u524D\u79EF\u5206 ${escapeHtml(currentPoints)} \u5206</span>
-          </div>
+      elements.editStudentFromDetailButton.hidden = false;
+      elements.studentDetailContent.innerHTML = `
+      <div class="students-detail-hero">
+        ${createAvatarHtml(student, "large")}
+        <div>
+          <h3>${escapeHtml(getStudentDisplayName(student))}</h3>
+          <p>${escapeHtml(student.student_code || "\u672A\u751F\u6210\u5B66\u53F7")} \xB7 ${escapeHtml(buildStatusLabel(student.status))}</p>
         </div>
-      `;
-      elements.redeemPreview.innerHTML = `
-        <div class="teacher-redeem-preview__row"><span>\u5F53\u524D\u79EF\u5206</span><strong>${escapeHtml(currentPoints)} \u5206</strong></div>
-        <div class="teacher-redeem-preview__row"><span>\u672C\u6B21\u6263\u9664</span><strong>${redeemPoints ? `-${escapeHtml(redeemPoints)} \u5206` : "\u5F85\u586B\u5199"}</strong></div>
-        <div class="teacher-redeem-preview__row ${invalid && redeemPoints > currentPoints ? "is-warning" : ""}"><span>\u5151\u6362\u540E\u5269\u4F59</span><strong>${escapeHtml(remainingPoints)} \u5206</strong></div>
-      `;
-      elements.redeemSubmitButton.disabled = invalid || state.isRedeeming;
+      </div>
+      <div class="students-detail-grid">
+        <div><span>\u6B63\u5F0F\u59D3\u540D</span><strong>${escapeHtml(student.legal_name || "-")}</strong></div>
+        <div><span>\u663E\u793A\u540D\u79F0</span><strong>${escapeHtml(student.display_name || "-")}</strong></div>
+        <div><span>\u5E74\u7EA7</span><strong>${escapeHtml(student.grade || "-")}</strong></div>
+        <div><span>\u5BB6\u957F\u59D3\u540D</span><strong>${escapeHtml(student.parent_name || "-")}</strong></div>
+        <div><span>\u5BB6\u957F\u624B\u673A\u53F7</span><strong>${escapeHtml(student.parent_phone || "-")}</strong></div>
+        <div><span>\u521B\u5EFA\u65F6\u95F4</span><strong>${escapeHtml(formatDateTime(student.created_at))}</strong></div>
+        <div><span>\u521B\u5EFA\u6765\u6E90</span><strong>${escapeHtml(student.created_by_role || "-")}</strong></div>
+        <div><span>\u5934\u50CF URL</span><strong class="students-detail-text">${escapeHtml(student.avatar_url || "-")}</strong></div>
+        <div class="students-detail-full"><span>\u5907\u6CE8</span><strong class="students-detail-text">${escapeHtml(student.notes || "-")}</strong></div>
+      </div>
+    `;
     }
-    function renderAll() {
-      ensureCategorySelection();
-      renderCampusOptions();
-      renderCampusRail();
-      renderClassOptions();
-      renderClassRail();
-      renderDialogOptions();
-      renderClassMeta();
-      renderSummary();
-      renderClassBoostState();
-      renderStudents();
-      renderPanel();
-      renderSearchResults();
-      updatePanelVisibility();
-      updateTeacherCommandState();
+    function renderManualDuplicateBox() {
+      const assessment = state.manualDuplicateAssessment;
+      if (!assessment || assessment.level === "none") {
+        elements.manualDuplicateBox.hidden = true;
+        elements.manualDuplicateBox.innerHTML = "";
+        return;
+      }
+      const messages = assessment.highMessages.concat(assessment.mediumMessages).map(function(message) {
+        return `<li>${escapeHtml(message)}</li>`;
+      }).join("");
+      elements.manualDuplicateBox.hidden = false;
+      elements.manualDuplicateBox.dataset.level = assessment.level;
+      elements.manualDuplicateBox.innerHTML = `
+      <strong>${assessment.level === "high" ? "\u68C0\u6D4B\u5230\u9AD8\u5EA6\u7591\u4F3C\u91CD\u590D" : "\u68C0\u6D4B\u5230\u4E2D\u5EA6\u7591\u4F3C\u91CD\u590D"}</strong>
+      <p>\u8FD9\u91CC\u53EA\u505A\u63D0\u9192\uFF0C\u4E0D\u4F1A\u81EA\u52A8\u5408\u5E76\u5B66\u751F\u4E3B\u6863\u3002</p>
+      <ul>${messages}</ul>
+    `;
     }
-    async function initializeData() {
-      if (!isSupabaseConfigured) {
-        showInlineNotice("\u5C1A\u672A\u914D\u7F6E Supabase\uFF0C\u8BF7\u5148\u521B\u5EFA .env \u5E76\u586B\u5199 SUPABASE_URL / SUPABASE_ANON_KEY\u3002", "error");
-        elements.studentGrid.innerHTML = '<div class="empty-state">\u7F3A\u5C11 Supabase \u914D\u7F6E\uFF0C\u8001\u5E08\u9875\u6682\u65F6\u65E0\u6CD5\u8BFB\u53D6\u771F\u5B9E\u6570\u636E\u3002</div>';
-        return;
-      }
-      if (state.authContext?.isTeacher && !state.authContext.teacherId) {
-        showInlineNotice("\u5F53\u524D\u8001\u5E08\u8D26\u53F7\u6CA1\u6709\u7ED1\u5B9A teachers \u8868\u8BB0\u5F55\uFF0C\u8BF7\u5148\u5728 user_profiles \u4E2D\u8865\u9F50 teacher_id\u3002", "error");
-        elements.studentGrid.innerHTML = '<div class="empty-state">\u5F53\u524D\u8D26\u53F7\u7F3A\u5C11 teacher_id \u7ED1\u5B9A\uFF0C\u6682\u65F6\u65E0\u6CD5\u8BFB\u53D6\u8001\u5E08\u540D\u4E0B\u73ED\u7EA7\u3002</div>';
-        return;
-      }
-      try {
-        const teacherPromise = state.authContext?.isTeacher ? state.authContext.profile.teacher ? Promise.resolve([state.authContext.profile.teacher]) : fetchTeachers().then(function(rows) {
-          return rows.filter(function(teacher) {
-            return teacher.id === state.authContext.teacherId;
-          });
-        }) : fetchTeachers();
-        const [campuses, subjects, teachers, classes, pointRules, levelTiers, badgeDefinitions] = await Promise.all([
-          fetchCampuses(),
-          fetchSubjects(),
-          teacherPromise,
-          fetchClasses(getClassQueryOptions()),
-          fetchPointRules(),
-          fetchLevelTiers().catch(function() {
-            return [];
-          }),
-          fetchBadgeDefinitions().catch(function() {
-            return [];
-          })
-        ]);
-        state.campuses = campuses;
-        state.subjects = subjects;
-        state.teachers = teachers;
-        state.classes = classes;
-        state.pointRules = pointRules;
-        state.badgeDefinitions = badgeDefinitions;
-        state.levelTiers = normalizeTierList(levelTiers);
-        state.campusId = classes[0]?.campus_id || state.authContext.profile?.teacher?.campus_id || campuses[0]?.id || "";
-        syncClassSelection();
-        renderAll();
-        await loadRosterAndRecords();
-      } catch (error) {
-        showInlineNotice(`\u521D\u59CB\u5316 Supabase \u6570\u636E\u5931\u8D25\uFF1A${error.message}`, "error");
-        elements.studentGrid.innerHTML = '<div class="empty-state">\u771F\u5B9E\u6570\u636E\u521D\u59CB\u5316\u5931\u8D25\uFF0C\u8BF7\u68C0\u67E5 Supabase \u8868\u7ED3\u6784\u548C\u73AF\u5883\u53D8\u91CF\u3002</div>';
-      }
-    }
-    function selectStudent(studentId) {
-      state.selectedStudentId = studentId;
-      state.studentRecords = [];
-      state.studentBadgeProgress = [];
-      state.loadingStudentDetails = true;
-      if (!desktopMedia.matches) {
-        state.isMobilePanelOpen = true;
-      }
-      renderAll();
-      resetPanelScroll();
-      loadStudentRecords(studentId);
-    }
-    function closeMobilePanel() {
-      if (desktopMedia.matches) {
-        return;
-      }
-      state.isMobilePanelOpen = false;
-      updatePanelVisibility();
-    }
-    async function refreshClassesAndRoster(nextClassId) {
-      state.classes = await fetchClasses(getClassQueryOptions());
-      if (nextClassId) {
-        state.classId = nextClassId;
-        const selectedClass = getSelectedClass();
-        if (selectedClass) {
-          state.campusId = selectedClass.campus_id;
-        }
-      }
-      syncClassSelection();
-      renderAll();
-      await loadRosterAndRecords();
-    }
-    async function handleAction(ruleId) {
-      const rule = state.pointRules.find(function(item) {
-        return item.id === ruleId;
-      });
-      const selectedClass = getSelectedClass();
-      const student = getSelectedStudent();
-      if (!rule || !selectedClass || !student) {
-        return;
-      }
-      const beforeProgress = getTierProgress(Number(student.total_points || 0), state.levelTiers);
-      try {
-        await insertPointLedger({
-          student_id: student.student_id,
-          class_id: selectedClass.id,
-          campus_id: selectedClass.campus_id,
-          subject_id: selectedClass.subject_id,
-          teacher_id: selectedClass.teacher_id || state.authContext.teacherId || null,
-          rule_id: rule.id,
-          rule_name_snapshot: rule.rule_name,
-          category_snapshot: rule.category,
-          points_delta: rule.points,
-          action_type: "add",
-          remark: "\u8001\u5E08\u7AEF\u5373\u65F6\u52A0\u5206"
-        });
-        await loadRosterAndRecords();
-        const updatedStudent = getSelectedStudent();
-        const afterProgress = getTierProgress(Number(updatedStudent?.total_points || 0), state.levelTiers);
-        state.feedback = {
-          studentId: student.student_id,
-          category: rule.category,
-          ruleId: rule.id,
-          actionLabel: rule.rule_name,
-          pointsDelta: Number(rule.points),
-          leveledUp: beforeProgress.currentTier.name !== afterProgress.currentTier.name,
-          newTierName: afterProgress.currentTier.name,
-          note: `${CATEGORY_META[rule.category]?.label || rule.category} \xB7 ${normalizeActionLabel(rule.rule_name)} +${rule.points} \u5206`,
-          timestamp: Date.now()
-        };
-        renderAll();
-        showToast(
-          state.feedback.leveledUp ? `${getStudentDisplayName(updatedStudent || student)} +${rule.points} \u5206\uFF0C\u5347\u7EA7\u5230 ${afterProgress.currentTier.name}` : `${getStudentDisplayName(updatedStudent || student)} +${rule.points} \u5206`
-        );
-        clearFeedbackLater();
-      } catch (error) {
-        showInlineNotice(`\u5199\u5165\u79EF\u5206\u6D41\u6C34\u5931\u8D25\uFF1A${error.message}`, "error");
-        showToast("\u52A0\u5206\u5931\u8D25\uFF0C\u8BF7\u68C0\u67E5 Supabase \u914D\u7F6E");
-      }
-    }
-    async function handleBadgeAction(badgeDefinitionId) {
-      if (state.isSavingBadgeEvent) {
-        return;
-      }
-      const selectedClass = getSelectedClass();
-      const student = getSelectedStudent();
-      const badgeDefinition = state.badgeDefinitions.find(function(item) {
-        return item.id === badgeDefinitionId;
-      });
-      if (!selectedClass || !student || !badgeDefinition) {
-        return;
-      }
-      const previousProgress = getBadgeProgressRow(badgeDefinition.id);
-      const teacherId = state.authContext.teacherId || selectedClass.teacher_id || null;
-      state.isSavingBadgeEvent = true;
-      state.savingBadgeDefinitionId = badgeDefinition.id;
-      renderBadgeActionCards();
-      try {
-        await insertStudentBadgeEvent({
-          student_id: student.student_id,
-          badge_definition_id: badgeDefinition.id,
-          teacher_id: teacherId,
-          class_id: selectedClass.id,
-          note: `\u8001\u5E08\u7AEF\u884C\u4E3A\u8BB0\u5F55\uFF1A${badgeDefinition.event_label}`
-        });
-        await loadStudentRecords(student.student_id);
-        const updatedProgress = getBadgeProgressRow(badgeDefinition.id);
-        const eventCount = Number(updatedProgress?.event_count || 0);
-        const threshold = Number(updatedProgress?.threshold || badgeDefinition.threshold || 1);
-        const unlockedJustNow = !previousProgress?.unlocked_at && Boolean(updatedProgress?.unlocked_at);
-        const studentName = getStudentDisplayName(getSelectedStudent() || student);
-        state.badgeFeedback = {
-          studentId: student.student_id,
-          badgeDefinitionId: badgeDefinition.id,
-          badgeName: badgeDefinition.name,
-          unlockedJustNow,
-          note: unlockedJustNow ? `${badgeDefinition.name} \u5DF2\u89E3\u9501\uFF0C${normalizeActionLabel(badgeDefinition.event_label)} \u5DF2\u7D2F\u8BA1\u5230 ${eventCount} \u6B21` : `${normalizeActionLabel(badgeDefinition.event_label)} \u5DF2\u8BB0\u5F55\uFF0C\u5F53\u524D ${eventCount} / ${threshold}`,
-          timestamp: Date.now()
-        };
-        renderPanel();
-        showToast(unlockedJustNow ? `${studentName} \u89E3\u9501 ${badgeDefinition.name}` : `${studentName} \u5DF2\u8BB0\u5F55\u201C${normalizeActionLabel(badgeDefinition.event_label)}\u201D`);
-        clearFeedbackLater();
-      } catch (error) {
-        showInlineNotice(`\u8BB0\u5F55\u884C\u4E3A\u5931\u8D25\uFF1A${error.message}`, "error");
-        showToast("\u5FBD\u7AE0\u8BB0\u5F55\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5");
-      } finally {
-        state.isSavingBadgeEvent = false;
-        state.savingBadgeDefinitionId = "";
-        renderBadgeActionCards();
-      }
-    }
-    async function handleRedeemSubmit(event) {
-      event.preventDefault();
-      if (state.isRedeeming) {
-        return;
-      }
-      const selectedClass = getSelectedClass();
-      const student = getSelectedStudent();
-      const itemName = elements.redeemItemInput.value.trim();
-      const points = Math.floor(Number(elements.redeemPointsInput.value || 0));
-      const currentPoints = Number(student?.total_points || 0);
-      if (!selectedClass || !student) {
-        showToast("\u8BF7\u5148\u9009\u62E9\u5B66\u751F");
-        return;
-      }
-      if (!itemName || !points) {
-        showToast("\u8BF7\u586B\u5199\u5151\u6362\u5185\u5BB9\u548C\u6263\u5206");
-        return;
-      }
-      if (points > currentPoints) {
-        showToast("\u79EF\u5206\u4E0D\u8DB3\uFF0C\u65E0\u6CD5\u5151\u6362");
-        updateRedeemPreview();
-        return;
-      }
-      state.isRedeeming = true;
-      updateRedeemPreview();
-      try {
-        await insertPointLedger({
-          student_id: student.student_id,
-          class_id: selectedClass.id,
-          campus_id: selectedClass.campus_id,
-          subject_id: selectedClass.subject_id,
-          teacher_id: selectedClass.teacher_id || state.authContext.teacherId || null,
-          rule_id: null,
-          rule_name_snapshot: `\u5151\u6362\uFF1A${itemName}`,
-          category_snapshot: "classroom",
-          points_delta: points * -1,
-          action_type: "deduct",
-          remark: `\u5151\u6362${itemName}\uFF0C\u6263\u9664 ${points} \u5206`
-        });
-        closeDialog(elements.redeemDialog);
-        elements.redeemForm.reset();
-        await loadRosterAndRecords();
-        const updatedStudent = getSelectedStudent();
-        state.feedback = {
-          studentId: student.student_id,
-          category: "redeem",
-          ruleId: "",
-          actionLabel: itemName,
-          pointsDelta: points * -1,
-          leveledUp: false,
-          newTierName: "",
-          note: `\u5151\u6362 ${itemName}\uFF0C\u6263\u9664 ${points} \u5206\uFF0C\u5269\u4F59 ${updatedStudent?.total_points || 0} \u5206`,
-          timestamp: Date.now()
-        };
-        renderAll();
-        showToast(`${getStudentDisplayName(updatedStudent || student)} \u5151\u6362 ${itemName}\uFF0C\u5269\u4F59 ${updatedStudent?.total_points || 0} \u5206`);
-        clearFeedbackLater();
-      } catch (error) {
-        showInlineNotice(`\u5151\u6362\u6263\u5206\u5931\u8D25\uFF1A${error.message}`, "error");
-        showToast("\u5151\u6362\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5");
-      } finally {
-        state.isRedeeming = false;
-        updateRedeemPreview();
-      }
-    }
-    async function handleSeedSubmit(event) {
-      event.preventDefault();
-      if (state.isSeeding) {
-        return;
-      }
-      const selectedClass = getSelectedClass();
-      const student = getSelectedStudent();
-      const seedPoints = Math.floor(Number(elements.seedPointsInput.value || 0));
-      const remark = normalizeText2(elements.seedRemarkInput.value) || "\u5386\u53F2\u79EF\u5206\u8865\u5F55";
-      if (!selectedClass || !student) {
-        showToast("\u8BF7\u5148\u9009\u62E9\u5B66\u751F");
-        return;
-      }
-      if (!Number.isInteger(seedPoints) || seedPoints <= 0) {
-        showToast("\u8865\u5F55\u79EF\u5206\u53EA\u80FD\u586B\u5199\u6B63\u6574\u6570");
-        updateSeedPreview();
-        return;
-      }
-      if (seedPoints > 5e3) {
-        showToast("\u5355\u6B21\u8865\u5F55\u4E0A\u9650\u4E3A 5000 \u5206");
-        updateSeedPreview();
-        return;
-      }
-      if (!remark) {
-        showToast("\u8BF7\u586B\u5199\u8865\u5F55\u5907\u6CE8");
-        updateSeedPreview();
-        return;
-      }
-      state.isSeeding = true;
-      updateSeedPreview();
-      const beforeProgress = getTierProgress(Number(student.total_points || 0), state.levelTiers);
-      try {
-        await insertPointLedger({
-          student_id: student.student_id,
-          class_id: selectedClass.id,
-          campus_id: selectedClass.campus_id,
-          subject_id: selectedClass.subject_id,
-          teacher_id: selectedClass.teacher_id || state.authContext.teacherId || null,
-          rule_id: null,
-          rule_name_snapshot: "\u8865\u5F55\u79EF\u5206",
-          category_snapshot: "classroom",
-          points_delta: seedPoints,
-          action_type: "seed",
-          remark
-        });
-        closeSeedDialog();
-        await loadRosterAndRecords();
-        const updatedStudent = getSelectedStudent();
-        const afterProgress = getTierProgress(Number(updatedStudent?.total_points || 0), state.levelTiers);
-        state.feedback = {
-          studentId: student.student_id,
-          category: "seed",
-          ruleId: "",
-          actionLabel: "\u8865\u5F55\u79EF\u5206",
-          pointsDelta: seedPoints,
-          leveledUp: beforeProgress.currentTier.name !== afterProgress.currentTier.name,
-          newTierName: afterProgress.currentTier.name,
-          note: `\u8865\u5F55\u79EF\u5206 +${seedPoints} \u5206`,
-          timestamp: Date.now()
-        };
-        renderAll();
-        showToast(
-          state.feedback.leveledUp ? `${getStudentDisplayName(updatedStudent || student)} \u8865\u5F55 ${seedPoints} \u5206\uFF0C\u5347\u7EA7\u5230 ${afterProgress.currentTier.name}` : `${getStudentDisplayName(updatedStudent || student)} \u5DF2\u8865\u5F55 ${seedPoints} \u5206`
-        );
-        clearFeedbackLater();
-      } catch (error) {
-        showInlineNotice(`\u8865\u5F55\u79EF\u5206\u5931\u8D25\uFF1A${error.message}`, "error");
-        showToast("\u8865\u5F55\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5");
-      } finally {
-        state.isSeeding = false;
-        updateSeedPreview();
-      }
-    }
-    async function confirmClassBoost() {
-      const selectedClass = getSelectedClass();
-      if (!selectedClass || !state.roster.length) {
-        renderClassBoostState();
-        closeClassBoostDialog();
-        return;
-      }
-      const payload = state.roster.map(function(student) {
-        return {
-          student_id: student.student_id,
-          class_id: selectedClass.id,
-          campus_id: selectedClass.campus_id,
-          subject_id: selectedClass.subject_id,
-          teacher_id: selectedClass.teacher_id || state.authContext.teacherId || null,
-          rule_id: null,
-          rule_name_snapshot: "\u6574\u73ED\u9F13\u52B1",
-          category_snapshot: "classroom",
-          points_delta: 1,
-          action_type: "batch_add",
-          remark: "\u8001\u5E08\u7AEF\u6574\u73ED +1"
-        };
-      });
-      if (elements.classBoostDialogConfirmButton) {
-        elements.classBoostDialogConfirmButton.disabled = true;
-      }
-      try {
-        await insertPointLedger(payload);
-        state.feedback = null;
-        closeClassBoostDialog();
-        await loadRosterAndRecords();
-        showToast(`${selectedClass.class_name} \u5DF2\u5B8C\u6210\u6574\u73ED +1`);
-        showInlineNotice("");
-      } catch (error) {
-        showInlineNotice(`\u6574\u73ED\u52A0\u5206\u5931\u8D25\uFF1A${error.message}`, "error");
-      } finally {
-        if (elements.classBoostDialogConfirmButton) {
-          elements.classBoostDialogConfirmButton.disabled = false;
-        }
-      }
-    }
-    async function handleCreateClassSubmit(event) {
-      event.preventDefault();
-      if (state.isSavingClass) {
-        return;
-      }
-      const campusId = elements.createClassCampusSelect.value;
-      const subjectId = elements.createClassSubjectSelect.value;
-      const teacherId = state.authContext?.isTeacher ? state.authContext.teacherId : elements.createClassTeacherSelect.value || null;
-      const className = elements.createClassNameInput.value.trim();
-      const scheduleText = elements.createClassScheduleInput.value.trim();
-      const classType = elements.createClassTypeSelect.value || "regular";
-      if (!className || !campusId || !subjectId) {
-        showToast("\u8BF7\u5B8C\u6574\u586B\u5199\u73ED\u7EA7\u4FE1\u606F");
-        return;
-      }
-      state.isSavingClass = true;
-      try {
-        const createdClass = await createClass({
-          class_name: className,
-          campus_id: campusId,
-          subject_id: subjectId,
-          teacher_id: teacherId,
-          schedule_text: scheduleText || null,
-          class_type: classType,
-          status: "active",
-          created_by_id: state.authContext.teacherId || null
-        });
-        closeDialog(elements.createClassDialog);
-        elements.createClassForm.reset();
-        state.campusId = campusId;
-        await refreshClassesAndRoster(createdClass.id);
-        showToast(`\u5DF2\u521B\u5EFA\u73ED\u7EA7\uFF1A${createdClass.class_name}`);
-      } catch (error) {
-        showInlineNotice(`\u521B\u5EFA\u73ED\u7EA7\u5931\u8D25\uFF1A${error.message}`, "error");
-        showToast("\u65B0\u5EFA\u73ED\u7EA7\u5931\u8D25");
-      } finally {
-        state.isSavingClass = false;
-      }
-    }
-    async function handleStudentSearch(event) {
-      if (event) {
-        event.preventDefault();
-      }
-      state.searchResults = [];
-      elements.studentSearchHint.textContent = "\u6B63\u5728\u641C\u7D22\u5B66\u751F\u4E3B\u6863...";
-      elements.studentSearchResults.innerHTML = '<div class="empty-state">\u6B63\u5728\u641C\u7D22\u5B66\u751F\uFF0C\u8BF7\u7A0D\u5019...</div>';
-      try {
-        state.searchResults = await searchStudents(elements.studentSearchInput.value || "");
-        renderSearchResults();
-        elements.studentSearchHint.textContent = state.searchResults.length ? `\u5DF2\u627E\u5230 ${state.searchResults.length} \u4E2A\u53EF\u52A0\u5165\u5B66\u751F` : "\u6CA1\u6709\u627E\u5230\u5339\u914D\u7684\u5B66\u751F\u4E3B\u6863\uFF0C\u53EF\u5C1D\u8BD5\u66F4\u6362\u5173\u952E\u5B57";
-      } catch (error) {
-        state.searchResults = [];
-        renderSearchResults();
-        elements.studentSearchHint.textContent = `\u641C\u7D22\u5931\u8D25\uFF1A${error.message}`;
-      }
-    }
-    function buildOptimisticRosterStudent(studentId) {
-      const student = state.searchResults.find(function(item) {
-        return item.id === studentId;
-      });
-      if (!student) {
-        return null;
-      }
+    function getManualDraft() {
       return {
-        student_id: student.id,
-        student_code: student.student_code || "",
-        legal_name: student.legal_name || "",
-        display_name: student.display_name || student.legal_name || "",
-        avatar_url: student.avatar_url || "",
-        grade: student.grade || "",
-        student_status: student.status || "normal",
-        status: student.status || "normal",
-        total_points: 0,
-        progress_7d: 0,
-        last_point_at: null,
-        joined_at: (/* @__PURE__ */ new Date()).toISOString(),
-        member_status: "active"
+        id: normalizeText2(elements.editingStudentIdInput.value),
+        legal_name: elements.createLegalNameInput.value,
+        display_name: elements.createDisplayNameInput.value,
+        grade: elements.createGradeInput.value,
+        status: elements.createStudentStatusSelect.value,
+        parent_name: elements.createParentNameInput.value,
+        parent_phone: elements.createParentPhoneInput.value,
+        avatar_url: elements.createAvatarUrlInput.value,
+        notes: elements.createNotesInput.value
       };
     }
-    function addStudentToRosterOptimistically(studentId) {
-      const optimisticStudent = buildOptimisticRosterStudent(studentId);
-      if (!optimisticStudent) {
+    async function refreshManualDuplicates() {
+      const draft = getManualDraft();
+      if (!normalizeText2(draft.legal_name)) {
+        state.manualDuplicateAssessment = null;
+        renderManualDuplicateBox();
         return;
       }
-      state.roster = state.roster.concat(optimisticStudent);
-      syncStudentSelection();
-      renderAll();
-    }
-    async function handleAddStudent(studentId) {
-      const selectedClass = getSelectedClass();
-      if (!selectedClass) {
-        showToast("\u8BF7\u5148\u9009\u62E9\u73ED\u7EA7");
-        return;
-      }
-      const alreadyJoined = state.roster.some(function(member) {
-        return member.student_id === studentId;
-      });
-      if (alreadyJoined) {
-        showToast("\u8BE5\u5B66\u751F\u5DF2\u5728\u5F53\u524D\u73ED\u7EA7\u4E2D");
-        return;
-      }
-      addStudentToRosterOptimistically(studentId);
-      showInlineNotice("");
-      showToast("\u5B66\u751F\u5DF2\u52A0\u5165\u5F53\u524D\u73ED\u7EA7");
       try {
-        await addStudentToClass({
-          class_id: selectedClass.id,
-          student_id: studentId,
-          member_status: "active",
-          joined_by_id: state.authContext.teacherId || null,
-          notes: "\u8001\u5E08\u7AEF\u52A0\u5165\u73ED\u7EA7"
+        const candidates = await fetchStudentDuplicateCandidates({
+          legalNames: [draft.legal_name],
+          parentPhones: [draft.parent_phone]
         });
-        loadRosterAndRecords().catch(function(refreshError) {
-          showInlineNotice(`\u73ED\u7EA7\u5237\u65B0\u5931\u8D25\uFF1A${refreshError.message}`, "error");
-        });
-        handleStudentSearch().catch(function() {
-        });
+        state.manualDuplicateAssessment = buildDuplicateAssessment(draft, candidates, [], null);
       } catch (error) {
-        if (error.code === "23505") {
-          loadRosterAndRecords().catch(function() {
-          });
-          handleStudentSearch().catch(function() {
-          });
-          showToast("\u8BE5\u5B66\u751F\u5DF2\u5728\u5F53\u524D\u73ED\u7EA7\u4E2D");
-          return;
-        }
-        state.roster = state.roster.filter(function(member) {
-          return member.student_id !== studentId;
-        });
-        syncStudentSelection();
-        renderAll();
-        showInlineNotice(`\u52A0\u5165\u73ED\u7EA7\u5931\u8D25\uFF1A${error.message}`, "error");
-        showToast("\u52A0\u5165\u73ED\u7EA7\u5931\u8D25");
+        state.manualDuplicateAssessment = null;
+        showInlineNotice(`\u7591\u4F3C\u91CD\u590D\u68C0\u67E5\u5931\u8D25\uFF1A${error.message}`, "error");
       }
+      renderManualDuplicateBox();
     }
-    function openCreateClassDialog() {
-      elements.createClassForm.reset();
-      elements.createClassCampusSelect.value = state.campusId || getAvailableCampuses()[0]?.id || state.campuses[0]?.id || "";
-      renderDialogOptions();
-      if (state.authContext?.isTeacher && state.authContext.teacherId) {
-        elements.createClassTeacherSelect.value = state.authContext.teacherId;
-      }
-      openDialog(elements.createClassDialog);
-      elements.createClassNameInput.focus();
+    function queueManualDuplicateCheck() {
+      window.clearTimeout(state.manualDuplicateTimer);
+      state.manualDuplicateTimer = window.setTimeout(function() {
+        refreshManualDuplicates();
+      }, 260);
     }
-    function openAddStudentDialog() {
-      if (!state.classId) {
-        showToast("\u8BF7\u5148\u9009\u62E9\u6216\u521B\u5EFA\u73ED\u7EA7");
-        return;
-      }
-      state.searchResults = [];
-      state.lastSearchKeyword = "";
-      elements.studentSearchInput.value = "";
-      resetTempStudentForm();
-      elements.studentSearchHint.textContent = "\u641C\u7D22\u5B66\u751F";
-      renderSearchResults();
-      openDialog(elements.addStudentDialog);
-      handleStudentSearch();
+    function syncStudentFormMeta() {
+      const isEditing = Boolean(elements.editingStudentIdInput.value);
+      elements.studentFormTitle.textContent = isEditing ? "\u7F16\u8F91\u5B66\u751F\u4E3B\u6863" : "\u65B0\u589E\u5B66\u751F\u4E3B\u6863";
+      elements.studentFormHint.textContent = isEditing ? "\u8FD9\u91CC\u7EF4\u62A4\u5B66\u751F\u6B63\u5F0F\u8D44\u6599\u3002\u8001\u5E08\u7AEF\u53EA\u5141\u8BB8\u8C03\u6574\u73ED\u7EA7\u5173\u7CFB\uFF0C\u4E0D\u5141\u8BB8\u6539\u5B66\u751F\u4E3B\u6863\u3002" : "\u53EA\u6709\u7BA1\u7406\u5458\u53EF\u4EE5\u521B\u5EFA\u5B66\u751F\u4E3B\u6863\u3002\u8001\u5E08\u7AEF\u53EA\u5904\u7406\u73ED\u7EA7\u5173\u7CFB\uFF0C\u4E0D\u5904\u7406\u5B66\u751F\u6B63\u5F0F\u8D44\u6599\u3002";
+      elements.submitCreateStudentButton.textContent = isEditing ? "\u4FDD\u5B58\u5B66\u751F\u4FEE\u6539" : "\u4FDD\u5B58\u5B66\u751F\u4E3B\u6863";
     }
-    function openRedeemDialog() {
-      const student = getSelectedStudent();
+    function prefillStudentForm(student) {
       if (!student) {
-        showToast("\u8BF7\u5148\u9009\u62E9\u5B66\u751F");
+        resetCreateStudentForm();
         return;
       }
-      elements.redeemForm.reset();
-      updateRedeemPreview();
-      openDialog(elements.redeemDialog);
-      elements.redeemItemInput.focus();
+      elements.editingStudentIdInput.value = student.id || "";
+      elements.createLegalNameInput.value = student.legal_name || "";
+      elements.createDisplayNameInput.value = student.display_name || "";
+      elements.createGradeInput.value = student.grade || "";
+      elements.createStudentStatusSelect.value = student.status || "normal";
+      elements.createParentNameInput.value = student.parent_name || "";
+      elements.createParentPhoneInput.value = student.parent_phone || "";
+      elements.createAvatarUrlInput.value = student.avatar_url || "";
+      elements.createNotesInput.value = student.notes || "";
+      state.manualDuplicateAssessment = null;
+      renderManualDuplicateBox();
+      syncStudentFormMeta();
     }
-    async function handleRemoveSelectedStudent() {
-      const selectedClass = getSelectedClass();
-      const student = getSelectedStudent();
-      if (!selectedClass || !student) {
-        showToast("\u8BF7\u5148\u9009\u62E9\u5B66\u751F");
+    function openCreateStudentDialog() {
+      resetCreateStudentForm();
+      openDialog(elements.createStudentDialog);
+    }
+    function openEditStudentDialog(studentId) {
+      const student = state.students.find(function(item) {
+        return item.id === studentId;
+      }) || null;
+      if (!student) {
+        showNotice("\u672A\u627E\u5230\u53EF\u7F16\u8F91\u7684\u5B66\u751F\u4E3B\u6863\u3002", "error");
         return;
       }
-      const studentName = getStudentDisplayName(student);
-      const confirmed = window.confirm(`\u786E\u8BA4\u628A${studentName}\u79FB\u51FA${selectedClass.class_name}\u5417\uFF1F`);
-      if (!confirmed) {
+      prefillStudentForm(student);
+      openDialog(elements.createStudentDialog);
+    }
+    function resetCreateStudentForm() {
+      elements.createStudentForm.reset();
+      elements.editingStudentIdInput.value = "";
+      elements.createStudentStatusSelect.value = "normal";
+      state.manualDuplicateAssessment = null;
+      renderManualDuplicateBox();
+      syncStudentFormMeta();
+    }
+    function resetImportState() {
+      state.importRows = [];
+      elements.importFileInput.value = "";
+      elements.importPreviewSummary.textContent = "\u4E0A\u4F20 CSV \u540E\uFF0C\u8FD9\u91CC\u4F1A\u663E\u793A\u9884\u89C8\u3001\u53EF\u5BFC\u5165\u6570\u91CF\u548C\u7591\u4F3C\u91CD\u590D\u63D0\u9192\u3002";
+      elements.importPreviewTableBody.innerHTML = '<tr><td colspan="8"><div class="empty-state">\u5C1A\u672A\u4E0A\u4F20 CSV \u6587\u4EF6\u3002</div></td></tr>';
+      elements.confirmImportButton.disabled = true;
+    }
+    function getValidImportRows() {
+      return state.importRows.filter(function(row) {
+        return !row.validationErrors.length;
+      });
+    }
+    function renderImportPreview() {
+      if (!state.importRows.length) {
+        resetImportState();
+        return;
+      }
+      const validCount = getValidImportRows().length;
+      const invalidCount = state.importRows.length - validCount;
+      const highCount = state.importRows.filter(function(row) {
+        return row.duplicateAssessment.level === "high";
+      }).length;
+      const mediumCount = state.importRows.filter(function(row) {
+        return row.duplicateAssessment.level === "medium";
+      }).length;
+      elements.importPreviewSummary.textContent = `\u5171\u9884\u89C8 ${state.importRows.length} \u6761\uFF0C\u53EF\u5BFC\u5165 ${validCount} \u6761\uFF0C\u6821\u9A8C\u5F02\u5E38 ${invalidCount} \u6761\uFF0C\u9AD8\u7591\u4F3C\u91CD\u590D ${highCount} \u6761\uFF0C\u4E2D\u7591\u4F3C\u91CD\u590D ${mediumCount} \u6761\u3002`;
+      elements.confirmImportButton.disabled = validCount === 0;
+      elements.importPreviewTableBody.innerHTML = state.importRows.map(function(row) {
+        const duplicateText = row.duplicateAssessment.level === "high" ? "\u9AD8\u7591\u4F3C\u91CD\u590D" : row.duplicateAssessment.level === "medium" ? "\u4E2D\u7591\u4F3C\u91CD\u590D" : "\u65E0";
+        const duplicateLines = row.duplicateAssessment.highMessages.concat(row.duplicateAssessment.mediumMessages);
+        const validationText = row.validationErrors.length ? row.validationErrors.join("\uFF1B") : "\u53EF\u5BFC\u5165";
+        return `
+        <tr>
+          <td>${row.rowNumber}</td>
+          <td>${escapeHtml(row.legal_name || "-")}</td>
+          <td>${escapeHtml(row.display_name || "-")}</td>
+          <td>${escapeHtml(row.grade || "-")}</td>
+          <td>${escapeHtml(row.parent_name || "-")}</td>
+          <td>${escapeHtml(row.parent_phone || "-")}</td>
+          <td>${escapeHtml(buildStatusLabel(row.status || "normal"))}</td>
+          <td>
+            <span class="student-risk-badge is-${row.duplicateAssessment.level}">${escapeHtml(duplicateText)}</span>
+            ${duplicateLines.length ? `<p class="students-risk-copy">${escapeHtml(duplicateLines.join("\uFF1B"))}</p>` : ""}
+            <p class="students-risk-copy">${escapeHtml(validationText)}</p>
+          </td>
+        </tr>
+      `;
+      }).join("");
+    }
+    async function loadStudents() {
+      if (!isSupabaseConfigured) {
+        renderCampusOptions();
+        renderSummary();
+        showInlineNotice("\u7F3A\u5C11 Supabase \u914D\u7F6E\uFF0C\u8BF7\u5148\u5728 .env \u4E2D\u586B\u5199 VITE_SUPABASE_URL \u548C VITE_SUPABASE_ANON_KEY\u3002", "error");
+        elements.studentsTableBody.innerHTML = '<tr><td colspan="8"><div class="empty-state">\u7F3A\u5C11 Supabase \u914D\u7F6E\uFF0C\u5B66\u751F\u4E3B\u6863\u65E0\u6CD5\u8BFB\u53D6\u3002</div></td></tr>';
+        return;
+      }
+      state.isLoadingStudents = true;
+      renderStudentsTable();
+      const selectedId = state.selectedStudent?.id || "";
+      try {
+        state.students = await fetchStudentsList({
+          search: state.search,
+          status: state.status,
+          limit: 300
+        });
+        state.selectedStudent = selectedId ? state.students.find(function(student) {
+          return student.id === selectedId;
+        }) || null : null;
+        showInlineNotice("", "info");
+      } catch (error) {
+        state.students = [];
+        state.selectedStudent = null;
+        showInlineNotice(`\u5B66\u751F\u5217\u8868\u8BFB\u53D6\u5931\u8D25\uFF1A${error.message}`, "error");
+      } finally {
+        state.isLoadingStudents = false;
+        renderSummary();
+        renderStudentsTable();
+        if (elements.studentDetailDialog.open) {
+          renderDetail(state.selectedStudent);
+        }
+      }
+    }
+    async function initialize() {
+      renderCampusOptions();
+      renderSummary();
+      renderStudentsTable();
+      renderDetail(null);
+      resetImportState();
+      if (!isSupabaseConfigured) {
+        showInlineNotice("\u7F3A\u5C11 Supabase \u914D\u7F6E\uFF0C\u5B66\u751F\u7BA1\u7406\u9875\u6682\u65F6\u65E0\u6CD5\u8FDE\u63A5\u6570\u636E\u5E93\u3002", "error");
         return;
       }
       try {
-        await removeStudentFromClass({
-          classId: selectedClass.id,
-          studentId: student.student_id,
-          notes: "\u8001\u5E08\u7AEF\u79FB\u51FA\u73ED\u7EA7"
-        });
-        state.feedback = null;
-        await loadRosterAndRecords();
-        showToast(`${studentName} \u5DF2\u79FB\u51FA\u5F53\u524D\u73ED\u7EA7`);
+        state.campuses = await fetchCampuses();
+        renderCampusOptions();
       } catch (error) {
-        showInlineNotice(`\u79FB\u51FA\u73ED\u7EA7\u5931\u8D25\uFF1A${error.message}`, "error");
-        showToast("\u79FB\u51FA\u5931\u8D25");
+        showInlineNotice(`\u6821\u533A\u5217\u8868\u8BFB\u53D6\u5931\u8D25\uFF1A${error.message}`, "error");
+      }
+      await loadStudents();
+    }
+    async function handleCreateStudentSubmit(event) {
+      event.preventDefault();
+      if (state.isSaving) {
+        return;
+      }
+      const draft = getManualDraft();
+      const legalName = normalizeText2(draft.legal_name);
+      if (!legalName) {
+        showNotice("\u6B63\u5F0F\u59D3\u540D\u4E3A\u5FC5\u586B\u9879\u3002", "error");
+        return;
+      }
+      const isEditing = Boolean(draft.id);
+      const duplicateAssessment = state.manualDuplicateAssessment;
+      state.isSaving = true;
+      elements.submitCreateStudentButton.disabled = true;
+      elements.submitCreateStudentButton.textContent = isEditing ? "\u4FDD\u5B58\u4E2D..." : "\u521B\u5EFA\u4E2D...";
+      try {
+        const savedStudent = isEditing ? await updateStudent(draft.id, buildStudentUpdateRow(draft)) : (await createStudents([buildStudentInsertRow(draft, 0)]))[0];
+        closeDialog(elements.createStudentDialog);
+        resetCreateStudentForm();
+        state.selectedStudent = savedStudent || null;
+        await loadStudents();
+        const duplicateMessages = duplicateAssessment ? duplicateAssessment.highMessages.concat(duplicateAssessment.mediumMessages) : [];
+        const duplicateHint = duplicateMessages.length ? ` \u5DF2\u63D0\u9192\u7591\u4F3C\u91CD\u590D\uFF1A${duplicateMessages[0]}` : "";
+        showNotice(`\u5B66\u751F\u4E3B\u6863\u5DF2${isEditing ? "\u66F4\u65B0" : "\u521B\u5EFA"}\uFF1A${savedStudent.display_name || savedStudent.legal_name || legalName}\u3002${duplicateHint}`, duplicateMessages.length ? "info" : "success");
+      } catch (error) {
+        showNotice(`\u4FDD\u5B58\u5B66\u751F\u4E3B\u6863\u5931\u8D25\uFF1A${error.message}`, "error");
+      } finally {
+        state.isSaving = false;
+        elements.submitCreateStudentButton.disabled = false;
+        syncStudentFormMeta();
       }
     }
-    elements.campusSelect.addEventListener("change", async function(event) {
-      state.campusId = event.target.value;
-      state.classBoostArmed = false;
-      syncClassSelection();
-      renderAll();
-      await loadRosterAndRecords();
+    async function handleImportFileChange(event) {
+      const file = event.target.files?.[0];
+      if (!file) {
+        resetImportState();
+        return;
+      }
+      try {
+        const text = await decodeCsvFile(file);
+        const parsedRows = parseCsv(text);
+        if (!parsedRows.length) {
+          throw new Error("CSV \u6587\u4EF6\u4E3A\u7A7A");
+        }
+        const headers = parsedRows[0].map(function(header) {
+          return normalizeText2(header).replace(/^\uFEFF/, "");
+        });
+        const missingFields = CSV_FIELDS.filter(function(field) {
+          return !headers.includes(field);
+        });
+        if (missingFields.length) {
+          throw new Error(`CSV \u7F3A\u5C11\u5B57\u6BB5\uFF1A${missingFields.join(", ")}`);
+        }
+        const headerIndexMap = headers.reduce(function(map, header, index) {
+          map[header] = index;
+          return map;
+        }, {});
+        const importRows = parsedRows.slice(1).map(function(cells, index) {
+          const draft = {
+            legal_name: normalizeText2(cells[headerIndexMap.legal_name]),
+            display_name: normalizeText2(cells[headerIndexMap.display_name]),
+            grade: normalizeText2(cells[headerIndexMap.grade]),
+            parent_name: normalizeText2(cells[headerIndexMap.parent_name]),
+            parent_phone: normalizeText2(cells[headerIndexMap.parent_phone]),
+            avatar_url: normalizeText2(cells[headerIndexMap.avatar_url]),
+            notes: normalizeText2(cells[headerIndexMap.notes]),
+            rowNumber: index + 2,
+            validationErrors: []
+          };
+          if (!CSV_FIELDS.some(function(field) {
+            return Boolean(draft[field]);
+          })) {
+            return null;
+          }
+          if (!draft.legal_name) {
+            draft.validationErrors.push("legal_name \u5FC5\u586B");
+          }
+          return draft;
+        }).filter(Boolean);
+        if (!importRows.length) {
+          throw new Error("CSV \u4E2D\u6CA1\u6709\u53EF\u9884\u89C8\u7684\u6570\u636E\u884C");
+        }
+        const candidates = await fetchStudentDuplicateCandidates({
+          legalNames: importRows.map(function(row) {
+            return row.legal_name;
+          }),
+          parentPhones: importRows.map(function(row) {
+            return row.parent_phone;
+          })
+        });
+        state.importRows = importRows.map(function(row) {
+          return {
+            ...row,
+            duplicateAssessment: buildDuplicateAssessment(row, candidates, importRows, row.rowNumber)
+          };
+        });
+        renderImportPreview();
+      } catch (error) {
+        resetImportState();
+        showNotice(`CSV \u89E3\u6790\u5931\u8D25\uFF1A${error.message}`, "error");
+      }
+    }
+    async function handleConfirmImport() {
+      const validRows = getValidImportRows();
+      if (!validRows.length || state.isSaving) {
+        return;
+      }
+      state.isSaving = true;
+      elements.confirmImportButton.disabled = true;
+      elements.confirmImportButton.textContent = "\u5BFC\u5165\u4E2D...";
+      try {
+        const payload = validRows.map(function(row, index) {
+          return buildStudentInsertRow(row, index + 1);
+        });
+        await createStudents(payload);
+        const invalidCount = state.importRows.length - validRows.length;
+        const highCount = state.importRows.filter(function(row) {
+          return row.duplicateAssessment.level === "high";
+        }).length;
+        const mediumCount = state.importRows.filter(function(row) {
+          return row.duplicateAssessment.level === "medium";
+        }).length;
+        closeDialog(elements.importStudentsDialog);
+        resetImportState();
+        await loadStudents();
+        showNotice(`\u5DF2\u5BFC\u5165 ${validRows.length} \u6761\u5B66\u751F\u4E3B\u6863\uFF1B\u8DF3\u8FC7 ${invalidCount} \u6761\u65E0\u6548\u884C\uFF1B\u9AD8\u7591\u4F3C\u91CD\u590D ${highCount} \u6761\uFF0C\u4E2D\u7591\u4F3C\u91CD\u590D ${mediumCount} \u6761\u3002`, "success");
+      } catch (error) {
+        showNotice(`\u6279\u91CF\u5BFC\u5165\u5931\u8D25\uFF1A${error.message}`, "error");
+      } finally {
+        state.isSaving = false;
+        elements.confirmImportButton.disabled = false;
+        elements.confirmImportButton.textContent = "\u786E\u8BA4\u5BFC\u5165";
+      }
+    }
+    elements.studentsSearchForm.addEventListener("submit", function(event) {
+      event.preventDefault();
+      state.search = normalizeText2(elements.studentsSearchInput.value);
+      loadStudents();
     });
-    elements.classSelect.addEventListener("change", async function(event) {
-      state.classId = event.target.value;
-      state.classBoostArmed = false;
-      renderAll();
-      await loadRosterAndRecords();
+    elements.clearStudentsSearchButton.addEventListener("click", function() {
+      state.search = "";
+      elements.studentsSearchInput.value = "";
+      loadStudents();
     });
-    elements.campusRail.addEventListener("click", async function(event) {
-      const button = event.target.closest("[data-campus-id]");
+    elements.studentsStatusFilter.addEventListener("change", function(event) {
+      state.status = event.target.value;
+      loadStudents();
+    });
+    elements.studentsTableBody.addEventListener("click", function(event) {
+      const editButton = event.target.closest("[data-edit-student]");
+      if (editButton) {
+        openEditStudentDialog(editButton.dataset.editStudent);
+        return;
+      }
+      const button = event.target.closest("[data-view-student]");
       if (!button) {
         return;
       }
-      state.campusId = button.dataset.campusId;
-      state.classBoostArmed = false;
-      syncClassSelection();
-      renderAll();
-      await loadRosterAndRecords();
+      state.selectedStudent = state.students.find(function(student) {
+        return student.id === button.dataset.viewStudent;
+      }) || null;
+      renderDetail(state.selectedStudent);
+      openDialog(elements.studentDetailDialog);
     });
-    elements.classRail.addEventListener("click", async function(event) {
-      const button = event.target.closest("[data-class-id]");
-      if (!button) {
+    elements.openCreateStudentButton.addEventListener("click", openCreateStudentDialog);
+    elements.closeCreateStudentButton.addEventListener("click", function() {
+      closeDialog(elements.createStudentDialog);
+      resetCreateStudentForm();
+    });
+    elements.cancelCreateStudentButton.addEventListener("click", function() {
+      closeDialog(elements.createStudentDialog);
+      resetCreateStudentForm();
+    });
+    elements.createStudentForm.addEventListener("submit", handleCreateStudentSubmit);
+    [
+      elements.createLegalNameInput,
+      elements.createDisplayNameInput,
+      elements.createGradeInput,
+      elements.createParentPhoneInput
+    ].forEach(function(input) {
+      input.addEventListener("input", queueManualDuplicateCheck);
+    });
+    elements.openImportDialogButton.addEventListener("click", function() {
+      resetImportState();
+      openDialog(elements.importStudentsDialog);
+    });
+    elements.closeImportDialogButton.addEventListener("click", function() {
+      closeDialog(elements.importStudentsDialog);
+    });
+    elements.cancelImportButton.addEventListener("click", function() {
+      closeDialog(elements.importStudentsDialog);
+    });
+    elements.importFileInput.addEventListener("change", handleImportFileChange);
+    elements.confirmImportButton.addEventListener("click", handleConfirmImport);
+    elements.closeStudentDetailButton.addEventListener("click", function() {
+      closeDialog(elements.studentDetailDialog);
+    });
+    elements.editStudentFromDetailButton.addEventListener("click", function() {
+      if (!state.selectedStudent) {
         return;
       }
-      state.classId = button.dataset.classId;
-      state.classBoostArmed = false;
-      renderAll();
-      await loadRosterAndRecords();
+      const studentId = state.selectedStudent.id;
+      closeDialog(elements.studentDetailDialog);
+      window.requestAnimationFrame(function() {
+        openEditStudentDialog(studentId);
+      });
     });
-    elements.campusRail.addEventListener("scroll", function() {
-      updateRailControlState("campus");
-    }, { passive: true });
-    elements.classRail.addEventListener("scroll", function() {
-      updateRailControlState("class");
-    }, { passive: true });
-    elements.campusRailPrevButton.addEventListener("click", function() {
-      scrollRailByPage("campus", -1);
+    elements.downloadTemplateButton.addEventListener("click", function() {
+      const blob = new Blob([createCsvTemplate()], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "students-import-template.csv";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
     });
-    elements.campusRailNextButton.addEventListener("click", function() {
-      scrollRailByPage("campus", 1);
-    });
-    elements.classRailPrevButton.addEventListener("click", function() {
-      scrollRailByPage("class", -1);
-    });
-    elements.classRailNextButton.addEventListener("click", function() {
-      scrollRailByPage("class", 1);
-    });
-    elements.studentGrid.addEventListener("click", function(event) {
-      const button = event.target.closest("[data-student-id]");
-      if (!button) {
-        return;
-      }
-      selectStudent(button.dataset.studentId);
-    });
-    elements.categoryTabs.addEventListener("click", function(event) {
-      const button = event.target.closest("[data-category]");
-      if (!button) {
-        return;
-      }
-      state.activeCategory = button.dataset.category;
-      renderTabs();
-      renderActionCards();
-    });
-    elements.teacherFocusToggleButton?.addEventListener("click", function() {
-      state.isClassFocusMode = !state.isClassFocusMode;
-      persistTeacherFocusMode(state.isClassFocusMode);
-      updateTeacherCommandState();
-      refreshRailControls();
-    });
-    elements.actionCards.addEventListener("click", function(event) {
-      const button = event.target.closest("[data-rule-id]");
-      if (!button) {
-        return;
-      }
-      handleAction(button.dataset.ruleId);
-    });
-    elements.badgeActionCards.addEventListener("click", function(event) {
-      const button = event.target.closest("[data-badge-definition-id]");
-      if (!button) {
-        return;
-      }
-      handleBadgeAction(button.dataset.badgeDefinitionId);
-    });
-    elements.classBoostToggleButton.addEventListener("click", function() {
-      const selectedClass = getSelectedClass();
-      if (!selectedClass || !state.roster.length) {
-        return;
-      }
-      openClassBoostDialog();
-    });
-    if (elements.classBoostDialogCancelButton) {
-      elements.classBoostDialogCancelButton.addEventListener("click", closeClassBoostDialog);
-    }
-    if (elements.classBoostDialogCloseButton) {
-      elements.classBoostDialogCloseButton.addEventListener("click", closeClassBoostDialog);
-    }
-    if (elements.classBoostDialogConfirmButton) {
-      elements.classBoostDialogConfirmButton.addEventListener("click", confirmClassBoost);
-    }
-    elements.openCreateClassButton.addEventListener("click", openCreateClassDialog);
-    elements.openAddStudentButton.addEventListener("click", openAddStudentDialog);
-    elements.removeSelectedStudentButton.addEventListener("click", handleRemoveSelectedStudent);
-    elements.openSeedDialogButton.addEventListener("click", openSeedDialog);
-    elements.openRedeemButton.addEventListener("click", openRedeemDialog);
-    elements.createClassCampusSelect.addEventListener("change", renderDialogOptions);
-    elements.createClassForm.addEventListener("submit", handleCreateClassSubmit);
-    elements.closeCreateClassButton.addEventListener("click", function() {
-      closeDialog(elements.createClassDialog);
-    });
-    elements.cancelCreateClassButton.addEventListener("click", function() {
-      closeDialog(elements.createClassDialog);
-    });
-    elements.studentSearchForm.addEventListener("submit", handleStudentSearch);
-    elements.studentSearchResults.addEventListener("click", function(event) {
-      const button = event.target.closest("[data-add-student-id]");
-      if (!button) {
-        return;
-      }
-      handleAddStudent(button.dataset.addStudentId);
-    });
-    elements.closeAddStudentButton.addEventListener("click", function() {
-      closeDialog(elements.addStudentDialog);
-    });
-    elements.seedForm.addEventListener("submit", handleSeedSubmit);
-    elements.seedPointsInput.addEventListener("input", updateSeedPreview);
-    elements.seedRemarkInput.addEventListener("input", updateSeedPreview);
-    elements.closeSeedDialogButton.addEventListener("click", closeSeedDialog);
-    elements.cancelSeedButton.addEventListener("click", closeSeedDialog);
-    elements.redeemForm.addEventListener("submit", handleRedeemSubmit);
-    elements.redeemItemInput.addEventListener("input", updateRedeemPreview);
-    elements.redeemPointsInput.addEventListener("input", updateRedeemPreview);
-    elements.closeRedeemButton.addEventListener("click", function() {
-      closeDialog(elements.redeemDialog);
-    });
-    elements.cancelRedeemButton.addEventListener("click", function() {
-      closeDialog(elements.redeemDialog);
-    });
-    elements.panelBackButton.addEventListener("click", closeMobilePanel);
-    elements.closeSheetButton.addEventListener("click", closeMobilePanel);
-    elements.sheetOverlay.addEventListener("click", closeMobilePanel);
-    document.addEventListener("keydown", function(event) {
-      if (event.key === "Escape") {
-        closeMobilePanel();
-      }
-    });
-    function handleViewportChange() {
-      syncStudentSelection();
-      renderAll();
-      refreshRailControls();
-      if (state.selectedStudentId) {
-        resetPanelScroll();
-        loadStudentRecords(state.selectedStudentId);
-      }
-    }
-    if (typeof desktopMedia.addEventListener === "function") {
-      desktopMedia.addEventListener("change", handleViewportChange);
-    } else if (typeof desktopMedia.addListener === "function") {
-      desktopMedia.addListener(handleViewportChange);
-    }
-    window.addEventListener("resize", refreshRailControls);
-    if (window.__FILE_MODE__ && elements.fileModeNotice) {
-      elements.fileModeNotice.hidden = false;
-    }
-    mountSessionActions(document.querySelector(".teacher-console-links"), authContext);
-    renderSearchResults();
-    updateSeedPreview();
-    updateRedeemPreview();
-    showInlineNotice("");
-    initializeData();
+    mountSessionActions(document.querySelector(".header-actions"), authContext);
+    initialize();
   };
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initTeacherPage, { once: true });
+    document.addEventListener("DOMContentLoaded", initStudentsPage, { once: true });
   } else {
-    initTeacherPage();
+    initStudentsPage();
   }
 }

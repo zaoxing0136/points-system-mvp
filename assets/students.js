@@ -13,7 +13,7 @@ import {
   formatDateTime,
   getStudentDisplayName
 } from './shared-ui.js';
-import { getLibraryAvatarForStudent } from './avatar-library.js';
+import { AVATAR_LIBRARY_LIST, getLibraryAvatarForStudent } from './avatar-library.js';
 
 const CSV_FIELDS = ['legal_name', 'display_name', 'grade', 'parent_name', 'parent_phone', 'avatar_url', 'notes'];
 const STATUS_META = {
@@ -142,14 +142,14 @@ function buildStudentInsertRow(draft, index) {
   const explicitAvatarUrl = normalizeText(draft.avatar_url);
   const defaultAvatar = explicitAvatarUrl
     ? null
-    : getLibraryAvatarForStudent({
+    : pickImportedAvatar({
         student_code: studentCode,
         legal_name: legalName,
         display_name: displayName,
         grade,
         parent_name: parentName,
         parent_phone: parentPhone
-      });
+      }, index);
 
   return {
     student_code: studentCode,
@@ -164,6 +164,22 @@ function buildStudentInsertRow(draft, index) {
     created_by_role: 'admin',
     created_by_id: null
   };
+}
+
+function pickImportedAvatar(studentDraft, index = 0) {
+  const preferredAvatar = getLibraryAvatarForStudent(studentDraft);
+  if (!AVATAR_LIBRARY_LIST.length) {
+    return preferredAvatar;
+  }
+
+  const preferredIndex = preferredAvatar
+    ? AVATAR_LIBRARY_LIST.findIndex(function (entry) {
+        return entry.code === preferredAvatar.code;
+      })
+    : -1;
+
+  const startIndex = preferredIndex >= 0 ? preferredIndex : 0;
+  return AVATAR_LIBRARY_LIST[(startIndex + Math.max(index - 1, 0)) % AVATAR_LIBRARY_LIST.length] || preferredAvatar || null;
 }
 
 function buildStudentUpdateRow(draft) {
