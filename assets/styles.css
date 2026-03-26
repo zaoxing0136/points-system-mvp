@@ -6050,6 +6050,12 @@ input:disabled {
   align-items: center;
 }
 
+.teacher-console .teacher-command,
+.teacher-console .teacher-list-panel,
+.teacher-console .teacher-panel-content {
+  overflow-anchor: none;
+}
+
 .teacher-console .teacher-panel {
   overflow: visible;
 }

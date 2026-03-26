@@ -14919,10 +14919,19 @@ var ACTION_TYPE_META = {
   deduct: "\u5151\u6362\u6263\u5206",
   seed: "\u8865\u5F55\u79EF\u5206"
 };
-var TEACHER_FOCUS_MODE_STORAGE_KEY = "teacher:class-focus-mode";
+var TEACHER_FOCUS_MODE_STORAGE_KEY = "teacher:class-focus-mode:v2";
 var ACTION_LABEL_ALIASES = Object.freeze({
   "\u4E13\u6CE8\u542C\u8BB2": "\u4E13\u6CE8\u542C\u8BFE",
   "\u79EF\u6781\u53D1\u8A00": "\u79EF\u6781\u8868\u8FBE"
+});
+var BADGE_EVENT_LABEL_ALIASES = Object.freeze({
+  "\u4E13\u6CE8\u542C\u8BB2": "\u4E13\u6CE8\u542C\u8BFE",
+  "\u4E13\u6CE8\u542C\u8BFE": "\u4E13\u6CE8\u542C\u8BFE",
+  "\u79EF\u6781\u53D1\u8A00": "\u79EF\u6781\u8868\u8FBE",
+  "\u79EF\u6781\u8868\u8FBE": "\u79EF\u6781\u8868\u8FBE",
+  "\u4E3B\u52A8\u534F\u4F5C": "\u4E3B\u52A8\u5E2E\u52A9",
+  "\u4E3B\u52A8\u5E2E\u52A9": "\u4E3B\u52A8\u5E2E\u52A9",
+  "\u575A\u6301\u5B8C\u6210": "\u575A\u6301\u5B8C\u6210"
 });
 function normalizeActionLabel(value) {
   const normalized = String(value || "").trim();
@@ -14933,6 +14942,10 @@ function normalizeActionCopy(value) {
     const [source, target] = entry;
     return String(text || "").split(source).join(target);
   }, String(value || "").trim());
+}
+function normalizeBadgeEventLabel(value) {
+  const normalized = normalizeActionLabel(value);
+  return BADGE_EVENT_LABEL_ALIASES[normalized] || normalized;
 }
 function getInitialTeacherFocusMode() {
   try {
@@ -15205,9 +15218,11 @@ if (isFileMode) {
     function clearFeedbackLater() {
       window.clearTimeout(clearFeedbackLater.timer);
       clearFeedbackLater.timer = window.setTimeout(function() {
+        const viewportState = captureViewportState();
         state.feedback = null;
         state.badgeFeedback = null;
         renderAll();
+        restoreViewportState(viewportState);
       }, 1800);
     }
     function showToast(message) {
@@ -15295,6 +15310,49 @@ if (isFileMode) {
         elements.teacherPanel.scrollTop = 0;
         elements.panelContent.scrollTop = 0;
       });
+    }
+    function captureViewportState() {
+      return {
+        pageX: window.scrollX || window.pageXOffset || 0,
+        pageY: window.scrollY || window.pageYOffset || 0,
+        studentGridScrollTop: elements.studentGrid?.scrollTop || 0,
+        panelScrollTop: elements.panelContent?.scrollTop || 0
+      };
+    }
+    function restoreViewportState(snapshot) {
+      if (!snapshot) {
+        return;
+      }
+      const applyState = function() {
+        window.scrollTo(snapshot.pageX, snapshot.pageY);
+        if (elements.studentGrid) {
+          elements.studentGrid.scrollTop = snapshot.studentGridScrollTop || 0;
+        }
+        if (elements.panelContent) {
+          elements.panelContent.scrollTop = snapshot.panelScrollTop || 0;
+        }
+      };
+      window.requestAnimationFrame(function() {
+        applyState();
+        window.requestAnimationFrame(applyState);
+      });
+    }
+    async function withPreservedViewport(callback) {
+      const snapshot = captureViewportState();
+      try {
+        return await callback(snapshot);
+      } finally {
+        restoreViewportState(snapshot);
+      }
+    }
+    function getLinkedBadgeDefinitionForRule(rule) {
+      if (!rule) {
+        return null;
+      }
+      const targetLabel = normalizeBadgeEventLabel(rule.rule_name);
+      return state.badgeDefinitions.find(function(badge) {
+        return normalizeBadgeEventLabel(badge.event_label) === targetLabel;
+      }) || null;
     }
     function shouldUseClassFocusMode() {
       return Boolean(state.classId) && state.isClassFocusMode;
@@ -15728,8 +15786,9 @@ if (isFileMode) {
       elements.actionCards.innerHTML = rules.map(function(rule, index) {
         const isRecent = recentFeedback && recentFeedback.ruleId === rule.id;
         const isHighFrequency = rule.is_common || index < 2;
-        const helperText = isRecent ? "\u5DF2\u8BB0\u5206" : isHighFrequency ? "\u9AD8\u9891" : "\u5373\u70B9\u5373\u52A0";
-        const actionBadge = isRecent ? '<span class="teacher-action-feedback">\u5DF2\u52A0\u5206</span>' : isHighFrequency ? '<span class="teacher-action-badge">\u5E38\u7528</span>' : "";
+        const linkedBadgeDefinition = getLinkedBadgeDefinitionForRule(rule);
+        const helperText = isRecent ? "\u5DF2\u8BB0\u5206" : linkedBadgeDefinition ? `\u540C\u6B65\u7D2F\u8BA1\u5230 ${linkedBadgeDefinition.name}` : isHighFrequency ? "\u9AD8\u9891" : "\u5373\u70B9\u5373\u52A0";
+        const actionBadge = isRecent ? '<span class="teacher-action-feedback">\u5DF2\u52A0\u5206</span>' : linkedBadgeDefinition ? `<span class="teacher-action-badge">\u8054\u52A8 ${escapeHtml(linkedBadgeDefinition.name)}</span>` : isHighFrequency ? '<span class="teacher-action-badge">\u5E38\u7528</span>' : "";
         return `
           <button class="teacher-action-card ${isRecent ? "is-ack" : ""} ${isHighFrequency ? "is-high-frequency" : ""}" type="button" data-rule-id="${escapeHtml(rule.id)}" data-category="${escapeHtml(state.activeCategory)}">
             <div class="teacher-action-card__top">
@@ -16046,6 +16105,8 @@ if (isFileMode) {
       state.studentRecords = [];
       state.studentBadgeProgress = [];
       state.loadingStudentDetails = true;
+      state.isClassFocusMode = true;
+      persistTeacherFocusMode(true);
       if (!desktopMedia.matches) {
         state.isMobilePanelOpen = true;
       }
@@ -16083,38 +16144,79 @@ if (isFileMode) {
         return;
       }
       const beforeProgress = getTierProgress(Number(student.total_points || 0), state.levelTiers);
+      const linkedBadgeDefinition = getLinkedBadgeDefinitionForRule(rule);
+      const teacherId = selectedClass.teacher_id || state.authContext.teacherId || null;
       try {
-        await insertPointLedger({
-          student_id: student.student_id,
-          class_id: selectedClass.id,
-          campus_id: selectedClass.campus_id,
-          subject_id: selectedClass.subject_id,
-          teacher_id: selectedClass.teacher_id || state.authContext.teacherId || null,
-          rule_id: rule.id,
-          rule_name_snapshot: rule.rule_name,
-          category_snapshot: rule.category,
-          points_delta: rule.points,
-          action_type: "add",
-          remark: "\u8001\u5E08\u7AEF\u5373\u65F6\u52A0\u5206"
+        await withPreservedViewport(async function() {
+          let badgeSyncError = null;
+          state.isClassFocusMode = true;
+          persistTeacherFocusMode(true);
+          await insertPointLedger({
+            student_id: student.student_id,
+            class_id: selectedClass.id,
+            campus_id: selectedClass.campus_id,
+            subject_id: selectedClass.subject_id,
+            teacher_id: teacherId,
+            rule_id: rule.id,
+            rule_name_snapshot: rule.rule_name,
+            category_snapshot: rule.category,
+            points_delta: rule.points,
+            action_type: "add",
+            remark: "\u8001\u5E08\u7AEF\u5373\u65F6\u52A0\u5206"
+          });
+          if (linkedBadgeDefinition) {
+            try {
+              await insertStudentBadgeEvent({
+                student_id: student.student_id,
+                badge_definition_id: linkedBadgeDefinition.id,
+                teacher_id: teacherId,
+                class_id: selectedClass.id,
+                note: `\u8BFE\u5802\u79EF\u5206\u8054\u52A8\uFF1A${normalizeBadgeEventLabel(linkedBadgeDefinition.event_label)}`
+              });
+            } catch (error) {
+              badgeSyncError = error;
+            }
+          }
+          await loadRosterAndRecords();
+          const updatedStudent = getSelectedStudent();
+          const afterProgress = getTierProgress(Number(updatedStudent?.total_points || 0), state.levelTiers);
+          state.feedback = {
+            studentId: student.student_id,
+            category: rule.category,
+            ruleId: rule.id,
+            actionLabel: rule.rule_name,
+            pointsDelta: Number(rule.points),
+            leveledUp: beforeProgress.currentTier.name !== afterProgress.currentTier.name,
+            newTierName: afterProgress.currentTier.name,
+            note: `${CATEGORY_META[rule.category]?.label || rule.category} \xB7 ${normalizeActionLabel(rule.rule_name)} +${rule.points} \u5206`,
+            timestamp: Date.now()
+          };
+          if (linkedBadgeDefinition) {
+            const updatedProgress = getBadgeProgressRow(linkedBadgeDefinition.id);
+            if (updatedProgress) {
+              const eventCount = Number(updatedProgress.event_count || 0);
+              const threshold = Number(updatedProgress.threshold || linkedBadgeDefinition.threshold || 1);
+              const unlockedJustNow = Boolean(updatedProgress.unlocked_at) && Number(updatedProgress.source_event_count || 0) === eventCount;
+              state.badgeFeedback = {
+                studentId: student.student_id,
+                badgeDefinitionId: linkedBadgeDefinition.id,
+                badgeName: linkedBadgeDefinition.name,
+                unlockedJustNow,
+                note: unlockedJustNow ? `${linkedBadgeDefinition.name} \u5DF2\u89E3\u9501\uFF0C${normalizeBadgeEventLabel(linkedBadgeDefinition.event_label)} \u5DF2\u7D2F\u8BA1\u5230 ${eventCount} \u6B21` : `${normalizeBadgeEventLabel(linkedBadgeDefinition.event_label)} \u5DF2\u7D2F\u8BA1\u5230 ${eventCount} / ${threshold}`,
+                timestamp: Date.now()
+              };
+            }
+          }
+          renderAll();
+          if (badgeSyncError) {
+            showInlineNotice(`\u79EF\u5206\u5DF2\u5199\u5165\uFF0C\u4F46\u5FBD\u7AE0\u8054\u52A8\u5931\u8D25\uFF1A${badgeSyncError.message}`, "error");
+          } else {
+            showInlineNotice("");
+          }
+          showToast(
+            state.feedback.leveledUp ? `${getStudentDisplayName(updatedStudent || student)} +${rule.points} \u5206\uFF0C\u5347\u7EA7\u5230 ${afterProgress.currentTier.name}` : `${getStudentDisplayName(updatedStudent || student)} +${rule.points} \u5206`
+          );
         });
-        await loadRosterAndRecords();
-        const updatedStudent = getSelectedStudent();
-        const afterProgress = getTierProgress(Number(updatedStudent?.total_points || 0), state.levelTiers);
-        state.feedback = {
-          studentId: student.student_id,
-          category: rule.category,
-          ruleId: rule.id,
-          actionLabel: rule.rule_name,
-          pointsDelta: Number(rule.points),
-          leveledUp: beforeProgress.currentTier.name !== afterProgress.currentTier.name,
-          newTierName: afterProgress.currentTier.name,
-          note: `${CATEGORY_META[rule.category]?.label || rule.category} \xB7 ${normalizeActionLabel(rule.rule_name)} +${rule.points} \u5206`,
-          timestamp: Date.now()
-        };
-        renderAll();
-        showToast(
-          state.feedback.leveledUp ? `${getStudentDisplayName(updatedStudent || student)} +${rule.points} \u5206\uFF0C\u5347\u7EA7\u5230 ${afterProgress.currentTier.name}` : `${getStudentDisplayName(updatedStudent || student)} +${rule.points} \u5206`
-        );
         clearFeedbackLater();
       } catch (error) {
         showInlineNotice(`\u5199\u5165\u79EF\u5206\u6D41\u6C34\u5931\u8D25\uFF1A${error.message}`, "error");
@@ -16139,29 +16241,33 @@ if (isFileMode) {
       state.savingBadgeDefinitionId = badgeDefinition.id;
       renderBadgeActionCards();
       try {
-        await insertStudentBadgeEvent({
-          student_id: student.student_id,
-          badge_definition_id: badgeDefinition.id,
-          teacher_id: teacherId,
-          class_id: selectedClass.id,
-          note: `\u8001\u5E08\u7AEF\u884C\u4E3A\u8BB0\u5F55\uFF1A${badgeDefinition.event_label}`
+        await withPreservedViewport(async function() {
+          state.isClassFocusMode = true;
+          persistTeacherFocusMode(true);
+          await insertStudentBadgeEvent({
+            student_id: student.student_id,
+            badge_definition_id: badgeDefinition.id,
+            teacher_id: teacherId,
+            class_id: selectedClass.id,
+            note: `\u8001\u5E08\u7AEF\u884C\u4E3A\u8BB0\u5F55\uFF1A${normalizeBadgeEventLabel(badgeDefinition.event_label)}`
+          });
+          await loadStudentRecords(student.student_id);
+          const updatedProgress = getBadgeProgressRow(badgeDefinition.id);
+          const eventCount = Number(updatedProgress?.event_count || 0);
+          const threshold = Number(updatedProgress?.threshold || badgeDefinition.threshold || 1);
+          const unlockedJustNow = !previousProgress?.unlocked_at && Boolean(updatedProgress?.unlocked_at);
+          const studentName = getStudentDisplayName(getSelectedStudent() || student);
+          state.badgeFeedback = {
+            studentId: student.student_id,
+            badgeDefinitionId: badgeDefinition.id,
+            badgeName: badgeDefinition.name,
+            unlockedJustNow,
+            note: unlockedJustNow ? `${badgeDefinition.name} \u5DF2\u89E3\u9501\uFF0C${normalizeActionLabel(badgeDefinition.event_label)} \u5DF2\u7D2F\u8BA1\u5230 ${eventCount} \u6B21` : `${normalizeActionLabel(badgeDefinition.event_label)} \u5DF2\u8BB0\u5F55\uFF0C\u5F53\u524D ${eventCount} / ${threshold}`,
+            timestamp: Date.now()
+          };
+          renderPanel();
+          showToast(unlockedJustNow ? `${studentName} \u89E3\u9501 ${badgeDefinition.name}` : `${studentName} \u5DF2\u8BB0\u5F55\u201C${normalizeActionLabel(badgeDefinition.event_label)}\u201D`);
         });
-        await loadStudentRecords(student.student_id);
-        const updatedProgress = getBadgeProgressRow(badgeDefinition.id);
-        const eventCount = Number(updatedProgress?.event_count || 0);
-        const threshold = Number(updatedProgress?.threshold || badgeDefinition.threshold || 1);
-        const unlockedJustNow = !previousProgress?.unlocked_at && Boolean(updatedProgress?.unlocked_at);
-        const studentName = getStudentDisplayName(getSelectedStudent() || student);
-        state.badgeFeedback = {
-          studentId: student.student_id,
-          badgeDefinitionId: badgeDefinition.id,
-          badgeName: badgeDefinition.name,
-          unlockedJustNow,
-          note: unlockedJustNow ? `${badgeDefinition.name} \u5DF2\u89E3\u9501\uFF0C${normalizeActionLabel(badgeDefinition.event_label)} \u5DF2\u7D2F\u8BA1\u5230 ${eventCount} \u6B21` : `${normalizeActionLabel(badgeDefinition.event_label)} \u5DF2\u8BB0\u5F55\uFF0C\u5F53\u524D ${eventCount} / ${threshold}`,
-          timestamp: Date.now()
-        };
-        renderPanel();
-        showToast(unlockedJustNow ? `${studentName} \u89E3\u9501 ${badgeDefinition.name}` : `${studentName} \u5DF2\u8BB0\u5F55\u201C${normalizeActionLabel(badgeDefinition.event_label)}\u201D`);
         clearFeedbackLater();
       } catch (error) {
         showInlineNotice(`\u8BB0\u5F55\u884C\u4E3A\u5931\u8D25\uFF1A${error.message}`, "error");

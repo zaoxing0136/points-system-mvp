@@ -36,10 +36,19 @@ const ACTION_TYPE_META = {
   seed: '补录积分'
 };
 
-const TEACHER_FOCUS_MODE_STORAGE_KEY = 'teacher:class-focus-mode';
+const TEACHER_FOCUS_MODE_STORAGE_KEY = 'teacher:class-focus-mode:v2';
 const ACTION_LABEL_ALIASES = Object.freeze({
   '专注听讲': '专注听课',
   '积极发言': '积极表达'
+});
+const BADGE_EVENT_LABEL_ALIASES = Object.freeze({
+  '专注听讲': '专注听课',
+  '专注听课': '专注听课',
+  '积极发言': '积极表达',
+  '积极表达': '积极表达',
+  '主动协作': '主动帮助',
+  '主动帮助': '主动帮助',
+  '坚持完成': '坚持完成'
 });
 
 function normalizeActionLabel(value) {
@@ -52,6 +61,11 @@ function normalizeActionCopy(value) {
     const [source, target] = entry;
     return String(text || '').split(source).join(target);
   }, String(value || '').trim());
+}
+
+function normalizeBadgeEventLabel(value) {
+  const normalized = normalizeActionLabel(value);
+  return BADGE_EVENT_LABEL_ALIASES[normalized] || normalized;
 }
 
 function getInitialTeacherFocusMode() {
@@ -358,9 +372,11 @@ if (isFileMode) {
     function clearFeedbackLater() {
       window.clearTimeout(clearFeedbackLater.timer);
       clearFeedbackLater.timer = window.setTimeout(function () {
+        const viewportState = captureViewportState();
         state.feedback = null;
         state.badgeFeedback = null;
         renderAll();
+        restoreViewportState(viewportState);
       }, 1800);
     }
 
@@ -458,6 +474,56 @@ if (isFileMode) {
         elements.teacherPanel.scrollTop = 0;
         elements.panelContent.scrollTop = 0;
       });
+    }
+
+    function captureViewportState() {
+      return {
+        pageX: window.scrollX || window.pageXOffset || 0,
+        pageY: window.scrollY || window.pageYOffset || 0,
+        studentGridScrollTop: elements.studentGrid?.scrollTop || 0,
+        panelScrollTop: elements.panelContent?.scrollTop || 0
+      };
+    }
+
+    function restoreViewportState(snapshot) {
+      if (!snapshot) {
+        return;
+      }
+
+      const applyState = function () {
+        window.scrollTo(snapshot.pageX, snapshot.pageY);
+        if (elements.studentGrid) {
+          elements.studentGrid.scrollTop = snapshot.studentGridScrollTop || 0;
+        }
+        if (elements.panelContent) {
+          elements.panelContent.scrollTop = snapshot.panelScrollTop || 0;
+        }
+      };
+
+      window.requestAnimationFrame(function () {
+        applyState();
+        window.requestAnimationFrame(applyState);
+      });
+    }
+
+    async function withPreservedViewport(callback) {
+      const snapshot = captureViewportState();
+      try {
+        return await callback(snapshot);
+      } finally {
+        restoreViewportState(snapshot);
+      }
+    }
+
+    function getLinkedBadgeDefinitionForRule(rule) {
+      if (!rule) {
+        return null;
+      }
+
+      const targetLabel = normalizeBadgeEventLabel(rule.rule_name);
+      return state.badgeDefinitions.find(function (badge) {
+        return normalizeBadgeEventLabel(badge.event_label) === targetLabel;
+      }) || null;
     }
 
     function shouldUseClassFocusMode() {
@@ -965,10 +1031,17 @@ if (isFileMode) {
       elements.actionCards.innerHTML = rules.map(function (rule, index) {
         const isRecent = recentFeedback && recentFeedback.ruleId === rule.id;
         const isHighFrequency = rule.is_common || index < 2;
-        const helperText = isRecent ? '已记分' : (isHighFrequency ? '高频' : '即点即加');
+        const linkedBadgeDefinition = getLinkedBadgeDefinitionForRule(rule);
+        const helperText = isRecent
+          ? '已记分'
+          : (linkedBadgeDefinition
+              ? `同步累计到 ${linkedBadgeDefinition.name}`
+              : (isHighFrequency ? '高频' : '即点即加'));
         const actionBadge = isRecent
           ? '<span class="teacher-action-feedback">已加分</span>'
-          : (isHighFrequency ? '<span class="teacher-action-badge">常用</span>' : '');
+          : (linkedBadgeDefinition
+              ? `<span class="teacher-action-badge">联动 ${escapeHtml(linkedBadgeDefinition.name)}</span>`
+              : (isHighFrequency ? '<span class="teacher-action-badge">常用</span>' : ''));
 
         return `
           <button class="teacher-action-card ${isRecent ? 'is-ack' : ''} ${isHighFrequency ? 'is-high-frequency' : ''}" type="button" data-rule-id="${escapeHtml(rule.id)}" data-category="${escapeHtml(state.activeCategory)}">
@@ -1342,6 +1415,8 @@ if (isFileMode) {
       state.studentRecords = [];
       state.studentBadgeProgress = [];
       state.loadingStudentDetails = true;
+      state.isClassFocusMode = true;
+      persistTeacherFocusMode(true);
       if (!desktopMedia.matches) {
         state.isMobilePanelOpen = true;
       }
@@ -1384,42 +1459,90 @@ if (isFileMode) {
       }
 
       const beforeProgress = getTierProgress(Number(student.total_points || 0), state.levelTiers);
+      const linkedBadgeDefinition = getLinkedBadgeDefinitionForRule(rule);
+      const teacherId = selectedClass.teacher_id || state.authContext.teacherId || null;
 
       try {
-        await insertPointLedger({
-          student_id: student.student_id,
-          class_id: selectedClass.id,
-          campus_id: selectedClass.campus_id,
-          subject_id: selectedClass.subject_id,
-          teacher_id: selectedClass.teacher_id || state.authContext.teacherId || null,
-          rule_id: rule.id,
-          rule_name_snapshot: rule.rule_name,
-          category_snapshot: rule.category,
-          points_delta: rule.points,
-          action_type: 'add',
-          remark: '老师端即时加分'
-        });
+        await withPreservedViewport(async function () {
+          let badgeSyncError = null;
 
-        await loadRosterAndRecords();
-        const updatedStudent = getSelectedStudent();
-        const afterProgress = getTierProgress(Number(updatedStudent?.total_points || 0), state.levelTiers);
-        state.feedback = {
-          studentId: student.student_id,
-          category: rule.category,
-          ruleId: rule.id,
-          actionLabel: rule.rule_name,
-          pointsDelta: Number(rule.points),
-          leveledUp: beforeProgress.currentTier.name !== afterProgress.currentTier.name,
-          newTierName: afterProgress.currentTier.name,
-          note: `${CATEGORY_META[rule.category]?.label || rule.category} · ${normalizeActionLabel(rule.rule_name)} +${rule.points} 分`,
-          timestamp: Date.now()
-        };
-        renderAll();
-        showToast(
-          state.feedback.leveledUp
-            ? `${getStudentDisplayName(updatedStudent || student)} +${rule.points} 分，升级到 ${afterProgress.currentTier.name}`
-            : `${getStudentDisplayName(updatedStudent || student)} +${rule.points} 分`
-        );
+          state.isClassFocusMode = true;
+          persistTeacherFocusMode(true);
+
+          await insertPointLedger({
+            student_id: student.student_id,
+            class_id: selectedClass.id,
+            campus_id: selectedClass.campus_id,
+            subject_id: selectedClass.subject_id,
+            teacher_id: teacherId,
+            rule_id: rule.id,
+            rule_name_snapshot: rule.rule_name,
+            category_snapshot: rule.category,
+            points_delta: rule.points,
+            action_type: 'add',
+            remark: '老师端即时加分'
+          });
+
+          if (linkedBadgeDefinition) {
+            try {
+              await insertStudentBadgeEvent({
+                student_id: student.student_id,
+                badge_definition_id: linkedBadgeDefinition.id,
+                teacher_id: teacherId,
+                class_id: selectedClass.id,
+                note: `课堂积分联动：${normalizeBadgeEventLabel(linkedBadgeDefinition.event_label)}`
+              });
+            } catch (error) {
+              badgeSyncError = error;
+            }
+          }
+
+          await loadRosterAndRecords();
+          const updatedStudent = getSelectedStudent();
+          const afterProgress = getTierProgress(Number(updatedStudent?.total_points || 0), state.levelTiers);
+          state.feedback = {
+            studentId: student.student_id,
+            category: rule.category,
+            ruleId: rule.id,
+            actionLabel: rule.rule_name,
+            pointsDelta: Number(rule.points),
+            leveledUp: beforeProgress.currentTier.name !== afterProgress.currentTier.name,
+            newTierName: afterProgress.currentTier.name,
+            note: `${CATEGORY_META[rule.category]?.label || rule.category} · ${normalizeActionLabel(rule.rule_name)} +${rule.points} 分`,
+            timestamp: Date.now()
+          };
+
+          if (linkedBadgeDefinition) {
+            const updatedProgress = getBadgeProgressRow(linkedBadgeDefinition.id);
+            if (updatedProgress) {
+              const eventCount = Number(updatedProgress.event_count || 0);
+              const threshold = Number(updatedProgress.threshold || linkedBadgeDefinition.threshold || 1);
+              const unlockedJustNow = Boolean(updatedProgress.unlocked_at) && Number(updatedProgress.source_event_count || 0) === eventCount;
+              state.badgeFeedback = {
+                studentId: student.student_id,
+                badgeDefinitionId: linkedBadgeDefinition.id,
+                badgeName: linkedBadgeDefinition.name,
+                unlockedJustNow,
+                note: unlockedJustNow
+                  ? `${linkedBadgeDefinition.name} 已解锁，${normalizeBadgeEventLabel(linkedBadgeDefinition.event_label)} 已累计到 ${eventCount} 次`
+                  : `${normalizeBadgeEventLabel(linkedBadgeDefinition.event_label)} 已累计到 ${eventCount} / ${threshold}`,
+                timestamp: Date.now()
+              };
+            }
+          }
+
+          renderAll();
+          if (badgeSyncError) {
+            showInlineNotice(`积分已写入，但徽章联动失败：${badgeSyncError.message}`, 'error');
+          } else {
+            showInlineNotice('');
+          }
+          showToast(
+            state.feedback.leveledUp
+              ? `${getStudentDisplayName(updatedStudent || student)} +${rule.points} 分，升级到 ${afterProgress.currentTier.name}`
+              : `${getStudentDisplayName(updatedStudent || student)} +${rule.points} 分`
+          );
+        });
         clearFeedbackLater();
       } catch (error) {
         showInlineNotice(`写入积分流水失败：${error.message}`, 'error');
@@ -1450,33 +1573,38 @@ if (isFileMode) {
       renderBadgeActionCards();
 
       try {
-        await insertStudentBadgeEvent({
-          student_id: student.student_id,
-          badge_definition_id: badgeDefinition.id,
-          teacher_id: teacherId,
-          class_id: selectedClass.id,
-          note: `老师端行为记录：${badgeDefinition.event_label}`
+        await withPreservedViewport(async function () {
+          state.isClassFocusMode = true;
+          persistTeacherFocusMode(true);
+
+          await insertStudentBadgeEvent({
+            student_id: student.student_id,
+            badge_definition_id: badgeDefinition.id,
+            teacher_id: teacherId,
+            class_id: selectedClass.id,
+            note: `老师端行为记录：${normalizeBadgeEventLabel(badgeDefinition.event_label)}`
+          });
+
+          await loadStudentRecords(student.student_id);
+          const updatedProgress = getBadgeProgressRow(badgeDefinition.id);
+          const eventCount = Number(updatedProgress?.event_count || 0);
+          const threshold = Number(updatedProgress?.threshold || badgeDefinition.threshold || 1);
+          const unlockedJustNow = !previousProgress?.unlocked_at && Boolean(updatedProgress?.unlocked_at);
+          const studentName = getStudentDisplayName(getSelectedStudent() || student);
+
+          state.badgeFeedback = {
+            studentId: student.student_id,
+            badgeDefinitionId: badgeDefinition.id,
+            badgeName: badgeDefinition.name,
+            unlockedJustNow,
+            note: unlockedJustNow
+              ? `${badgeDefinition.name} 已解锁，${normalizeActionLabel(badgeDefinition.event_label)} 已累计到 ${eventCount} 次`
+              : `${normalizeActionLabel(badgeDefinition.event_label)} 已记录，当前 ${eventCount} / ${threshold}`,
+            timestamp: Date.now()
+          };
+          renderPanel();
+          showToast(unlockedJustNow ? `${studentName} 解锁 ${badgeDefinition.name}` : `${studentName} 已记录“${normalizeActionLabel(badgeDefinition.event_label)}”`);
         });
-
-        await loadStudentRecords(student.student_id);
-        const updatedProgress = getBadgeProgressRow(badgeDefinition.id);
-        const eventCount = Number(updatedProgress?.event_count || 0);
-        const threshold = Number(updatedProgress?.threshold || badgeDefinition.threshold || 1);
-        const unlockedJustNow = !previousProgress?.unlocked_at && Boolean(updatedProgress?.unlocked_at);
-        const studentName = getStudentDisplayName(getSelectedStudent() || student);
-
-        state.badgeFeedback = {
-          studentId: student.student_id,
-          badgeDefinitionId: badgeDefinition.id,
-          badgeName: badgeDefinition.name,
-          unlockedJustNow,
-          note: unlockedJustNow
-            ? `${badgeDefinition.name} 已解锁，${normalizeActionLabel(badgeDefinition.event_label)} 已累计到 ${eventCount} 次`
-            : `${normalizeActionLabel(badgeDefinition.event_label)} 已记录，当前 ${eventCount} / ${threshold}`,
-          timestamp: Date.now()
-        };
-        renderPanel();
-        showToast(unlockedJustNow ? `${studentName} 解锁 ${badgeDefinition.name}` : `${studentName} 已记录“${normalizeActionLabel(badgeDefinition.event_label)}”`);
         clearFeedbackLater();
       } catch (error) {
         showInlineNotice(`记录行为失败：${error.message}`, 'error');
