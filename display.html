@@ -5,16 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>大屏展示页</title>
     <link rel="stylesheet" href="./assets/styles.css" />
+    <script defer src="./assets/avatars/avatar-library.manifest.global.js"></script>
+    <script defer src="./assets/file-preview-runtime.js"></script>
+    <script defer src="./assets/display-file-preview.global.js"></script>
     <script>
-      if (window.location.protocol === 'file:') {
-        document.write('<script src="./assets/avatars/avatar-library.manifest.global.js"><\\/script>');
-        document.write('<script src="./assets/file-preview-runtime.js"><\\/script>');
-        document.write('<script src="./assets/display-file-preview.global.js"><\\/script>');
-      }
-    </script>
-    <script type="module">
       if (window.location.protocol !== 'file:') {
-        import('./assets/display.js');
+        const displayRuntime = document.createElement('script');
+        displayRuntime.type = 'module';
+        displayRuntime.src = './assets/display.js';
+        document.head.appendChild(displayRuntime);
       }
     </script>
   </head>
@@ -24,12 +23,12 @@
         <div class="display-title-wrap">
           <p class="eyebrow">Growth Wall</p>
           <h1>学生成长荣耀榜</h1>
-          <p class="hero-copy">大字、轮播、强反馈，适合校区电视持续展示。</p>
+          <p class="hero-copy">自动翻页、无需人工滚动，适合校区电视持续展示。</p>
         </div>
         <div class="display-meta">
           <div class="display-status">
             <span class="status-dot"></span>
-            <span>10 秒刷新 · 8 秒轮播</span>
+            <span id="displayStatusText">智能刷新中</span>
           </div>
           <div id="displayClock" class="clock-pill"></div>
           <a class="inline-link light-link" href="./index.html">返回首页</a>
