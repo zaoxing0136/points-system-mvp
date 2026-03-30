@@ -8,12 +8,35 @@
     <script defer src="./assets/avatars/avatar-library.manifest.global.js"></script>
     <script defer src="./assets/file-preview-runtime.js"></script>
     <script defer src="./assets/display-file-preview.global.js"></script>
-    <script>
+    <script type="module">
+      function renderDisplayBootError(message) {
+        function applyError() {
+          const statusText = document.getElementById('displayStatusText');
+          if (statusText) {
+            statusText.textContent = message;
+          }
+
+          ['totalBoard', 'progressBoard', 'badgeBoard'].forEach(function (id) {
+            const container = document.getElementById(id);
+            if (container) {
+              container.innerHTML = `<div class="empty-state">${message}</div>`;
+            }
+          });
+        }
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', applyError, { once: true });
+        } else {
+          applyError();
+        }
+      }
+
       if (window.location.protocol !== 'file:') {
-        const displayRuntime = document.createElement('script');
-        displayRuntime.type = 'module';
-        displayRuntime.src = './assets/display.js';
-        document.head.appendChild(displayRuntime);
+        import('./assets/display.js').catch(function (error) {
+          const message = `大屏脚本加载失败：${error && error.message ? error.message : '未知错误'}`;
+          console.error(error);
+          renderDisplayBootError(message);
+        });
       }
     </script>
   </head>
