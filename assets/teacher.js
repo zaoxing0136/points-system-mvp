@@ -2,11 +2,14 @@
 import { getAuthDisplayName, mountSessionActions, requirePageAuth } from './auth.js';
 import {
   addStudentToClass,
+  archiveClass,
   createClass,
+  deleteClass,
   fetchBadgeDefinitions,
   fetchCampuses,
   fetchClasses,
   fetchClassRoster,
+  fetchClassUsageStats,
   fetchLevelTiers,
   fetchPointRules,
   fetchStudentBadgeProgress,
@@ -16,7 +19,8 @@ import {
   insertStudentBadgeEvent,
   insertPointLedger,
   removeStudentFromClass,
-  searchStudents
+  searchStudents,
+  updateClass
 } from './supabase-service.js';
 import {
   CATEGORY_META,
@@ -32,7 +36,7 @@ import {
 const ACTION_TYPE_META = {
   add: '加分',
   batch_add: '整班加分',
-  deduct: '兑换扣分',
+  deduct: '扣分',
   seed: '补录积分'
 };
 
@@ -48,7 +52,8 @@ const BADGE_EVENT_LABEL_ALIASES = Object.freeze({
   '积极表达': '积极表达',
   '主动协作': '主动帮助',
   '主动帮助': '主动帮助',
-  '坚持完成': '坚持完成'
+  '坚持完成': '准时到课',
+  '准时到课': '准时到课'
 });
 
 function normalizeActionLabel(value) {
@@ -112,7 +117,7 @@ function mountFileModeFallback() {
     selectionHint.textContent = 'file:// mode is disabled for real data.';
   }
 
-  ['openCreateClassButton', 'openAddStudentButton', 'classBoostToggleButton', 'removeSelectedStudentButton', 'openSeedDialogButton', 'openRedeemButton'].forEach(function (id) {
+  ['openCreateClassButton', 'editClassButton', 'archiveClassButton', 'deleteClassButton', 'openAddStudentButton', 'classBoostToggleButton', 'removeSelectedStudentButton', 'openSeedDialogButton', 'openRedeemButton'].forEach(function (id) {
     const button = document.getElementById(id);
     if (button) {
       button.disabled = true;
@@ -157,6 +162,9 @@ if (isFileMode) {
       classBoostCancelButton: document.getElementById('classBoostCancelButton'),
       teacherInlineNotice: document.getElementById('teacherInlineNotice'),
       openCreateClassButton: document.getElementById('openCreateClassButton'),
+      editClassButton: document.getElementById('editClassButton'),
+      archiveClassButton: document.getElementById('archiveClassButton'),
+      deleteClassButton: document.getElementById('deleteClassButton'),
       openAddStudentButton: document.getElementById('openAddStudentButton'),
       teacherPanel: document.getElementById('teacherPanel'),
       panelEmptyState: document.getElementById('panelEmptyState'),
@@ -173,6 +181,8 @@ if (isFileMode) {
       activeCategoryTitle: document.getElementById('activeCategoryTitle'),
       activeCategoryTip: document.getElementById('activeCategoryTip'),
       actionCards: document.getElementById('actionCards'),
+      deductionSection: document.getElementById('deductionSection'),
+      deductionCards: document.getElementById('deductionCards'),
       badgeActionCards: document.getElementById('badgeActionCards'),
       badgeProgressList: document.getElementById('badgeProgressList'),
       studentRecordList: document.getElementById('studentRecordList'),
@@ -180,6 +190,9 @@ if (isFileMode) {
       fileModeNotice: document.getElementById('fileModeNotice'),
       createClassDialog: document.getElementById('createClassDialog'),
       createClassForm: document.getElementById('createClassForm'),
+      createClassDialogTitle: document.getElementById('createClassDialogTitle'),
+      createClassDialogHint: document.getElementById('createClassDialogHint'),
+      createClassSubmitButton: document.getElementById('createClassSubmitButton'),
       closeCreateClassButton: document.getElementById('closeCreateClassButton'),
       cancelCreateClassButton: document.getElementById('cancelCreateClassButton'),
       createClassNameInput: document.getElementById('createClassNameInput'),
@@ -240,6 +253,10 @@ if (isFileMode) {
       loadingStudentDetails: false,
       authContext,
       isSavingClass: false,
+      editingClassId: '',
+      classDialogMode: 'create',
+      isArchivingClass: false,
+      isDeletingClass: false,
       isRedeeming: false,
       isSeeding: false,
       isSavingBadgeEvent: false,
@@ -263,6 +280,29 @@ if (isFileMode) {
 
     function getCurrentRules() {
       return groupRulesByCategory(state.pointRules);
+    }
+
+    function getRulesByPolarity(category, polarity) {
+      const groupedRules = getCurrentRules();
+      const rules = groupedRules[category] || [];
+      return rules.filter(function (rule) {
+        const points = Number(rule.points || 0);
+        return polarity === 'negative' ? points < 0 : points >= 0;
+      });
+    }
+
+    function getDeductionRules() {
+      return state.pointRules
+        .filter(function (rule) {
+          return Number(rule.points || 0) < 0 && Boolean(rule.is_active);
+        })
+        .slice()
+        .sort(function (left, right) {
+          if (Number(left.sort_order || 0) !== Number(right.sort_order || 0)) {
+            return Number(left.sort_order || 0) - Number(right.sort_order || 0);
+          }
+          return String(left.rule_name || '').localeCompare(String(right.rule_name || ''), 'zh-CN');
+        });
     }
 
     function getSelectedBadgeProgress() {
@@ -421,6 +461,38 @@ if (isFileMode) {
         return;
       }
       dialog.removeAttribute('open');
+    }
+
+    function resetClassDialogState() {
+      state.editingClassId = '';
+      state.classDialogMode = 'create';
+      if (elements.createClassDialogTitle) {
+        elements.createClassDialogTitle.textContent = '快速建班';
+      }
+      if (elements.createClassDialogHint) {
+        elements.createClassDialogHint.textContent = '老师端也可以在试运行阶段快速创建自己的班级。';
+      }
+      if (elements.createClassSubmitButton) {
+        elements.createClassSubmitButton.textContent = state.isSavingClass ? '保存中...' : '创建班级';
+      }
+    }
+
+    function configureClassDialogForEdit(classItem) {
+      state.editingClassId = classItem?.id || '';
+      state.classDialogMode = classItem ? 'edit' : 'create';
+      if (elements.createClassDialogTitle) {
+        elements.createClassDialogTitle.textContent = classItem ? '编辑班级' : '快速建班';
+      }
+      if (elements.createClassDialogHint) {
+        elements.createClassDialogHint.textContent = classItem
+          ? '修改班级名称、校区、学科和时间安排。已使用过的班级如需停用，请改用归档。'
+          : '老师端也可以在试运行阶段快速创建自己的班级。';
+      }
+      if (elements.createClassSubmitButton) {
+        elements.createClassSubmitButton.textContent = state.isSavingClass
+          ? '保存中...'
+          : (classItem ? '保存班级' : '创建班级');
+      }
     }
 
     function openClassBoostDialog() {
@@ -674,7 +746,7 @@ if (isFileMode) {
     function renderClassRail() {
       const classes = filteredClasses();
       if (!classes.length) {
-        elements.classRail.innerHTML = '<span class="teacher-filter-empty">????????</span>';
+        elements.classRail.innerHTML = '<span class="teacher-filter-empty">当前校区暂无班级</span>';
         updateRailControlState('class');
         return;
       }
@@ -893,6 +965,26 @@ if (isFileMode) {
       elements.openAddStudentButton.disabled = !state.classId;
     }
 
+    function renderClassManagementState() {
+      const hasClass = Boolean(state.classId);
+      if (elements.editClassButton) {
+        elements.editClassButton.disabled = !hasClass || state.isSavingClass || state.isArchivingClass || state.isDeletingClass;
+      }
+      if (elements.archiveClassButton) {
+        elements.archiveClassButton.disabled = !hasClass || state.isSavingClass || state.isArchivingClass || state.isDeletingClass;
+        elements.archiveClassButton.textContent = state.isArchivingClass ? '归档中...' : '归档班级';
+      }
+      if (elements.deleteClassButton) {
+        elements.deleteClassButton.disabled = !hasClass || state.isSavingClass || state.isArchivingClass || state.isDeletingClass;
+        elements.deleteClassButton.textContent = state.isDeletingClass ? '处理中...' : '删除班级';
+      }
+      if (elements.createClassSubmitButton) {
+        elements.createClassSubmitButton.textContent = state.isSavingClass
+          ? '保存中...'
+          : (state.classDialogMode === 'edit' ? '保存班级' : '创建班级');
+      }
+    }
+
     function renderStudents() {
       if (state.loadingRoster) {
         elements.studentGrid.innerHTML = '<div class="empty-state">正在读取当前班级学生...</div>';
@@ -1019,8 +1111,7 @@ if (isFileMode) {
     }
 
     function renderActionCards() {
-      const groupedRules = getCurrentRules();
-      const rules = groupedRules[state.activeCategory] || [];
+      const rules = getRulesByPolarity(state.activeCategory, 'positive');
       const recentFeedback = state.feedback && Date.now() - state.feedback.timestamp < 1200 ? state.feedback : null;
 
       if (!rules.length) {
@@ -1111,6 +1202,40 @@ if (isFileMode) {
       }).join('');
     }
 
+    function renderDeductionCards() {
+      const rules = getDeductionRules();
+      const recentFeedback = state.feedback && Date.now() - state.feedback.timestamp < 1200 ? state.feedback : null;
+
+      if (!elements.deductionSection || !elements.deductionCards) {
+        return;
+      }
+
+      if (!rules.length) {
+        elements.deductionSection.hidden = true;
+        elements.deductionCards.innerHTML = '';
+        return;
+      }
+
+      elements.deductionSection.hidden = false;
+      elements.deductionCards.innerHTML = rules.map(function (rule) {
+        const isRecent = recentFeedback && recentFeedback.ruleId === rule.id;
+        const points = Math.abs(Number(rule.points || 0));
+        return `
+          <button class="teacher-action-card teacher-action-card--negative ${isRecent ? 'is-ack' : ''}" type="button" data-rule-id="${escapeHtml(rule.id)}" data-action-kind="deduction">
+            <div class="teacher-action-card__top">
+              <strong>${escapeHtml(normalizeActionLabel(rule.rule_name))}</strong>
+              ${isRecent ? '<span class="teacher-action-feedback">已扣分</span>' : '<span class="teacher-action-badge teacher-action-badge--negative">提醒</span>'}
+            </div>
+            <div class="teacher-action-card__points">
+              <span>- ${escapeHtml(points)}</span>
+              <em>分</em>
+            </div>
+            <p>${escapeHtml(isRecent ? '已记录扣分' : '课堂提醒，现场可直接点按')}</p>
+          </button>
+        `;
+      }).join('');
+    }
+
     function renderBadgeProgress() {
       const student = getSelectedStudent();
 
@@ -1175,12 +1300,15 @@ if (isFileMode) {
       }
 
       elements.studentRecordList.innerHTML = state.studentRecords.map(function (record) {
+        const isRedeemRecord = record.action_type === 'deduct' && /^兑换[:：]/u.test(String(record.rule_name_snapshot || ''));
         const categoryLabel = record.action_type === 'deduct'
-          ? '积分兑换'
+          ? (isRedeemRecord ? '积分兑换' : '课堂提醒')
           : (record.action_type === 'seed' ? '历史补录' : (CATEGORY_META[record.category_snapshot]?.label || record.category_snapshot));
         const score = Number(record.points_delta || 0);
         const scoreText = `${score > 0 ? '+' : ''}${score}`;
-        const typeLabel = ACTION_TYPE_META[record.action_type] || record.action_type || '记录';
+        const typeLabel = record.action_type === 'deduct' && !isRedeemRecord
+          ? '减分'
+          : (ACTION_TYPE_META[record.action_type] || record.action_type || '记录');
         const detailText = record.remark && record.remark !== record.rule_name_snapshot
           ? normalizeActionCopy(record.remark)
           : '';
@@ -1222,6 +1350,7 @@ if (isFileMode) {
       renderSpotlight(selectedStudent);
       renderTabs();
       renderActionCards();
+      renderDeductionCards();
       renderBadgeActionCards();
       renderBadgeProgress();
       renderStudentRecords();
@@ -1353,6 +1482,7 @@ if (isFileMode) {
       renderClassMeta();
       renderSummary();
       renderClassBoostState();
+      renderClassManagementState();
       renderStudents();
       renderPanel();
       renderSearchResults();
@@ -1461,6 +1591,8 @@ if (isFileMode) {
       const beforeProgress = getTierProgress(Number(student.total_points || 0), state.levelTiers);
       const linkedBadgeDefinition = getLinkedBadgeDefinitionForRule(rule);
       const teacherId = selectedClass.teacher_id || state.authContext.teacherId || null;
+      const pointsDelta = Number(rule.points || 0);
+      const isDeduction = pointsDelta < 0;
 
       try {
         await withPreservedViewport(async function () {
@@ -1475,15 +1607,15 @@ if (isFileMode) {
             campus_id: selectedClass.campus_id,
             subject_id: selectedClass.subject_id,
             teacher_id: teacherId,
-            rule_id: rule.id,
+            rule_id: rule.__localOnly ? null : rule.id,
             rule_name_snapshot: rule.rule_name,
             category_snapshot: rule.category,
-            points_delta: rule.points,
-            action_type: 'add',
-            remark: '老师端即时加分'
+            points_delta: pointsDelta,
+            action_type: isDeduction ? 'deduct' : 'add',
+            remark: isDeduction ? `老师端减分：${normalizeActionLabel(rule.rule_name)}` : '老师端即时加分'
           });
 
-          if (linkedBadgeDefinition) {
+          if (!isDeduction && linkedBadgeDefinition) {
             try {
               await insertStudentBadgeEvent({
                 student_id: student.student_id,
@@ -1505,14 +1637,14 @@ if (isFileMode) {
             category: rule.category,
             ruleId: rule.id,
             actionLabel: rule.rule_name,
-            pointsDelta: Number(rule.points),
+            pointsDelta,
             leveledUp: beforeProgress.currentTier.name !== afterProgress.currentTier.name,
             newTierName: afterProgress.currentTier.name,
-            note: `${CATEGORY_META[rule.category]?.label || rule.category} · ${normalizeActionLabel(rule.rule_name)} +${rule.points} 分`,
+            note: `${CATEGORY_META[rule.category]?.label || rule.category} · ${normalizeActionLabel(rule.rule_name)} ${pointsDelta > 0 ? '+' : ''}${pointsDelta} 分`,
             timestamp: Date.now()
           };
 
-          if (linkedBadgeDefinition) {
+          if (!isDeduction && linkedBadgeDefinition) {
             const updatedProgress = getBadgeProgressRow(linkedBadgeDefinition.id);
             if (updatedProgress) {
               const eventCount = Number(updatedProgress.event_count || 0);
@@ -1539,14 +1671,14 @@ if (isFileMode) {
           }
           showToast(
             state.feedback.leveledUp
-              ? `${getStudentDisplayName(updatedStudent || student)} +${rule.points} 分，升级到 ${afterProgress.currentTier.name}`
-              : `${getStudentDisplayName(updatedStudent || student)} +${rule.points} 分`
+              ? `${getStudentDisplayName(updatedStudent || student)} ${pointsDelta > 0 ? '+' : ''}${pointsDelta} 分，升级到 ${afterProgress.currentTier.name}`
+              : `${getStudentDisplayName(updatedStudent || student)} ${pointsDelta > 0 ? '+' : ''}${pointsDelta} 分`
           );
         });
         clearFeedbackLater();
       } catch (error) {
-        showInlineNotice(`写入积分流水失败：${error.message}`, 'error');
-        showToast('加分失败，请检查 Supabase 配置');
+        showInlineNotice(`${isDeduction ? '写入减分流水失败' : '写入积分流水失败'}：${error.message}`, 'error');
+        showToast(isDeduction ? '减分失败，请检查配置' : '加分失败，请检查 Supabase 配置');
       }
     }
 
@@ -1831,28 +1963,37 @@ if (isFileMode) {
       }
 
       state.isSavingClass = true;
+      renderClassManagementState();
+      const isEditing = state.classDialogMode === 'edit' && Boolean(state.editingClassId);
 
       try {
-        const createdClass = await createClass({
+        const payload = {
           class_name: className,
           campus_id: campusId,
           subject_id: subjectId,
           teacher_id: teacherId,
           schedule_text: scheduleText || null,
           class_type: classType,
-          status: 'active',
           created_by_id: state.authContext.teacherId || null
-        });
+        };
+        const savedClass = isEditing
+          ? await updateClass(state.editingClassId, payload)
+          : await createClass({
+              ...payload,
+              status: 'active'
+            });
         closeDialog(elements.createClassDialog);
         elements.createClassForm.reset();
+        resetClassDialogState();
         state.campusId = campusId;
-        await refreshClassesAndRoster(createdClass.id);
-        showToast(`已创建班级：${createdClass.class_name}`);
+        await refreshClassesAndRoster(savedClass.id);
+        showToast(isEditing ? `已更新班级：${savedClass.class_name}` : `已创建班级：${savedClass.class_name}`);
       } catch (error) {
-        showInlineNotice(`创建班级失败：${error.message}`, 'error');
-        showToast('新建班级失败');
+        showInlineNotice(`${isEditing ? '更新班级失败' : '创建班级失败'}：${error.message}`, 'error');
+        showToast(isEditing ? '保存班级失败' : '新建班级失败');
       } finally {
         state.isSavingClass = false;
+        renderClassManagementState();
       }
     }
 
@@ -1962,6 +2103,7 @@ if (isFileMode) {
     }
 
     function openCreateClassDialog() {
+      resetClassDialogState();
       elements.createClassForm.reset();
       elements.createClassCampusSelect.value = state.campusId || getAvailableCampuses()[0]?.id || state.campuses[0]?.id || '';
       renderDialogOptions();
@@ -1970,6 +2112,94 @@ if (isFileMode) {
       }
       openDialog(elements.createClassDialog);
       elements.createClassNameInput.focus();
+    }
+
+    function openEditClassDialog() {
+      const selectedClass = getSelectedClass();
+      if (!selectedClass) {
+        showToast('请先选择班级');
+        return;
+      }
+
+      elements.createClassForm.reset();
+      elements.createClassCampusSelect.value = selectedClass.campus_id || '';
+      renderDialogOptions();
+      configureClassDialogForEdit(selectedClass);
+      elements.createClassNameInput.value = selectedClass.class_name || '';
+      elements.createClassCampusSelect.value = selectedClass.campus_id || '';
+      elements.createClassSubjectSelect.value = selectedClass.subject_id || '';
+      elements.createClassTeacherSelect.value = selectedClass.teacher_id || '';
+      elements.createClassTypeSelect.value = selectedClass.class_type || 'regular';
+      elements.createClassScheduleInput.value = selectedClass.schedule_text || '';
+      openDialog(elements.createClassDialog);
+      elements.createClassNameInput.focus();
+    }
+
+    async function handleArchiveCurrentClass() {
+      const selectedClass = getSelectedClass();
+      if (!selectedClass || state.isArchivingClass) {
+        return;
+      }
+
+      const confirmed = window.confirm(`确认归档班级“${selectedClass.class_name}”吗？归档后将不再出现在老师端班级列表里。`);
+      if (!confirmed) {
+        return;
+      }
+
+      state.isArchivingClass = true;
+      renderClassManagementState();
+      try {
+        await archiveClass(selectedClass.id);
+        state.selectedStudentId = null;
+        state.studentRecords = [];
+        state.studentBadgeProgress = [];
+        await refreshClassesAndRoster();
+        showInlineNotice('');
+        showToast(`已归档班级：${selectedClass.class_name}`);
+      } catch (error) {
+        showInlineNotice(`归档班级失败：${error.message}`, 'error');
+        showToast('归档班级失败');
+      } finally {
+        state.isArchivingClass = false;
+        renderClassManagementState();
+      }
+    }
+
+    async function handleDeleteCurrentClass() {
+      const selectedClass = getSelectedClass();
+      if (!selectedClass || state.isDeletingClass) {
+        return;
+      }
+
+      state.isDeletingClass = true;
+      renderClassManagementState();
+      try {
+        const usage = await fetchClassUsageStats(selectedClass.id);
+        if (!usage.canHardDelete) {
+          showInlineNotice(`班级“${selectedClass.class_name}”已有 ${usage.activeMemberCount} 名在班学生、${usage.ledgerCount} 条积分流水，只能归档，不能直接删除。`, 'error');
+          showToast('该班级只能归档，不能删除');
+          return;
+        }
+
+        const confirmed = window.confirm(`确认永久删除空班“${selectedClass.class_name}”吗？此操作不可恢复。`);
+        if (!confirmed) {
+          return;
+        }
+
+        await deleteClass(selectedClass.id);
+        state.selectedStudentId = null;
+        state.studentRecords = [];
+        state.studentBadgeProgress = [];
+        await refreshClassesAndRoster();
+        showInlineNotice('');
+        showToast(`已删除班级：${selectedClass.class_name}`);
+      } catch (error) {
+        showInlineNotice(`删除班级失败：${error.message}`, 'error');
+        showToast('删除班级失败');
+      } finally {
+        state.isDeletingClass = false;
+        renderClassManagementState();
+      }
     }
 
     function openAddStudentDialog() {
@@ -2107,6 +2337,7 @@ if (isFileMode) {
       state.activeCategory = button.dataset.category;
       renderTabs();
       renderActionCards();
+      renderDeductionCards();
     });
 
     elements.teacherFocusToggleButton?.addEventListener('click', function () {
@@ -2117,6 +2348,14 @@ if (isFileMode) {
     });
 
     elements.actionCards.addEventListener('click', function (event) {
+      const button = event.target.closest('[data-rule-id]');
+      if (!button) {
+        return;
+      }
+      handleAction(button.dataset.ruleId);
+    });
+
+    elements.deductionCards?.addEventListener('click', function (event) {
       const button = event.target.closest('[data-rule-id]');
       if (!button) {
         return;
@@ -2152,6 +2391,9 @@ if (isFileMode) {
     }
 
     elements.openCreateClassButton.addEventListener('click', openCreateClassDialog);
+    elements.editClassButton?.addEventListener('click', openEditClassDialog);
+    elements.archiveClassButton?.addEventListener('click', handleArchiveCurrentClass);
+    elements.deleteClassButton?.addEventListener('click', handleDeleteCurrentClass);
     elements.openAddStudentButton.addEventListener('click', openAddStudentDialog);
     elements.removeSelectedStudentButton.addEventListener('click', handleRemoveSelectedStudent);
     elements.openSeedDialogButton.addEventListener('click', openSeedDialog);
@@ -2159,9 +2401,11 @@ if (isFileMode) {
     elements.createClassCampusSelect.addEventListener('change', renderDialogOptions);
     elements.createClassForm.addEventListener('submit', handleCreateClassSubmit);
     elements.closeCreateClassButton.addEventListener('click', function () {
+      resetClassDialogState();
       closeDialog(elements.createClassDialog);
     });
     elements.cancelCreateClassButton.addEventListener('click', function () {
+      resetClassDialogState();
       closeDialog(elements.createClassDialog);
     });
 

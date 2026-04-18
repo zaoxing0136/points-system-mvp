@@ -1,5 +1,7 @@
 ﻿import { ensureSupabase } from './supabase-client.js';
 
+import { DEFAULT_BADGE_DEFINITIONS, DEFAULT_POINT_RULES, OFFICIAL_CAMPUSES, OFFICIAL_CAMPUS_NAMES } from './default-config.js';
+
 const ACTIVE_POINT_RULE_FIELDS = 'id, category, rule_name, points, sort_order, is_active, is_common, created_at';
 const ADMIN_POINT_RULE_FIELDS = 'id, category, rule_name, points, sort_order, is_active, is_common, created_at';
 const LEVEL_TIER_FIELDS = 'id, level_no, level_name, threshold, is_active, created_at, updated_at';
@@ -21,6 +23,212 @@ const CLASS_SELECT_FIELDS = `
   subjects:subject_id ( id, name, code ),
   teachers:teacher_id ( id, name, display_name )
 `;
+
+const CATEGORY_ORDER = ['classroom', 'homework', 'project', 'habits'];
+
+const OFFICIAL_CAMPUS_ORDER = OFFICIAL_CAMPUS_NAMES.reduce(function (orderMap, campusName, index) {
+  orderMap[normalizeCampusName(campusName)] = index;
+  return orderMap;
+}, {});
+
+const OFFICIAL_CAMPUS_ID_MAP = OFFICIAL_CAMPUSES.reduce(function (idMap, campus) {
+  idMap[campus.id] = campus;
+  return idMap;
+}, {});
+
+function normalizeCampusName(value) {
+  return String(value || '').trim().replace(/校区$/u, '');
+}
+
+function getCanonicalCampusName(value) {
+  const normalized = normalizeCampusName(value);
+  return OFFICIAL_CAMPUS_NAMES.find(function (campusName) {
+    return normalizeCampusName(campusName) === normalized;
+  }) || normalized || String(value || '').trim();
+}
+
+function isOfficialCampusName(value) {
+  const normalized = normalizeCampusName(value);
+  return Object.prototype.hasOwnProperty.call(OFFICIAL_CAMPUS_ORDER, normalized);
+}
+
+function sortCampusesByOfficialOrder(rows) {
+  return rows.slice().sort(function (left, right) {
+    const leftRank = OFFICIAL_CAMPUS_ORDER[normalizeCampusName(left?.name)] ?? Number.MAX_SAFE_INTEGER;
+    const rightRank = OFFICIAL_CAMPUS_ORDER[normalizeCampusName(right?.name)] ?? Number.MAX_SAFE_INTEGER;
+    if (leftRank !== rightRank) {
+      return leftRank - rightRank;
+    }
+    return String(left?.name || '').localeCompare(String(right?.name || ''), 'zh-CN');
+  });
+}
+
+function mapCampusNameFields(row) {
+  if (!row || typeof row !== 'object') {
+    return row;
+  }
+
+  const mappedRow = { ...row };
+  if (mappedRow.name) {
+    mappedRow.name = getCanonicalCampusName(mappedRow.name);
+  }
+  if (mappedRow.campus_name) {
+    mappedRow.campus_name = getCanonicalCampusName(mappedRow.campus_name);
+  }
+  if (mappedRow.campuses?.name) {
+    mappedRow.campuses = {
+      ...mappedRow.campuses,
+      name: getCanonicalCampusName(mappedRow.campuses.name)
+    };
+  }
+  return mappedRow;
+}
+
+function normalizeRuleName(value) {
+  const ruleName = String(value || '').trim();
+  if (ruleName === '专注听讲') {
+    return '专注听课';
+  }
+  if (ruleName === '积极发言') {
+    return '积极表达';
+  }
+  return ruleName;
+}
+
+function comparePointRules(left, right) {
+  if (String(left?.category || '') !== String(right?.category || '')) {
+    const leftRank = CATEGORY_ORDER.indexOf(String(left?.category || ''));
+    const rightRank = CATEGORY_ORDER.indexOf(String(right?.category || ''));
+    return (leftRank === -1 ? CATEGORY_ORDER.length : leftRank) - (rightRank === -1 ? CATEGORY_ORDER.length : rightRank);
+  }
+  if (Number(left?.sort_order || 0) !== Number(right?.sort_order || 0)) {
+    return Number(left?.sort_order || 0) - Number(right?.sort_order || 0);
+  }
+  if (Boolean(left?.is_common) !== Boolean(right?.is_common)) {
+    return Number(Boolean(right?.is_common)) - Number(Boolean(left?.is_common));
+  }
+  return String(left?.rule_name || '').localeCompare(String(right?.rule_name || ''), 'zh-CN');
+}
+
+function buildOfficialCampusRows(rows) {
+  const campusMap = new Map();
+
+  (rows || []).forEach(function (row) {
+    const mappedRow = mapCampusNameFields(row);
+    const campusName = normalizeCampusName(mappedRow?.name);
+    if (campusName && isOfficialCampusName(campusName)) {
+      campusMap.set(campusName, {
+        ...mappedRow,
+        status: mappedRow.status || 'active',
+        __localOnly: false
+      });
+    }
+  });
+
+  OFFICIAL_CAMPUSES.forEach(function (campus) {
+    const normalizedName = normalizeCampusName(campus.name);
+    if (!campusMap.has(normalizedName)) {
+      campusMap.set(normalizedName, {
+        id: campus.id,
+        name: campus.name,
+        code: campus.code,
+        status: 'active',
+        created_at: null,
+        __localOnly: true
+      });
+    }
+  });
+
+  return sortCampusesByOfficialOrder(Array.from(campusMap.values()));
+}
+
+function reconcilePointRuleRows(rows) {
+  const merged = (rows || []).map(function (row) {
+    const normalizedRuleName = normalizeRuleName(row.rule_name);
+    const isPunctualRule = normalizedRuleName === '准时到课';
+    return {
+      ...row,
+      rule_name: normalizedRuleName,
+      category: isPunctualRule ? 'classroom' : row.category,
+      points: isPunctualRule ? 1 : Number(row.points || 0),
+      sort_order: isPunctualRule ? 60 : Number(row.sort_order || 0),
+      is_active: row.is_active !== false,
+      is_common: isPunctualRule ? true : Boolean(row.is_common),
+      __localOnly: false
+    };
+  });
+
+  const hasPunctualRule = merged.some(function (row) {
+    return row.rule_name === '准时到课';
+  });
+  if (!hasPunctualRule) {
+    const fallbackPunctualRule = DEFAULT_POINT_RULES.find(function (row) {
+      return row.rule_name === '准时到课' && row.category === 'classroom';
+    });
+    if (fallbackPunctualRule) {
+      merged.push({
+        ...fallbackPunctualRule,
+        __localOnly: true
+      });
+    }
+  }
+
+  DEFAULT_POINT_RULES
+    .filter(function (row) {
+      return Number(row.points || 0) < 0;
+    })
+    .forEach(function (fallbackRule) {
+      const exists = merged.some(function (row) {
+        return row.id === fallbackRule.id || row.rule_name === fallbackRule.rule_name;
+      });
+      if (!exists) {
+        merged.push({
+          ...fallbackRule,
+          __localOnly: true
+        });
+      }
+    });
+
+  return merged.sort(comparePointRules);
+}
+
+function reconcileBadgeDefinitionRows(rows) {
+  const merged = (rows || []).map(function (row) {
+    if (row.code === 'persistence_star') {
+      return {
+        ...row,
+        event_label: '准时到课',
+        description: '准时到课累计达到阈值后解锁。'
+      };
+    }
+    return {
+      ...row,
+      event_label: normalizeRuleName(row.event_label)
+    };
+  });
+
+  const hasPersistenceBadge = merged.some(function (row) {
+    return row.code === 'persistence_star';
+  });
+  if (!hasPersistenceBadge) {
+    const fallbackBadge = DEFAULT_BADGE_DEFINITIONS.find(function (row) {
+      return row.code === 'persistence_star';
+    });
+    if (fallbackBadge) {
+      merged.push({
+        ...fallbackBadge,
+        id: fallbackBadge.id || null
+      });
+    }
+  }
+
+  return merged.sort(function (left, right) {
+    if (Number(left?.sort_order || 0) !== Number(right?.sort_order || 0)) {
+      return Number(left?.sort_order || 0) - Number(right?.sort_order || 0);
+    }
+    return String(left?.name || '').localeCompare(String(right?.name || ''), 'zh-CN');
+  });
+}
 
 function buildErrorMessage(prefix, message) {
   const normalizedPrefix = String(prefix || '').trim();
@@ -85,9 +293,11 @@ function mergeRowsById(rows) {
 
 export async function fetchCampuses() {
   const supabase = ensureSupabase();
-  return runQuery(
-    supabase.from('campuses').select('id, name, code, status, created_at').eq('status', 'active').order('name')
+  const rows = await runQuery(
+    supabase.from('campuses').select('id, name, code, status, created_at').eq('status', 'active').order('created_at')
   );
+
+  return buildOfficialCampusRows(rows);
 }
 
 export async function fetchSubjects() {
@@ -128,17 +338,28 @@ export async function fetchClasses(options = {}) {
     query = query.eq('teacher_id', options.teacherId);
   }
 
-  return runQuery(query);
+  const rows = await runQuery(query);
+  return rows
+    .map(mapCampusNameFields)
+    .filter(function (row) {
+      return isOfficialCampusName(row?.campuses?.name);
+    });
 }
 
 export async function fetchClassesDirectory() {
   const supabase = ensureSupabase();
-  return runQuery(
+  const rows = await runQuery(
     supabase
       .from('classes')
       .select(CLASS_SELECT_FIELDS)
       .order('created_at', { ascending: false })
   );
+
+  return rows
+    .map(mapCampusNameFields)
+    .filter(function (row) {
+      return isOfficialCampusName(row?.campuses?.name);
+    });
 }
 
 export async function fetchClassMemberLinks() {
@@ -153,7 +374,7 @@ export async function fetchClassMemberLinks() {
 
 export async function fetchPointRules() {
   const supabase = ensureSupabase();
-  return runQuery(
+  const rows = await runQuery(
     supabase
       .from('point_rules')
       .select(ACTIVE_POINT_RULE_FIELDS)
@@ -163,11 +384,15 @@ export async function fetchPointRules() {
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true })
   );
+
+  return reconcilePointRuleRows(rows).filter(function (row) {
+    return row.is_active !== false;
+  });
 }
 
 export async function fetchAdminPointRules() {
   const supabase = ensureSupabase();
-  return runQuery(
+  const rows = await runQuery(
     supabase
       .from('point_rules')
       .select(ADMIN_POINT_RULE_FIELDS)
@@ -176,6 +401,8 @@ export async function fetchAdminPointRules() {
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true })
   );
+
+  return reconcilePointRuleRows(rows);
 }
 
 export async function upsertPointRules(rows) {
@@ -228,7 +455,10 @@ export async function fetchBadgeDefinitions(options = {}) {
     query = query.eq('is_active', true);
   }
 
-  return runQuery(query, '读取徽章规则失败');
+  const rows = await runQuery(query, '读取徽章规则失败');
+  return reconcileBadgeDefinitionRows(rows).filter(function (row) {
+    return activeOnly ? row.is_active !== false : true;
+  });
 }
 
 export async function upsertBadgeDefinitions(rows) {
@@ -371,7 +601,20 @@ export async function fetchStudentBadgeProgress(studentId) {
     query = query.in('student_id', ids);
   }
 
-  return runQuery(query, '读取学生徽章进度失败');
+  const rows = await runQuery(query, '读取学生徽章进度失败');
+  return rows.map(function (row) {
+    if (row.code === 'persistence_star') {
+      return {
+        ...row,
+        event_label: '准时到课',
+        description: '准时到课累计达到阈值后解锁。'
+      };
+    }
+    return {
+      ...row,
+      event_label: normalizeRuleName(row.event_label)
+    };
+  });
 }
 
 export async function insertStudentBadgeEvent(payload) {
@@ -386,13 +629,101 @@ export async function insertStudentBadgeEvent(payload) {
 
 export async function createClass(payload) {
   const supabase = ensureSupabase();
-  return runQuery(
-    supabase
-      .from('classes')
-      .insert(payload)
-      .select(CLASS_SELECT_FIELDS)
-      .single()
-  );
+  try {
+    return await runQuery(
+      supabase
+        .from('classes')
+        .insert(payload)
+        .select(CLASS_SELECT_FIELDS)
+        .single(),
+      '创建班级失败'
+    );
+  } catch (error) {
+    const targetCampus = OFFICIAL_CAMPUS_ID_MAP[String(payload?.campus_id || '').trim()];
+    if (targetCampus && /foreign key|violates/i.test(String(error?.message || ''))) {
+      throw new Error(`正式校区“${targetCampus.name}”还没写入数据库，请先执行 supabase/010_rollout_cleanup.sql。`);
+    }
+    throw error;
+  }
+}
+
+export async function updateClass(classId, payload) {
+  const supabase = ensureSupabase();
+  try {
+    return await runQuery(
+      supabase
+        .from('classes')
+        .update(payload)
+        .eq('id', classId)
+        .select(CLASS_SELECT_FIELDS)
+        .single(),
+      '更新班级失败'
+    );
+  } catch (error) {
+    const targetCampus = OFFICIAL_CAMPUS_ID_MAP[String(payload?.campus_id || '').trim()];
+    if (targetCampus && /foreign key|violates/i.test(String(error?.message || ''))) {
+      throw new Error(`正式校区“${targetCampus.name}”还没写入数据库，请先执行 supabase/010_rollout_cleanup.sql。`);
+    }
+    throw error;
+  }
+}
+
+export async function archiveClass(classId) {
+  return updateClass(classId, { status: 'archived' });
+}
+
+async function fetchHeadCount(builder, context) {
+  const { count, error } = await builder;
+  if (error) {
+    throw mapSupabaseError(error, context);
+  }
+  return Number(count || 0);
+}
+
+export async function fetchClassUsageStats(classId) {
+  const supabase = ensureSupabase();
+  const [activeMemberCount, ledgerCount] = await Promise.all([
+    fetchHeadCount(
+      supabase
+        .from('class_students')
+        .select('id', { count: 'exact', head: true })
+        .eq('class_id', classId)
+        .eq('member_status', 'active'),
+      '读取班级学生人数失败'
+    ),
+    fetchHeadCount(
+      supabase
+        .from('point_ledger')
+        .select('id', { count: 'exact', head: true })
+        .eq('class_id', classId),
+      '读取班级积分流水失败'
+    )
+  ]);
+
+  return {
+    activeMemberCount,
+    ledgerCount,
+    canHardDelete: activeMemberCount === 0 && ledgerCount === 0
+  };
+}
+
+export async function deleteClass(classId) {
+  const supabase = ensureSupabase();
+  const stats = await fetchClassUsageStats(classId);
+  if (!stats.canHardDelete) {
+    throw new Error('班级已有学生或积分流水，只能归档，不能直接删除。');
+  }
+
+  const { error } = await supabase
+    .from('classes')
+    .delete()
+    .eq('id', classId);
+
+  if (error) {
+    throw mapSupabaseError(error, '删除班级失败');
+  }
+
+  return true;
 }
 
 export async function searchStudents(keyword) {
@@ -414,7 +745,7 @@ export async function searchStudents(keyword) {
     ].join(','));
   }
 
-  return runQuery(query, '读取徽章榜失败');
+  return runQuery(query, '搜索学生失败');
 }
 
 export async function addStudentToClass(payload) {
@@ -474,8 +805,15 @@ export async function fetchStudentPointsSummary(studentIds) {
 }
 
 function parseCampusNameFromNotes(notes) {
-  const match = String(notes || '').match(/([^\s：:，,；;]+?校区)/u);
-  return match ? match[1] : '';
+  const text = String(notes || '');
+  const matchWithSuffix = text.match(/([^\s：:，,；;]+?校区)/u);
+  if (matchWithSuffix) {
+    return getCanonicalCampusName(matchWithSuffix[1]);
+  }
+  const matchWithoutSuffix = OFFICIAL_CAMPUS_NAMES.find(function (campusName) {
+    return text.includes(campusName);
+  });
+  return matchWithoutSuffix || '';
 }
 
 async function fetchCampusNameMapForStudents(studentIds) {
@@ -500,7 +838,10 @@ async function fetchCampusNameMapForStudents(studentIds) {
 
   ledgerBatches.flat().forEach(function (row) {
     if (!campusMap.has(row.student_id) && row.campuses?.name) {
-      campusMap.set(row.student_id, row.campuses.name);
+      const campusName = getCanonicalCampusName(row.campuses.name);
+      if (isOfficialCampusName(campusName)) {
+        campusMap.set(row.student_id, campusName);
+      }
     }
   });
 
@@ -535,7 +876,8 @@ async function fetchCampusNameMapForStudents(studentIds) {
 
       const classCampusMap = new Map();
       classBatches.flat().forEach(function (row) {
-        classCampusMap.set(row.id, row.campuses?.name || '');
+        const campusName = getCanonicalCampusName(row.campuses?.name || '');
+        classCampusMap.set(row.id, isOfficialCampusName(campusName) ? campusName : '');
       });
 
       memberLinks.forEach(function (row) {
@@ -595,6 +937,8 @@ export async function fetchLeaderboardSummary() {
       ...row,
       campus_name: campusMap.get(row.student_id) || ''
     };
+  }).filter(function (row) {
+    return Boolean(String(row.campus_name || '').trim());
   });
 }
 
@@ -622,6 +966,8 @@ export async function fetchBadgeLeaderboard(studentIds) {
       ...row,
       campus_name: campusMap.get(row.student_id) || ''
     };
+  }).filter(function (row) {
+    return Boolean(String(row.campus_name || '').trim());
   });
 }
 function waitForAdminApi(ms) {

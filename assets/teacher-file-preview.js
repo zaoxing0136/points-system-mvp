@@ -19,10 +19,10 @@ const LEVEL_TIERS = normalizeTierList([
 
 const PREVIEW_RULES = {
   classroom: [
-    { id: 'focus', rule_name: '专注发言', points: 2, is_common: true },
-    { id: 'teamwork', rule_name: '合作互助', points: 3, is_common: true },
-    { id: 'brave', rule_name: '主动尝试', points: 2 },
-    { id: 'question', rule_name: '会提问题', points: 1 }
+    { id: 'focus', rule_name: '专注听课', points: 1, is_common: true },
+    { id: 'expression', rule_name: '积极表达', points: 2, is_common: true },
+    { id: 'punctual', rule_name: '准时到课', points: 1, is_common: true },
+    { id: 'teamwork', rule_name: '主动协作', points: 2 }
   ],
   homework: [
     { id: 'finish', rule_name: '按时完成', points: 2, is_common: true },
@@ -45,7 +45,7 @@ function buildPreviewRecords(student) {
   const baseTime = new Date(student.created_at || Date.now()).getTime();
   return [
     {
-      rule_name_snapshot: '专注发言',
+      rule_name_snapshot: '专注听课',
       category_snapshot: 'classroom',
       points_delta: 2,
       action_type: 'add',
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function () {
       ...student,
       total_points: 128 + index * 21,
       class_name: '启航探索班',
-      campus_name: '星河校区'
+      campus_name: '东新'
     };
   });
 
@@ -283,7 +283,7 @@ document.addEventListener('DOMContentLoaded', function () {
     elements.teacherInlineNotice.textContent = '真实加分、建班、搜索加人仍需本地服务；此处主要用于验证头像审美与小尺寸清晰度。';
   }
   if (elements.campusSelect) {
-    elements.campusSelect.innerHTML = '<option value="preview-campus">星河校区（本地预览）</option>';
+    elements.campusSelect.innerHTML = '<option value="preview-campus">东新（本地预览）</option>';
     elements.campusSelect.disabled = true;
   }
   if (elements.classSelect) {
@@ -291,7 +291,7 @@ document.addEventListener('DOMContentLoaded', function () {
     elements.classSelect.disabled = true;
   }
   if (elements.campusRail) {
-    elements.campusRail.innerHTML = '<button class="teacher-filter-chip is-active" type="button">星河校区</button>';
+    elements.campusRail.innerHTML = '<button class="teacher-filter-chip is-active" type="button">东新</button>';
   }
   if (elements.classRail) {
     elements.classRail.innerHTML = '<button class="teacher-filter-chip teacher-filter-chip--class is-active" type="button"><strong>启航探索班</strong><span>静态预览</span></button>';

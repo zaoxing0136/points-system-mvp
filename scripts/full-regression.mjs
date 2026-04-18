@@ -10,6 +10,7 @@ const cwd = process.cwd();
 const baseUrl = 'http://127.0.0.1:4175';
 const edgePath = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
 const artifactDir = path.join(cwd, 'artifacts', 'full-regression');
+const OFFICIAL_CAMPUSES = ['东新', '城北', '江湾', '三墩', '观成', '文三', '解放路'];
 const results = [];
 const cleanupState = {
   studentNames: [],
@@ -139,6 +140,35 @@ function buildAuthEmail(loginName) {
   return `${loginName}@accounts.points-mvp.local`;
 }
 
+function normalizeCampusName(value) {
+  return String(value || '').trim().replace(/校区$/u, '');
+}
+
+function isOfficialCampusName(value) {
+  return OFFICIAL_CAMPUSES.includes(normalizeCampusName(value));
+}
+
+async function fetchOfficialActiveCampuses(serviceClient, minimumCount = 1) {
+  const { data, error } = await serviceClient
+    .from('campuses')
+    .select('id, name')
+    .eq('status', 'active')
+    .order('created_at', { ascending: true });
+  if (error) {
+    throw error;
+  }
+
+  const campuses = (data || []).filter(function (campus) {
+    return isOfficialCampusName(campus?.name);
+  });
+
+  if (campuses.length < minimumCount) {
+    throw new Error(`Not enough official campuses for regression seed: expected ${minimumCount}, got ${campuses.length}.`);
+  }
+
+  return campuses;
+}
+
 async function listAllAuthUsers(serviceClient) {
   let page = 1;
   const users = [];
@@ -203,10 +233,7 @@ function buildStudentCode(seed) {
 async function createDisposableTeacherBundle(serviceClient, options) {
   const loginName = options.loginName;
   const email = buildAuthEmail(loginName);
-  const { data: campuses, error: campusError } = await serviceClient.from('campuses').select('id, name').eq('status', 'active').order('created_at', { ascending: true }).limit(2);
-  if (campusError) {
-    throw campusError;
-  }
+  const campuses = await fetchOfficialActiveCampuses(serviceClient, 2);
   const { data: subjects, error: subjectError } = await serviceClient.from('subjects').select('id, name').eq('status', 'active').order('created_at', { ascending: true }).limit(1);
   if (subjectError) {
     throw subjectError;
@@ -425,15 +452,7 @@ async function seedTeacherWorkspace(serviceClient, options) {
   const teacherId = profile.teacher_id;
   cleanupState.teacherIds.push(teacherId);
 
-  const { data: campuses, error: campusError } = await serviceClient
-    .from('campuses')
-    .select('id')
-    .eq('status', 'active')
-    .order('created_at', { ascending: true })
-    .limit(2);
-  if (campusError) {
-    throw campusError;
-  }
+  const campuses = await fetchOfficialActiveCampuses(serviceClient, 2);
 
   const { data: subjects, error: subjectError } = await serviceClient
     .from('subjects')
@@ -539,6 +558,7 @@ async function seedTeacherWorkspace(serviceClient, options) {
 
   return {
     teacherId,
+    campuses,
     classNames,
     studentNames
   };
@@ -610,6 +630,63 @@ async function waitForTeacherReady(page) {
   await page.waitForTimeout(1200);
 }
 
+async function focusTeacherWorkspace(page, expectedClassNames = []) {
+  const campusOptions = await page.locator('#campusSelect option').evaluateAll(function (nodes) {
+    return nodes
+      .map(function (node) {
+        return {
+          value: node.value,
+          text: node.textContent || ''
+        };
+      })
+      .filter(function (option) {
+        return option.value;
+      });
+  });
+
+  for (const campusOption of campusOptions) {
+    await page.locator('#campusSelect').selectOption(campusOption.value, { force: true });
+    await page.waitForTimeout(1200);
+
+    const classOptions = await page.locator('#classSelect option').evaluateAll(function (nodes) {
+      return nodes
+        .map(function (node) {
+          return {
+            value: node.value,
+            text: node.textContent || ''
+          };
+        })
+        .filter(function (option) {
+          return option.value;
+        });
+    });
+
+    const targetClassOption = classOptions.find(function (option) {
+      return expectedClassNames.some(function (className) {
+        return option.text.includes(className);
+      });
+    }) || classOptions[0];
+
+    if (!targetClassOption?.value) {
+      continue;
+    }
+
+    await page.locator('#classSelect').selectOption(targetClassOption.value, { force: true });
+    await page.waitForTimeout(1500);
+
+    const studentCount = await page.locator('#studentGrid [data-student-id]').count();
+    if (studentCount > 0) {
+      return {
+        campus: campusOption.text,
+        className: targetClassOption.text,
+        studentCount
+      };
+    }
+  }
+
+  throw new Error('No teacher workspace class with active students could be selected.');
+}
+
 async function loginAs(page, loginName, password) {
   await page.goto(`${baseUrl}/login.html`, { waitUntil: 'networkidle' });
   await page.fill('#loginAccountInput', loginName);
@@ -641,6 +718,7 @@ async function step(name, fn) {
 loadEnvFiles();
 const serviceClient = createServiceClient();
 let browser = null;
+let uiTeacherWorkspace = null;
 
 try {
   const adminUser = await ensureAdminAccount(serviceClient);
@@ -733,7 +811,7 @@ try {
 
       adminAccountPhase = '准备老师工作区数据';
       await trackUiTeacherCleanup(serviceClient, createdUserId);
-      await seedTeacherWorkspace(serviceClient, {
+      uiTeacherWorkspace = await seedTeacherWorkspace(serviceClient, {
         userId: createdUserId,
         loginName: uiTeacherLogin,
         displayName: uiTeacherDisplay,
@@ -943,16 +1021,24 @@ try {
       teacherPhase = '切校区切班级';
       const campusCount = await teacherPage.locator('#campusSelect option').count();
       if (campusCount > 1) {
-        await teacherPage.selectOption('#campusSelect', { index: 1 });
+        await teacherPage.locator('#campusSelect').selectOption({ index: 1 }, { force: true });
         await teacherPage.waitForTimeout(1000);
       }
       const classCount = await teacherPage.locator('#classSelect option').count();
       if (classCount > 1) {
-        await teacherPage.selectOption('#classSelect', { index: 1 });
+        await teacherPage.locator('#classSelect').selectOption({ index: 1 }, { force: true });
         await teacherPage.waitForTimeout(1200);
       }
 
       teacherPhase = '选择学生并单人加分';
+      if (await teacherPage.locator('#studentGrid [data-student-id]').count() === 0) {
+        teacherPhase = '瀹氫綅鍒版湁瀛︾敓鐨勮€佸笀鐝骇';
+        const workspaceTarget = await focusTeacherWorkspace(teacherPage, uiTeacherWorkspace?.classNames || []);
+        if (!workspaceTarget.studentCount) {
+          throw new Error('teacher workspace did not load roster');
+        }
+      }
+
       await teacherPage.locator('#studentGrid [data-student-id]').first().click();
       await teacherPage.waitForTimeout(800);
       const actionBefore = await teacherPage.locator('#studentRecordList').textContent();

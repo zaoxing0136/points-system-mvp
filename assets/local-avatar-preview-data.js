@@ -12,8 +12,8 @@ const DISPLAY_NAMES = [
 ];
 
 const GRADES = ['小班', '中班', '大班', '一年级', '二年级', '三年级'];
-const CAMPUSES = ['星河校区', '海棠校区', '云杉校区'];
-const CLASS_NAMES = ['启航探索班', '森林创想班', '星光表达班'];
+const CAMPUSES = ['东新', '江湾', '三墩', '城北', '观成', '文三', '解放路'];
+const CLASS_NAMES = ['启航探索班', '森林创想班', '星光表达班', '未来创客班'];
 const PARENTS = ['李妈妈', '王妈妈', '陈爸爸', '周妈妈', '林爸爸', '许妈妈'];
 const NOTES = [
   '喜欢动手搭建，适合项目激励。',

@@ -84,6 +84,9 @@
         <div class="teacher-class-actions teacher-class-actions--v1">
           <div class="teacher-class-actions-row">
             <button id="openCreateClassButton" class="primary-button" type="button">快速建班</button>
+            <button id="editClassButton" class="ghost-button" type="button">编辑班级</button>
+            <button id="archiveClassButton" class="ghost-button teacher-safe-button" type="button">归档班级</button>
+            <button id="deleteClassButton" class="ghost-button teacher-remove-button" type="button">删除班级</button>
             <button id="openAddStudentButton" class="ghost-button" type="button">搜索加人</button>
             <button id="classBoostToggleButton" class="ghost-button teacher-safe-button" type="button">整班 +1</button>
           </div>
@@ -138,6 +141,17 @@
                 <div id="actionCards" class="teacher-action-grid teacher-action-grid--compact"></div>
               </section>
 
+              <section id="deductionSection" class="teacher-actions-section teacher-actions-section--v1 teacher-actions-section--deduction" hidden>
+                <div class="teacher-actions-head teacher-actions-head--v1">
+                  <div>
+                    <p class="eyebrow">Deduction Rules</p>
+                    <h3>减分提醒</h3>
+                  </div>
+                  <p class="section-tip">只做课堂提醒，不联动徽章，方便老师现场轻量纠偏。</p>
+                </div>
+                <div id="deductionCards" class="teacher-action-grid teacher-action-grid--compact teacher-deduction-grid"></div>
+              </section>
+
               <section class="teacher-actions-section teacher-actions-section--v1 teacher-badge-section">
                 <div class="teacher-actions-head teacher-actions-head--v1">
                   <div>
@@ -169,8 +183,8 @@
       <form id="createClassForm" class="teacher-dialog-form trial-dialog-form">
         <div class="teacher-dialog-head">
           <div>
-            <h2>快速建班</h2>
-            <p class="section-tip">老师端也可以在试运行阶段快速创建自己的班级。</p>
+            <h2 id="createClassDialogTitle">快速建班</h2>
+            <p id="createClassDialogHint" class="section-tip">老师端也可以在试运行阶段快速创建自己的班级。</p>
           </div>
           <button id="closeCreateClassButton" class="icon-button" type="button" aria-label="关闭">×</button>
         </div>
@@ -209,7 +223,7 @@
           <input id="createClassScheduleInput" name="schedule_text" type="text" placeholder="例如：周三 19:00-20:30" />
         </label>
         <div class="teacher-dialog-actions">
-          <button class="primary-button" type="submit">创建班级</button>
+          <button id="createClassSubmitButton" class="primary-button" type="submit">创建班级</button>
           <button id="cancelCreateClassButton" class="ghost-button" type="button">取消</button>
         </div>
       </form>
