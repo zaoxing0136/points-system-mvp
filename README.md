@@ -39,6 +39,8 @@
 7. `supabase/007_students_admin_write.sql`
 8. `supabase/008_point_ledger_seed_action.sql`
 9. `supabase/009_badges_real_chain.sql`
+10. `supabase/010_rollout_cleanup.sql`
+11. `supabase/011_subjects_admin_write.sql`
 
 ## 当前核心表 / 视图
 
@@ -133,7 +135,7 @@ npm run build
 ### 管理员
 
 - 角色：`admin`
-- 可管理段位、积分规则、徽章规则、老师账号
+- 可管理段位、积分规则、徽章规则、老师账号、课程目录
 - 可查看真实徽章结果
 
 ### 老师

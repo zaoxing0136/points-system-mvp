@@ -41,6 +41,7 @@ const ACTION_TYPE_META = {
 };
 
 const TEACHER_FOCUS_MODE_STORAGE_KEY = 'teacher:class-focus-mode:v2';
+const TEACHER_LAST_CAMPUS_STORAGE_KEY = 'teacher:last-campus:v1';
 const ACTION_LABEL_ALIASES = Object.freeze({
   '专注听讲': '专注听课',
   '积极发言': '积极表达'
@@ -84,6 +85,26 @@ function getInitialTeacherFocusMode() {
 function persistTeacherFocusMode(enabled) {
   try {
     window.localStorage.setItem(TEACHER_FOCUS_MODE_STORAGE_KEY, enabled ? 'on' : 'off');
+  } catch (error) {
+    // Ignore localStorage failures so the page can keep working in locked-down browsers.
+  }
+}
+
+function getStoredTeacherCampusId() {
+  try {
+    return window.localStorage.getItem(TEACHER_LAST_CAMPUS_STORAGE_KEY) || '';
+  } catch (error) {
+    return '';
+  }
+}
+
+function persistTeacherCampusId(campusId) {
+  try {
+    if (!campusId) {
+      window.localStorage.removeItem(TEACHER_LAST_CAMPUS_STORAGE_KEY);
+      return;
+    }
+    window.localStorage.setItem(TEACHER_LAST_CAMPUS_STORAGE_KEY, campusId);
   } catch (error) {
     // Ignore localStorage failures so the page can keep working in locked-down browsers.
   }
@@ -364,28 +385,9 @@ if (isFileMode) {
     }
 
     function getAvailableCampuses() {
-      if (!state.authContext?.isTeacher) {
-        return state.campuses;
-      }
-
-      const campusIds = new Set(
-        state.classes.map(function (classItem) {
-          return classItem.campus_id;
-        }).filter(Boolean)
-      );
-
-      const teacherCampusId = state.authContext.profile?.teacher?.campus_id || '';
-      if (teacherCampusId) {
-        campusIds.add(teacherCampusId);
-      }
-
-      if (!campusIds.size) {
-        return state.campuses;
-      }
-
-      return state.campuses.filter(function (campus) {
-        return campusIds.has(campus.id);
-      });
+      // Teachers can teach across campuses, so class creation must always expose
+      // all official campuses instead of shrinking the list to existing classes.
+      return state.campuses;
     }
 
     function getClassQueryOptions() {
@@ -699,6 +701,8 @@ if (isFileMode) {
       if (campuses.length && !campuses.some(function (campus) { return campus.id === state.campusId; })) {
         state.campusId = campuses[0].id;
       }
+
+      persistTeacherCampusId(state.campusId);
 
       const options = campuses.map(function (campus) {
         return `<option value="${escapeHtml(campus.id)}">${escapeHtml(campus.name)}</option>`;
@@ -1530,7 +1534,13 @@ if (isFileMode) {
         state.pointRules = pointRules;
         state.badgeDefinitions = badgeDefinitions;
         state.levelTiers = normalizeTierList(levelTiers);
-        state.campusId = classes[0]?.campus_id || state.authContext.profile?.teacher?.campus_id || campuses[0]?.id || '';
+        const storedCampusId = getStoredTeacherCampusId();
+        const hasStoredCampus = campuses.some(function (campus) {
+          return campus.id === storedCampusId;
+        });
+        state.campusId = hasStoredCampus
+          ? storedCampusId
+          : classes[0]?.campus_id || campuses[0]?.id || '';
         syncClassSelection();
         renderAll();
         await loadRosterAndRecords();
@@ -1572,6 +1582,7 @@ if (isFileMode) {
           state.campusId = selectedClass.campus_id;
         }
       }
+      persistTeacherCampusId(state.campusId);
       syncClassSelection();
       renderAll();
       await loadRosterAndRecords();
@@ -2105,7 +2116,14 @@ if (isFileMode) {
     function openCreateClassDialog() {
       resetClassDialogState();
       elements.createClassForm.reset();
-      elements.createClassCampusSelect.value = state.campusId || getAvailableCampuses()[0]?.id || state.campuses[0]?.id || '';
+      const storedCampusId = getStoredTeacherCampusId();
+      const availableCampuses = getAvailableCampuses();
+      const defaultCampusId = availableCampuses.some(function (campus) {
+        return campus.id === storedCampusId;
+      })
+        ? storedCampusId
+        : state.campusId || availableCampuses[0]?.id || state.campuses[0]?.id || '';
+      elements.createClassCampusSelect.value = defaultCampusId;
       renderDialogOptions();
       if (state.authContext?.isTeacher && state.authContext.teacherId) {
         elements.createClassTeacherSelect.value = state.authContext.teacherId;
@@ -2261,6 +2279,7 @@ if (isFileMode) {
 
     elements.campusSelect.addEventListener('change', async function (event) {
       state.campusId = event.target.value;
+      persistTeacherCampusId(state.campusId);
       state.classBoostArmed = false;
       syncClassSelection();
       renderAll();
@@ -2280,6 +2299,7 @@ if (isFileMode) {
         return;
       }
       state.campusId = button.dataset.campusId;
+      persistTeacherCampusId(state.campusId);
       state.classBoostArmed = false;
       syncClassSelection();
       renderAll();
@@ -2398,7 +2418,10 @@ if (isFileMode) {
     elements.removeSelectedStudentButton.addEventListener('click', handleRemoveSelectedStudent);
     elements.openSeedDialogButton.addEventListener('click', openSeedDialog);
     elements.openRedeemButton.addEventListener('click', openRedeemDialog);
-    elements.createClassCampusSelect.addEventListener('change', renderDialogOptions);
+    elements.createClassCampusSelect.addEventListener('change', function () {
+      persistTeacherCampusId(elements.createClassCampusSelect.value);
+      renderDialogOptions();
+    });
     elements.createClassForm.addEventListener('submit', handleCreateClassSubmit);
     elements.closeCreateClassButton.addEventListener('click', function () {
       resetClassDialogState();

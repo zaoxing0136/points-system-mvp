@@ -13,8 +13,9 @@
   const STATUS_META = {
     all: '全部状态',
     normal: '正常',
+    inactive: '已停用',
     temporary: '临时',
-    pending_merge: '待合并',
+    pending_merge: '已停用',
     merged: '已合并'
   };
 

@@ -6,6 +6,7 @@ const ACTIVE_POINT_RULE_FIELDS = 'id, category, rule_name, points, sort_order, i
 const ADMIN_POINT_RULE_FIELDS = 'id, category, rule_name, points, sort_order, is_active, is_common, created_at';
 const LEVEL_TIER_FIELDS = 'id, level_no, level_name, threshold, is_active, created_at, updated_at';
 const BADGE_DEFINITION_FIELDS = 'id, code, name, description, event_label, icon_token, threshold, is_active, sort_order, created_at, updated_at';
+const SUBJECT_FIELDS = 'id, name, code, status, created_at';
 const STUDENT_FIELDS = 'id, student_code, legal_name, display_name, gender, grade, birth_year, parent_name, parent_phone, avatar_url, status, created_by_role, created_by_id, notes, created_at, updated_at';
 const STUDENT_DUPLICATE_FIELDS = 'id, student_code, legal_name, display_name, grade, parent_name, parent_phone, status, created_at';
 const CLASS_SELECT_FIELDS = `
@@ -25,6 +26,7 @@ const CLASS_SELECT_FIELDS = `
 `;
 
 const CATEGORY_ORDER = ['classroom', 'homework', 'project', 'habits'];
+const INACTIVE_STORAGE_STATUS = 'pending_merge';
 
 const OFFICIAL_CAMPUS_ORDER = OFFICIAL_CAMPUS_NAMES.reduce(function (orderMap, campusName, index) {
   orderMap[normalizeCampusName(campusName)] = index;
@@ -303,7 +305,96 @@ export async function fetchCampuses() {
 export async function fetchSubjects() {
   const supabase = ensureSupabase();
   return runQuery(
-    supabase.from('subjects').select('id, name, code, status, created_at').eq('status', 'active').order('name')
+    supabase
+      .from('subjects')
+      .select(SUBJECT_FIELDS)
+      .eq('status', 'active')
+      .order('name'),
+    '读取课程列表失败'
+  );
+}
+
+function mapStudentStatusForApp(status) {
+  const normalizedStatus = String(status || '').trim();
+  if (normalizedStatus === INACTIVE_STORAGE_STATUS) {
+    return 'inactive';
+  }
+  return normalizedStatus || 'normal';
+}
+
+function mapStudentStatusForStorage(status) {
+  const normalizedStatus = String(status || '').trim();
+  if (normalizedStatus === 'inactive') {
+    return INACTIVE_STORAGE_STATUS;
+  }
+  return normalizedStatus || 'normal';
+}
+
+function mapStudentStatusFields(row) {
+  if (!row || typeof row !== 'object') {
+    return row;
+  }
+  const mappedRow = { ...row };
+  if (Object.prototype.hasOwnProperty.call(mappedRow, 'status')) {
+    mappedRow.status = mapStudentStatusForApp(mappedRow.status);
+  }
+  if (Object.prototype.hasOwnProperty.call(mappedRow, 'student_status')) {
+    mappedRow.student_status = mapStudentStatusForApp(mappedRow.student_status);
+  }
+  return mappedRow;
+}
+
+function mapStudentStatusRows(rows) {
+  return (rows || []).map(mapStudentStatusFields);
+}
+
+function isStudentInactiveStatus(status) {
+  const normalizedStatus = String(status || '').trim();
+  return normalizedStatus === 'inactive' || normalizedStatus === INACTIVE_STORAGE_STATUS;
+}
+
+function isExcludedStudentStatus(status) {
+  const normalizedStatus = String(status || '').trim();
+  return normalizedStatus === 'merged' || isStudentInactiveStatus(normalizedStatus);
+}
+
+export async function fetchSubjectsDirectory() {
+  const supabase = ensureSupabase();
+  return runQuery(
+    supabase
+      .from('subjects')
+      .select(SUBJECT_FIELDS)
+      .order('status', { ascending: true })
+      .order('name', { ascending: true }),
+    '读取课程目录失败'
+  );
+}
+
+export async function upsertSubjects(rows) {
+  const supabase = ensureSupabase();
+  const payload = (Array.isArray(rows) ? rows : [rows]).map(function (row) {
+    const baseRow = {
+      name: String(row.name || '').trim(),
+      code: String(row.code || '').trim(),
+      status: row.status === 'inactive' ? 'inactive' : 'active'
+    };
+    if (row.id) {
+      return {
+        id: row.id,
+        ...baseRow
+      };
+    }
+    return baseRow;
+  });
+
+  return runQuery(
+    supabase
+      .from('subjects')
+      .upsert(payload, { onConflict: 'id' })
+      .select(SUBJECT_FIELDS)
+      .order('status', { ascending: true })
+      .order('name', { ascending: true }),
+    '保存课程失败'
   );
 }
 
@@ -477,7 +568,7 @@ export async function upsertBadgeDefinitions(rows) {
 export async function fetchStudentsList(options = {}) {
   const supabase = ensureSupabase();
   const search = String(options.search || '').trim();
-  const status = String(options.status || '').trim();
+  const status = mapStudentStatusForStorage(options.status);
   const limit = Math.max(1, Math.min(Number(options.limit || 200), 500));
 
   let query = supabase
@@ -499,30 +590,111 @@ export async function fetchStudentsList(options = {}) {
     ].join(','));
   }
 
-  return runQuery(query);
+  return mapStudentStatusRows(await runQuery(query));
 }
 
 export async function createStudents(rows) {
   const supabase = ensureSupabase();
-  const payload = Array.isArray(rows) ? rows : [rows];
-  return runQuery(
+  const payload = (Array.isArray(rows) ? rows : [rows]).map(function (row) {
+    return {
+      ...row,
+      status: mapStudentStatusForStorage(row?.status)
+    };
+  });
+  return mapStudentStatusRows(await runQuery(
     supabase
       .from('students')
       .insert(payload)
       .select(STUDENT_FIELDS)
-  );
+  ));
 }
 
 export async function updateStudent(studentId, payload) {
   const supabase = ensureSupabase();
-  return runQuery(
+  return mapStudentStatusFields(await runQuery(
     supabase
       .from('students')
-      .update(payload)
+      .update({
+        ...payload,
+        ...(Object.prototype.hasOwnProperty.call(payload || {}, 'status')
+          ? { status: mapStudentStatusForStorage(payload.status) }
+          : {})
+      })
       .eq('id', studentId)
       .select(STUDENT_FIELDS)
       .single()
-  );
+  ));
+}
+
+export async function updateStudentStatus(studentId, status) {
+  return updateStudent(studentId, { status });
+}
+
+export async function fetchStudentUsageStats(studentId) {
+  const supabase = ensureSupabase();
+  const [classRelationCount, ledgerCount, badgeEventCount, badgeUnlockCount] = await Promise.all([
+    fetchHeadCount(
+      supabase
+        .from('class_students')
+        .select('id', { count: 'exact', head: true })
+        .eq('student_id', studentId),
+      '读取学生班级关系失败'
+    ),
+    fetchHeadCount(
+      supabase
+        .from('point_ledger')
+        .select('id', { count: 'exact', head: true })
+        .eq('student_id', studentId),
+      '读取学生积分流水失败'
+    ),
+    fetchHeadCount(
+      supabase
+        .from('student_badge_events')
+        .select('id', { count: 'exact', head: true })
+        .eq('student_id', studentId),
+      '读取学生徽章行为记录失败'
+    ),
+    fetchHeadCount(
+      supabase
+        .from('student_badge_unlocks')
+        .select('id', { count: 'exact', head: true })
+        .eq('student_id', studentId),
+      '读取学生徽章解锁记录失败'
+    )
+  ]);
+
+  return {
+    classRelationCount,
+    ledgerCount,
+    badgeEventCount,
+    badgeUnlockCount,
+    canHardDelete: classRelationCount === 0 && ledgerCount === 0 && badgeEventCount === 0 && badgeUnlockCount === 0
+  };
+}
+
+export async function deleteStudent(studentId) {
+  const supabase = ensureSupabase();
+  const stats = await fetchStudentUsageStats(studentId);
+  if (!stats.canHardDelete) {
+    const blockers = [
+      stats.classRelationCount ? `${stats.classRelationCount} 条班级关系` : '',
+      stats.ledgerCount ? `${stats.ledgerCount} 条积分流水` : '',
+      stats.badgeEventCount ? `${stats.badgeEventCount} 条徽章行为记录` : '',
+      stats.badgeUnlockCount ? `${stats.badgeUnlockCount} 条徽章解锁记录` : ''
+    ].filter(Boolean);
+    throw new Error(`学生已有历史数据（${blockers.join('、')}），只能停用，不能直接删除。`);
+  }
+
+  const { error } = await supabase
+    .from('students')
+    .delete()
+    .eq('id', studentId);
+
+  if (error) {
+    throw mapSupabaseError(error, '删除学生失败');
+  }
+
+  return true;
 }
 
 export async function fetchStudentDuplicateCandidates(options = {}) {
@@ -559,12 +731,12 @@ export async function fetchStudentDuplicateCandidates(options = {}) {
     return runQuery(builder);
   }));
 
-  return mergeRowsById(resultSets.flat());
+  return mapStudentStatusRows(mergeRowsById(resultSets.flat()));
 }
 
 export async function fetchClassRoster(classId) {
   const supabase = ensureSupabase();
-  return runQuery(
+  const rows = await runQuery(
     supabase
       .from('class_student_roster')
       .select('*')
@@ -572,6 +744,9 @@ export async function fetchClassRoster(classId) {
       .eq('member_status', 'active')
       .order('joined_at', { ascending: true })
   );
+  return mapStudentStatusRows(rows).filter(function (row) {
+    return !isExcludedStudentStatus(row.student_status);
+  });
 }
 
 export async function fetchStudentLedger(studentId, limit = 6) {
@@ -601,7 +776,9 @@ export async function fetchStudentBadgeProgress(studentId) {
     query = query.in('student_id', ids);
   }
 
-  const rows = await runQuery(query, '读取学生徽章进度失败');
+  const rows = mapStudentStatusRows(await runQuery(query, '读取学生徽章进度失败')).filter(function (row) {
+    return !isExcludedStudentStatus(row.status);
+  });
   return rows.map(function (row) {
     if (row.code === 'persistence_star') {
       return {
@@ -733,6 +910,7 @@ export async function searchStudents(keyword) {
     .from('students')
     .select('id, student_code, legal_name, display_name, grade, parent_name, parent_phone, status, created_at')
     .neq('status', 'merged')
+    .neq('status', INACTIVE_STORAGE_STATUS)
     .order('created_at', { ascending: false })
     .limit(20);
 
@@ -745,7 +923,7 @@ export async function searchStudents(keyword) {
     ].join(','));
   }
 
-  return runQuery(query, '搜索学生失败');
+  return mapStudentStatusRows(await runQuery(query, '搜索学生失败'));
 }
 
 export async function addStudentToClass(payload) {
@@ -797,11 +975,15 @@ export async function insertPointLedger(rows) {
 
 export async function fetchStudentPointsSummary(studentIds) {
   const supabase = ensureSupabase();
-  let query = supabase.from('student_points_summary').select('*').neq('status', 'merged');
+  let query = supabase
+    .from('student_points_summary')
+    .select('*')
+    .neq('status', 'merged')
+    .neq('status', INACTIVE_STORAGE_STATUS);
   if (studentIds?.length) {
     query = query.in('student_id', studentIds);
   }
-  return runQuery(query);
+  return mapStudentStatusRows(await runQuery(query));
 }
 
 function parseCampusNameFromNotes(notes) {
@@ -923,6 +1105,7 @@ export async function fetchLeaderboardSummary() {
       .from('student_points_summary')
       .select('*')
       .neq('status', 'merged')
+      .neq('status', INACTIVE_STORAGE_STATUS)
       .order('total_points', { ascending: false })
       .order('progress_7d', { ascending: false })
       .order('display_name', { ascending: true })
@@ -932,7 +1115,7 @@ export async function fetchLeaderboardSummary() {
     return row.student_id;
   }));
 
-  return summary.map(function (row) {
+  return mapStudentStatusRows(summary).map(function (row) {
     return {
       ...row,
       campus_name: campusMap.get(row.student_id) || ''
@@ -956,7 +1139,9 @@ export async function fetchBadgeLeaderboard(studentIds) {
     query = query.in('student_id', studentIds);
   }
 
-  const rows = await runQuery(query);
+  const rows = mapStudentStatusRows(await runQuery(query)).filter(function (row) {
+    return !isExcludedStudentStatus(row.status);
+  });
   const campusMap = await fetchCampusNameMapForStudents(rows.map(function (row) {
     return row.student_id;
   }));

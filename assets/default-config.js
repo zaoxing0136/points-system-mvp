@@ -27,7 +27,7 @@ export const DEFAULT_POINT_RULES = [
   { id: '82222222-2222-2222-2222-222222222224', category: 'homework', rule_name: '超额练习', points: 2, sort_order: 40, is_active: true, is_common: false },
   { id: '82222222-2222-2222-2222-222222222225', category: 'homework', rule_name: '作业优秀', points: 3, sort_order: 50, is_active: true, is_common: true },
   { id: '83333333-3333-3333-3333-333333333331', category: 'project', rule_name: '作品完成', points: 2, sort_order: 10, is_active: true, is_common: true },
-  { id: '83333333-3333-3333-3333-333333333332', category: 'project', rule_name: '创意表达', points: 2, sort_order: 20, is_active: true, is_common: true },
+  { id: '85555555-5555-5555-5555-555555555555', category: 'project', rule_name: '创意表达', points: 3, sort_order: 20, is_active: true, is_common: true },
   { id: '83333333-3333-3333-3333-333333333333', category: 'project', rule_name: '展示分享', points: 2, sort_order: 30, is_active: true, is_common: true },
   { id: '83333333-3333-3333-3333-333333333334', category: 'project', rule_name: '动手实践', points: 1, sort_order: 40, is_active: true, is_common: false },
   { id: '83333333-3333-3333-3333-333333333335', category: 'project', rule_name: '作品之星', points: 3, sort_order: 50, is_active: true, is_common: true },

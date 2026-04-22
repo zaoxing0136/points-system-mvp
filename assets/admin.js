@@ -3,11 +3,14 @@ import {
   fetchAdminPointRules,
   fetchBadgeDefinitions,
   fetchBadgeLeaderboard,
+  fetchClassesDirectory,
   fetchLevelTiers,
+  fetchSubjectsDirectory,
   fetchTeacherAccountDirectory,
   upsertBadgeDefinitions,
   upsertLevelTiers,
   upsertPointRules,
+  upsertSubjects,
   resetTeacherAccountPassword,
   saveTeacherAccount
 } from './supabase-service.js';
@@ -19,6 +22,8 @@ import {
 } from './default-config.js';
 
 const CATEGORY_ORDER = ['classroom', 'homework', 'project', 'habits'];
+const TEACHER_ACCOUNT_PREVIEW_LIMIT = 6;
+const SUBJECT_PREVIEW_LIMIT = 5;
 
 function getCategoryRank(category) {
   const index = CATEGORY_ORDER.indexOf(category);
@@ -47,6 +52,49 @@ function sortBadgeDefinitions(rows) {
     }
     return String(left.name || '').localeCompare(String(right.name || ''), 'zh-CN');
   });
+}
+
+function sortSubjects(rows) {
+  return rows.slice().sort(function (left, right) {
+    if (String(left.status || 'active') !== String(right.status || 'active')) {
+      return String(left.status || 'active').localeCompare(String(right.status || 'active'), 'zh-CN');
+    }
+    return String(left.name || '').localeCompare(String(right.name || ''), 'zh-CN');
+  });
+}
+
+function normalizeSubjectRows(rows, usageStats = new Map()) {
+  return sortSubjects((rows || []).map(function (row) {
+    const usage = usageStats.get(row.id) || { totalClassCount: 0, activeClassCount: 0 };
+    return {
+      id: row.id,
+      name: String(row.name || '').trim(),
+      code: String(row.code || '').trim(),
+      status: row.status === 'inactive' ? 'inactive' : 'active',
+      created_at: row.created_at || null,
+      totalClassCount: Number(usage.totalClassCount || 0),
+      activeClassCount: Number(usage.activeClassCount || 0)
+    };
+  }));
+}
+
+function buildSubjectUsageStats(classes) {
+  return (classes || []).reduce(function (usageMap, classRow) {
+    const subjectId = classRow?.subject_id;
+    if (!subjectId) {
+      return usageMap;
+    }
+    const current = usageMap.get(subjectId) || {
+      totalClassCount: 0,
+      activeClassCount: 0
+    };
+    current.totalClassCount += 1;
+    if (String(classRow.status || '') !== 'archived') {
+      current.activeClassCount += 1;
+    }
+    usageMap.set(subjectId, current);
+    return usageMap;
+  }, new Map());
 }
 
 function normalizeLevelTiers(rows) {
@@ -112,7 +160,16 @@ function initAdminPage() {
     resetAllDataButton: document.getElementById('resetAllDataButton'),
     adminNotice: document.getElementById('adminNotice'),
     teacherAccountCount: document.getElementById('teacherAccountCount'),
+    subjectDefinitionCount: document.getElementById('subjectDefinitionCount'),
     badgeDefinitionCount: document.getElementById('badgeDefinitionCount'),
+    subjectForm: document.getElementById('subjectForm'),
+    subjectNameInput: document.getElementById('subjectNameInput'),
+    subjectStatusSelect: document.getElementById('subjectStatusSelect'),
+    subjectSaveButton: document.getElementById('subjectSaveButton'),
+    subjectResetButton: document.getElementById('subjectResetButton'),
+    subjectsSummary: document.getElementById('subjectsSummary'),
+    subjectsToggle: document.getElementById('subjectsToggle'),
+    subjectsTableBody: document.getElementById('subjectsTableBody'),
     teacherAccountForm: document.getElementById('teacherAccountForm'),
     accountUserIdInput: document.getElementById('accountUserIdInput'),
     teacherAccountFormTitle: document.getElementById('teacherAccountFormTitle'),
@@ -127,6 +184,8 @@ function initAdminPage() {
     accountActiveSelect: document.getElementById('accountActiveSelect'),
     teacherAccountSaveButton: document.getElementById('teacherAccountSaveButton'),
     teacherAccountResetButton: document.getElementById('teacherAccountResetButton'),
+    teacherAccountsSummary: document.getElementById('teacherAccountsSummary'),
+    teacherAccountsToggle: document.getElementById('teacherAccountsToggle'),
     teacherAccountsBody: document.getElementById('teacherAccountsBody')
   };
 
@@ -134,12 +193,16 @@ function initAdminPage() {
     levelTiers: normalizeLevelTiers([]),
     pointRules: normalizePointRules(DEFAULT_POINT_RULES),
     badges: normalizeBadgeDefinitions([]),
+    subjects: normalizeSubjectRows([]),
     badgeResults: [],
     teacherAccounts: [],
     isSaving: false,
     isLoading: false,
     isSavingAccount: false,
-    selectedAccountId: ''
+    isSavingSubject: false,
+    selectedAccountId: '',
+    showAllTeacherAccounts: false,
+    showAllSubjects: false
   };
 
   function getTeacherAccountButtonLabel() {
@@ -153,6 +216,44 @@ function initAdminPage() {
   function buildTeacherAccountEmail(loginName) {
     const normalized = normalizeLoginName(loginName);
     return normalized ? normalized + '@accounts.points-mvp.local' : '保存后自动生成';
+  }
+
+  function updatePreviewToggle(toggleElement, totalCount, limit, expanded) {
+    if (!toggleElement) {
+      return;
+    }
+    const hasMore = totalCount > limit;
+    toggleElement.hidden = !hasMore;
+    if (!hasMore) {
+      return;
+    }
+    toggleElement.textContent = expanded
+      ? `收起列表（仅看前 ${limit} 条）`
+      : `展开全部（共 ${totalCount} 条）`;
+  }
+
+  function formatLastLoginParts(timestamp) {
+    if (!timestamp) {
+      return {
+        title: '尚未登录',
+        detail: '还没有登录记录'
+      };
+    }
+
+    const formatted = new Date(timestamp).toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }).replace(',', '');
+    const [datePart, timePart = ''] = formatted.split(' ');
+    return {
+      title: datePart || formatted,
+      detail: timePart || '最近登录'
+    };
   }
 
   function syncTeacherAccountPreview() {
@@ -194,9 +295,21 @@ function initAdminPage() {
     elements.teacherAccountSaveButton.textContent = isBusy ? '保存中...' : getTeacherAccountButtonLabel();
   }
 
+  function setSubjectBusy(isBusy, buttonText) {
+    state.isSavingSubject = isBusy;
+    elements.subjectSaveButton.disabled = isBusy;
+    elements.subjectResetButton.disabled = isBusy;
+    elements.subjectSaveButton.textContent = buttonText || '新增课程';
+  }
+
   function renderOverview() {
     if (elements.teacherAccountCount) {
       elements.teacherAccountCount.textContent = String(state.teacherAccounts.length);
+    }
+    if (elements.subjectDefinitionCount) {
+      elements.subjectDefinitionCount.textContent = String(state.subjects.filter(function (subject) {
+        return subject.status !== 'inactive';
+      }).length);
     }
     if (elements.badgeDefinitionCount) {
       elements.badgeDefinitionCount.textContent = String(state.badges.length);
@@ -298,33 +411,119 @@ function initAdminPage() {
     }).join('');
   }
 
+  function renderSubjectsTable() {
+    if (!elements.subjectsTableBody) {
+      return;
+    }
+
+    if (!state.subjects.length) {
+      if (elements.subjectsSummary) {
+        elements.subjectsSummary.textContent = '当前还没有课程，请先在左侧新增一门课程。';
+      }
+      updatePreviewToggle(elements.subjectsToggle, 0, SUBJECT_PREVIEW_LIMIT, state.showAllSubjects);
+      elements.subjectsTableBody.innerHTML = '<tr><td colspan="4"><div class="empty-state">当前还没有课程，请先在左侧新增一门课程。</div></td></tr>';
+      return;
+    }
+
+    const totalCount = state.subjects.length;
+    const visibleSubjects = state.showAllSubjects
+      ? state.subjects
+      : state.subjects.slice(0, SUBJECT_PREVIEW_LIMIT);
+
+    if (elements.subjectsSummary) {
+      elements.subjectsSummary.textContent = state.showAllSubjects
+        ? `当前共 ${totalCount} 门课程，已展开全部。`
+        : `当前共 ${totalCount} 门课程，默认只展示前 ${Math.min(totalCount, SUBJECT_PREVIEW_LIMIT)} 门。`;
+    }
+    updatePreviewToggle(elements.subjectsToggle, totalCount, SUBJECT_PREVIEW_LIMIT, state.showAllSubjects);
+
+    elements.subjectsTableBody.innerHTML = visibleSubjects.map(function (subject) {
+      const usageSummary = subject.totalClassCount
+        ? {
+          primary: `已关联 ${subject.totalClassCount} 个班级`,
+          detail: `${subject.activeClassCount} 个进行中`
+        }
+        : {
+          primary: '暂未被班级使用',
+          detail: '可随时停用'
+        };
+      return `
+        <tr>
+          <td class="admin-subject-primary">
+            <input type="text" data-subject-name="${escapeHtml(subject.id)}" value="${escapeHtml(subject.name)}" />
+            <span class="admin-subject-meta">${escapeHtml(subject.code || '-')}</span>
+          </td>
+          <td class="admin-subject-usage-cell">
+            <div class="admin-subject-usage">
+              <strong>${escapeHtml(usageSummary.primary)}</strong>
+              <span>${escapeHtml(usageSummary.detail)}</span>
+            </div>
+          </td>
+          <td>
+            <select class="admin-subject-status-select" data-subject-status="${escapeHtml(subject.id)}">
+              <option value="active" ${subject.status === 'inactive' ? '' : 'selected'}>启用</option>
+              <option value="inactive" ${subject.status === 'inactive' ? 'selected' : ''}>停用</option>
+            </select>
+          </td>
+          <td>
+            <button class="ghost-button admin-subject-save-button" type="button" data-subject-save="${escapeHtml(subject.id)}">保存</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
   function renderTeacherAccounts() {
     const accounts = Array.isArray(state.teacherAccounts) ? state.teacherAccounts : [];
 
     if (!accounts.length) {
-      elements.teacherAccountsBody.innerHTML = '<tr><td colspan="6"><div class="empty-state">当前还没有开通老师账号，先用左侧表单创建第一位老师。</div></td></tr>';
+      if (elements.teacherAccountsSummary) {
+        elements.teacherAccountsSummary.textContent = '当前还没有开通老师账号。';
+      }
+      updatePreviewToggle(elements.teacherAccountsToggle, 0, TEACHER_ACCOUNT_PREVIEW_LIMIT, state.showAllTeacherAccounts);
+      elements.teacherAccountsBody.innerHTML = '<tr><td colspan="4"><div class="empty-state">当前还没有开通老师账号，先用左侧表单创建第一位老师。</div></td></tr>';
       return;
     }
 
-    elements.teacherAccountsBody.innerHTML = accounts.map(function (account) {
+    const totalCount = accounts.length;
+    const visibleAccounts = state.showAllTeacherAccounts
+      ? accounts
+      : accounts.slice(0, TEACHER_ACCOUNT_PREVIEW_LIMIT);
+
+    if (elements.teacherAccountsSummary) {
+      elements.teacherAccountsSummary.textContent = state.showAllTeacherAccounts
+        ? `已开通 ${totalCount} 个老师账号，当前显示全部。`
+        : `已开通 ${totalCount} 个老师账号，默认只展示前 ${Math.min(totalCount, TEACHER_ACCOUNT_PREVIEW_LIMIT)} 个。`;
+    }
+    updatePreviewToggle(elements.teacherAccountsToggle, totalCount, TEACHER_ACCOUNT_PREVIEW_LIMIT, state.showAllTeacherAccounts);
+
+    elements.teacherAccountsBody.innerHTML = visibleAccounts.map(function (account) {
       const teacherName = account.display_name || account.teacher?.display_name || account.teacher?.name || '未命名老师';
-      const lastLogin = account.last_sign_in_at ? new Date(account.last_sign_in_at).toLocaleString('zh-CN') : '尚未登录';
+      const lastLogin = formatLastLoginParts(account.last_sign_in_at);
       return `
         <tr>
           <td>
             <div class="admin-account-name">
               <strong>${escapeHtml(teacherName)}</strong>
-              <span>${escapeHtml(buildTeacherAccountEmail(account.login_name || ''))}</span>
+              <span>@${escapeHtml(account.login_name || '-')}</span>
             </div>
           </td>
-          <td>${escapeHtml(account.login_name || '-')}</td>
-          <td>${account.is_active ? '<span class="student-status-badge is-normal">启用</span>' : '<span class="student-status-badge is-merged">停用</span>'}</td>
-          <td>${account.must_change_password ? '<span class="student-risk-badge is-medium">需改密</span>' : '<span class="student-risk-badge is-none">已通过</span>'}</td>
-          <td>${escapeHtml(lastLogin)}</td>
+          <td>
+            <div class="admin-account-status-stack">
+              ${account.is_active ? '<span class="student-status-badge is-normal">启用</span>' : '<span class="student-status-badge is-merged">停用</span>'}
+              ${account.must_change_password ? '<span class="student-risk-badge is-medium">需改密</span>' : '<span class="student-risk-badge is-none">已通过</span>'}
+            </div>
+          </td>
+          <td>
+            <div class="admin-account-last-login">
+              <strong>${escapeHtml(lastLogin.title)}</strong>
+              <span>${escapeHtml(lastLogin.detail)}</span>
+            </div>
+          </td>
           <td>
             <div class="admin-account-actions">
               <button class="ghost-button" type="button" data-account-edit="${escapeHtml(account.id)}">编辑</button>
-              <button class="inline-button" type="button" data-account-reset="${escapeHtml(account.id)}">重置为 666666</button>
+              <button class="inline-button" type="button" data-account-reset="${escapeHtml(account.id)}">重置密码</button>
             </div>
           </td>
         </tr>
@@ -387,12 +586,59 @@ function initAdminPage() {
 
   function renderAll() {
     renderOverview();
+    renderSubjectsTable();
     renderLevelTable();
     renderPointRulesTable();
     renderBadgesTable();
     renderBadgeResults();
     renderTeacherAccounts();
     syncTeacherAccountPreview();
+  }
+
+  function resetSubjectForm() {
+    elements.subjectForm.reset();
+    elements.subjectStatusSelect.value = 'active';
+    elements.subjectNameInput.focus();
+  }
+
+  function normalizeSubjectName(value) {
+    return String(value || '').trim();
+  }
+
+  function buildSubjectCode(name) {
+    const base = normalizeSubjectName(name)
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .toUpperCase() || 'COURSE';
+    const existingCodes = new Set(state.subjects.map(function (subject) {
+      return String(subject.code || '').trim().toUpperCase();
+    }).filter(Boolean));
+
+    let nextCode = base;
+    let index = 1;
+    while (existingCodes.has(nextCode)) {
+      nextCode = `${base}_${index}`;
+      index += 1;
+    }
+    return nextCode;
+  }
+
+  function validateSubjectName(name, subjectId) {
+    if (!name) {
+      return '课程名称不能为空。';
+    }
+
+    const duplicate = state.subjects.find(function (subject) {
+      return subject.id !== subjectId && String(subject.name || '').trim() === name;
+    });
+
+    if (duplicate) {
+      return '课程名称已存在，请直接修改原有课程或换一个名字。';
+    }
+
+    return '';
   }
 
   function readLevelTiers() {
@@ -543,6 +789,21 @@ function initAdminPage() {
     renderBadgeResults();
   }
 
+  async function reloadSubjectsDirectory() {
+    const [rawSubjects, rawClasses] = await Promise.all([
+      fetchSubjectsDirectory().catch(function () { return null; }),
+      fetchClassesDirectory().catch(function () { return null; })
+    ]);
+
+    if (!Array.isArray(rawSubjects)) {
+      return;
+    }
+
+    state.subjects = normalizeSubjectRows(rawSubjects, buildSubjectUsageStats(rawClasses || []));
+    renderOverview();
+    renderSubjectsTable();
+  }
+
   async function loadConfig() {
     state.isLoading = true;
 
@@ -560,12 +821,16 @@ function initAdminPage() {
         rawLevelTiers,
         rawPointRules,
         rawBadgeDefinitions,
+        rawSubjects,
+        rawClasses,
         rawTeacherAccounts,
         rawBadgeResults
       ] = await Promise.all([
         fetchLevelTiers().catch(function () { return []; }),
         fetchAdminPointRules().catch(function () { return []; }),
         fetchBadgeDefinitions({ activeOnly: false }).catch(function () { return []; }),
+        fetchSubjectsDirectory().catch(function () { return []; }),
+        fetchClassesDirectory().catch(function () { return []; }),
         fetchTeacherAccountsWithRetry().catch(function () { return []; }),
         fetchBadgeLeaderboard().catch(function () { return []; })
       ]);
@@ -574,6 +839,7 @@ function initAdminPage() {
       state.levelTiers = normalizeLevelTiers(seeded.levelTiers);
       state.pointRules = normalizePointRules(seeded.pointRules);
       state.badges = normalizeBadgeDefinitions(seeded.badgeDefinitions);
+      state.subjects = normalizeSubjectRows(rawSubjects, buildSubjectUsageStats(rawClasses));
       state.teacherAccounts = Array.isArray(rawTeacherAccounts) ? rawTeacherAccounts : [];
       state.badgeResults = Array.isArray(rawBadgeResults) ? rawBadgeResults : [];
       renderAll();
@@ -741,9 +1007,81 @@ function initAdminPage() {
     }
   }
 
+  async function handleSubjectSave(event) {
+    event.preventDefault();
+    if (state.isSavingSubject) {
+      return;
+    }
+
+    const name = normalizeSubjectName(elements.subjectNameInput.value);
+    const validationError = validateSubjectName(name);
+    if (validationError) {
+      showNotice(validationError, 'error');
+      return;
+    }
+
+    try {
+      setSubjectBusy(true, '新增中...');
+      await upsertSubjects({
+        name,
+        code: buildSubjectCode(name),
+        status: elements.subjectStatusSelect.value === 'inactive' ? 'inactive' : 'active'
+      });
+      await reloadSubjectsDirectory();
+      resetSubjectForm();
+      showNotice(`课程已新增：${name}`, 'success');
+    } catch (error) {
+      showNotice(`新增课程失败：${error.message}`, 'error');
+    } finally {
+      setSubjectBusy(false, '新增课程');
+    }
+  }
+
+  async function handleSubjectsTableClick(event) {
+    const saveButton = event.target.closest('[data-subject-save]');
+    if (!saveButton || state.isSavingSubject) {
+      return;
+    }
+
+    const subjectId = saveButton.dataset.subjectSave;
+    const currentSubject = state.subjects.find(function (subject) {
+      return subject.id === subjectId;
+    });
+    if (!currentSubject) {
+      return;
+    }
+
+    const name = normalizeSubjectName(document.querySelector(`[data-subject-name="${subjectId}"]`)?.value);
+    const status = document.querySelector(`[data-subject-status="${subjectId}"]`)?.value === 'inactive' ? 'inactive' : 'active';
+    const validationError = validateSubjectName(name, subjectId);
+    if (validationError) {
+      showNotice(validationError, 'error');
+      return;
+    }
+
+    try {
+      setSubjectBusy(true, '保存中...');
+      await upsertSubjects({
+        id: currentSubject.id,
+        name,
+        code: currentSubject.code,
+        status
+      });
+      await reloadSubjectsDirectory();
+      showNotice(`课程已保存：${name}`, 'success');
+    } catch (error) {
+      showNotice(`保存课程失败：${error.message}`, 'error');
+    } finally {
+      setSubjectBusy(false, '新增课程');
+    }
+  }
+
   elements.saveConfigButton.addEventListener('click', handleSave);
   elements.resetConfigButton.addEventListener('click', handleResetDefaults);
   elements.resetAllDataButton.addEventListener('click', handleResetBadgeDefaults);
+  elements.subjectResetButton.addEventListener('click', resetSubjectForm);
+  elements.subjectForm.addEventListener('submit', handleSubjectSave);
+  elements.subjectsTableBody.addEventListener('click', handleSubjectsTableClick);
   elements.teacherAccountResetButton.addEventListener('click', resetTeacherAccountForm);
   elements.teacherAccountForm.addEventListener('submit', handleTeacherAccountSave);
   [
@@ -757,9 +1095,22 @@ function initAdminPage() {
     field.addEventListener('change', syncTeacherAccountPreview);
   });
   elements.teacherAccountsBody.addEventListener('click', handleAccountTableClick);
+  if (elements.teacherAccountsToggle) {
+    elements.teacherAccountsToggle.addEventListener('click', function () {
+      state.showAllTeacherAccounts = !state.showAllTeacherAccounts;
+      renderTeacherAccounts();
+    });
+  }
+  if (elements.subjectsToggle) {
+    elements.subjectsToggle.addEventListener('click', function () {
+      state.showAllSubjects = !state.showAllSubjects;
+      renderSubjectsTable();
+    });
+  }
 
   renderAll();
   resetTeacherAccountForm();
+  resetSubjectForm();
   loadConfig();
 }
 

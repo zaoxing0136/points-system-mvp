@@ -15,6 +15,8 @@
 7. `supabase/007_students_admin_write.sql`
 8. `supabase/008_point_ledger_seed_action.sql`
 9. `supabase/009_badges_real_chain.sql`
+10. `supabase/010_rollout_cleanup.sql`
+11. `supabase/011_subjects_admin_write.sql`
 
 ### 老环境增量升级
 

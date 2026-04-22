@@ -50,6 +50,10 @@
             <strong>20 项</strong>
           </div>
           <div class="metric-chip trial-metric-chip">
+            <span class="metric-label">课程目录</span>
+            <strong id="subjectDefinitionCount">0</strong>
+          </div>
+          <div class="metric-chip trial-metric-chip">
             <span class="metric-label">真实徽章规则</span>
             <strong id="badgeDefinitionCount">0</strong>
           </div>
@@ -143,18 +147,91 @@
               </div>
               <p class="section-tip">查看账号状态、首次登录状态和最后登录时间。</p>
             </div>
+            <div class="admin-table-tools">
+              <p id="teacherAccountsSummary" class="admin-table-summary">已开通 0 个老师账号。</p>
+              <button id="teacherAccountsToggle" class="ghost-button admin-table-toggle" type="button" hidden>展开全部</button>
+            </div>
             <table class="editable-table admin-account-table trial-table">
               <thead>
                 <tr>
-                  <th>老师名称</th>
-                  <th>账号名</th>
-                  <th>状态</th>
-                  <th>首次登录</th>
+                  <th>老师信息</th>
+                  <th>账号状态</th>
                   <th>最后登录</th>
                   <th>操作</th>
                 </tr>
               </thead>
               <tbody id="teacherAccountsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="surface-card admin-section trial-course-card">
+        <div class="section-head trial-account-head">
+          <div>
+            <p class="eyebrow">Course Catalog</p>
+            <h2>课程管理</h2>
+          </div>
+          <p class="section-tip">教务老师可以在这里新增课程、修改课程名称，或停用不再开设的课程。停用后，新建班级时不会再显示这门课。</p>
+        </div>
+
+        <div class="admin-subject-layout trial-subject-layout">
+          <form id="subjectForm" class="admin-account-form admin-account-form--minimal trial-account-form">
+            <div class="admin-account-form-head trial-account-form-head">
+              <div>
+                <p class="eyebrow">New Course</p>
+                <h3>新增课程</h3>
+                <p class="admin-account-copy">只需要填写课程名称。课程编码由系统自动生成，教务老师不用手动维护。</p>
+              </div>
+              <div class="admin-account-chip-row">
+                <span class="admin-account-chip">支持改名</span>
+                <span class="admin-account-chip">支持停用</span>
+                <span class="admin-account-chip">不停删历史课程</span>
+              </div>
+            </div>
+
+            <div class="admin-account-inline-grid trial-account-inline-grid trial-subject-inline-grid">
+              <label class="students-form-field">
+                <span>课程名称 *</span>
+                <input id="subjectNameInput" type="text" placeholder="例如：创意编程 / 乐高科学" required />
+              </label>
+              <label class="students-form-field">
+                <span>课程状态</span>
+                <select id="subjectStatusSelect">
+                  <option value="active" selected>启用</option>
+                  <option value="inactive">停用</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="teacher-dialog-actions">
+              <button id="subjectSaveButton" class="primary-button" type="submit">新增课程</button>
+              <button id="subjectResetButton" class="ghost-button" type="button">清空表单</button>
+            </div>
+          </form>
+
+          <div class="table-wrap admin-account-table-wrap trial-account-table-wrap">
+            <div class="admin-account-table-head">
+              <div>
+                <p class="eyebrow">Active Catalog</p>
+                <h3>现有课程</h3>
+              </div>
+              <p class="section-tip">已被班级使用过的课程建议直接停用，不要改成另一门完全不同的课。</p>
+            </div>
+            <div class="admin-table-tools">
+              <p id="subjectsSummary" class="admin-table-summary">当前共有 0 门课程。</p>
+              <button id="subjectsToggle" class="ghost-button admin-table-toggle" type="button" hidden>展开全部</button>
+            </div>
+            <table class="editable-table admin-account-table trial-table">
+              <thead>
+                <tr>
+                  <th>课程信息</th>
+                  <th>使用情况</th>
+                  <th>状态</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="subjectsTableBody"></tbody>
             </table>
           </div>
         </div>

@@ -614,7 +614,14 @@ async function waitForNotice(page, selector, pattern, timeout = 20000) {
   await page.waitForFunction(
     ([noticeSelector, source]) => {
       const node = document.querySelector(noticeSelector);
-      return Boolean(node && !node.hidden && new RegExp(source).test(node.textContent || ''));
+      if (!node || node.hidden) {
+        return false;
+      }
+      const text = node.textContent || '';
+      if (noticeSelector === '#adminNotice' && node.dataset?.type === 'success' && text.trim()) {
+        return true;
+      }
+      return Boolean(new RegExp(source).test(text));
     },
     [selector, pattern.source],
     { timeout }

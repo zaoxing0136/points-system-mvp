@@ -2,9 +2,12 @@ import { isSupabaseConfigured } from './supabase-client.js';
 import { mountSessionActions, requirePageAuth } from './auth.js';
 import {
   createStudents,
+  deleteStudent,
   fetchCampuses,
   fetchStudentDuplicateCandidates,
   fetchStudentsList,
+  fetchStudentUsageStats,
+  updateStudentStatus,
   updateStudent
 } from './supabase-service.js';
 import {
@@ -19,8 +22,9 @@ const CSV_FIELDS = ['legal_name', 'display_name', 'grade', 'parent_name', 'paren
 const STATUS_META = {
   normal: '正常',
   temporary: '临时',
-  pending_merge: '待合并',
-  merged: '已合并'
+  pending_merge: '已停用',
+  merged: '已合并',
+  inactive: '已停用'
 };
 
 function normalizeText(value) {
@@ -287,6 +291,8 @@ if (authContext) {
     studentDetailDialog: document.getElementById('studentDetailDialog'),
     closeStudentDetailButton: document.getElementById('closeStudentDetailButton'),
     editStudentFromDetailButton: document.getElementById('editStudentFromDetailButton'),
+    toggleStudentStatusButton: document.getElementById('toggleStudentStatusButton'),
+    deleteStudentButton: document.getElementById('deleteStudentButton'),
     studentDetailContent: document.getElementById('studentDetailContent'),
     createStudentDialog: document.getElementById('createStudentDialog'),
     createStudentForm: document.getElementById('createStudentForm'),
@@ -324,7 +330,8 @@ if (authContext) {
     manualDuplicateAssessment: null,
     manualDuplicateTimer: null,
     isLoadingStudents: false,
-    isSaving: false
+    isSaving: false,
+    actionLocks: new Set()
   };
 
   function openDialog(dialog) {
@@ -418,6 +425,12 @@ if (authContext) {
     }
 
     elements.studentsTableBody.innerHTML = state.students.map(function (student) {
+      const isBusy = state.actionLocks.has(student.id);
+      const canToggleStatus = student.status !== 'merged';
+      const toggleLabel = student.status === 'inactive' ? '恢复' : '停用';
+      const deleteLabel = isBusy ? '处理中...' : '删除';
+      const toggleDisabledAttr = isBusy || !canToggleStatus ? 'disabled' : '';
+      const deleteDisabledAttr = isBusy ? 'disabled' : '';
       return `
         <tr>
           <td>
@@ -439,6 +452,8 @@ if (authContext) {
             <div class="students-table-actions">
               <button class="ghost-button" type="button" data-edit-student="${escapeHtml(student.id)}">编辑</button>
               <button class="inline-button" type="button" data-view-student="${escapeHtml(student.id)}">查看</button>
+              ${canToggleStatus ? `<button class="ghost-button" type="button" data-toggle-student-status="${escapeHtml(student.id)}" ${toggleDisabledAttr}>${escapeHtml(toggleLabel)}</button>` : ''}
+              <button class="danger-button" type="button" data-delete-student="${escapeHtml(student.id)}" ${deleteDisabledAttr}>${escapeHtml(deleteLabel)}</button>
             </div>
           </td>
         </tr>
@@ -449,11 +464,24 @@ if (authContext) {
   function renderDetail(student) {
     if (!student) {
       elements.editStudentFromDetailButton.hidden = true;
+      elements.toggleStudentStatusButton.hidden = true;
+      elements.deleteStudentButton.hidden = true;
       elements.studentDetailContent.innerHTML = '<div class="empty-state">没有找到学生详情。</div>';
       return;
     }
 
     elements.editStudentFromDetailButton.hidden = false;
+    elements.toggleStudentStatusButton.hidden = student.status === 'merged';
+    elements.deleteStudentButton.hidden = false;
+    if (student.status === 'inactive') {
+      elements.toggleStudentStatusButton.textContent = '恢复学生';
+      elements.toggleStudentStatusButton.dataset.action = 'reactivate';
+    } else {
+      elements.toggleStudentStatusButton.textContent = '停用学生';
+      elements.toggleStudentStatusButton.dataset.action = 'deactivate';
+    }
+    elements.toggleStudentStatusButton.disabled = state.actionLocks.has(student.id);
+    elements.deleteStudentButton.disabled = state.actionLocks.has(student.id);
     elements.studentDetailContent.innerHTML = `
       <div class="students-detail-hero">
         ${createAvatarHtml(student, 'large')}
@@ -495,6 +523,22 @@ if (authContext) {
       <p>这里只做提醒，不会自动合并学生主档。</p>
       <ul>${messages}</ul>
     `;
+  }
+
+  function lockStudentAction(studentId) {
+    state.actionLocks.add(studentId);
+    renderStudentsTable();
+    if (state.selectedStudent?.id === studentId && elements.studentDetailDialog.open) {
+      renderDetail(state.selectedStudent);
+    }
+  }
+
+  function unlockStudentAction(studentId) {
+    state.actionLocks.delete(studentId);
+    renderStudentsTable();
+    if (state.selectedStudent?.id === studentId && elements.studentDetailDialog.open) {
+      renderDetail(state.selectedStudent);
+    }
   }
 
   function getManualDraft() {
@@ -752,6 +796,77 @@ if (authContext) {
     }
   }
 
+  async function handleToggleStudentStatus(studentId) {
+    const student = state.students.find(function (item) {
+      return item.id === studentId;
+    }) || null;
+    if (!student) {
+      showNotice('未找到学生主档。', 'error');
+      return;
+    }
+
+    const isInactive = student.status === 'inactive';
+    const nextStatus = isInactive ? 'normal' : 'inactive';
+    const confirmed = window.confirm(isInactive
+      ? `确认恢复学生“${getStudentDisplayName(student)}”吗？恢复后老师端又能搜索到这个学生。`
+      : `确认停用学生“${getStudentDisplayName(student)}”吗？停用后老师端将无法搜索和加入这个学生。`);
+    if (!confirmed) {
+      return;
+    }
+
+    lockStudentAction(studentId);
+    try {
+      const saved = await updateStudentStatus(studentId, nextStatus);
+      state.selectedStudent = saved;
+      await loadStudents();
+      showNotice(`学生已${isInactive ? '恢复' : '停用'}：${getStudentDisplayName(saved)}。`, 'success');
+    } catch (error) {
+      showNotice(`${isInactive ? '恢复' : '停用'}学生失败：${error.message}`, 'error');
+    } finally {
+      unlockStudentAction(studentId);
+    }
+  }
+
+  async function handleDeleteStudent(studentId) {
+    const student = state.students.find(function (item) {
+      return item.id === studentId;
+    }) || null;
+    if (!student) {
+      showNotice('未找到学生主档。', 'error');
+      return;
+    }
+
+    lockStudentAction(studentId);
+    try {
+      const stats = await fetchStudentUsageStats(studentId);
+      if (!stats.canHardDelete) {
+        throw new Error(`学生已有历史数据（${[
+          stats.classRelationCount ? `${stats.classRelationCount} 条班级关系` : '',
+          stats.ledgerCount ? `${stats.ledgerCount} 条积分流水` : '',
+          stats.badgeEventCount ? `${stats.badgeEventCount} 条徽章行为记录` : '',
+          stats.badgeUnlockCount ? `${stats.badgeUnlockCount} 条徽章解锁记录` : ''
+        ].filter(Boolean).join('、')}），只能停用，不能直接删除。`);
+      }
+
+      const confirmed = window.confirm(`确认删除学生“${getStudentDisplayName(student)}”吗？这个账号没有历史数据，删除后不可恢复。`);
+      if (!confirmed) {
+        return;
+      }
+
+      await deleteStudent(studentId);
+      if (state.selectedStudent?.id === studentId) {
+        state.selectedStudent = null;
+        closeDialog(elements.studentDetailDialog);
+      }
+      await loadStudents();
+      showNotice(`学生已删除：${getStudentDisplayName(student)}。`, 'success');
+    } catch (error) {
+      showNotice(`删除学生失败：${error.message}`, 'error');
+    } finally {
+      unlockStudentAction(studentId);
+    }
+  }
+
   async function handleImportFileChange(event) {
     const file = event.target.files?.[0];
     if (!file) {
@@ -885,6 +1000,18 @@ if (authContext) {
       return;
     }
 
+    const toggleButton = event.target.closest('[data-toggle-student-status]');
+    if (toggleButton) {
+      handleToggleStudentStatus(toggleButton.dataset.toggleStudentStatus);
+      return;
+    }
+
+    const deleteButton = event.target.closest('[data-delete-student]');
+    if (deleteButton) {
+      handleDeleteStudent(deleteButton.dataset.deleteStudent);
+      return;
+    }
+
     const button = event.target.closest('[data-view-student]');
     if (!button) {
       return;
@@ -949,6 +1076,20 @@ if (authContext) {
     window.requestAnimationFrame(function () {
       openEditStudentDialog(studentId);
     });
+  });
+
+  elements.toggleStudentStatusButton?.addEventListener('click', function () {
+    if (!state.selectedStudent) {
+      return;
+    }
+    handleToggleStudentStatus(state.selectedStudent.id);
+  });
+
+  elements.deleteStudentButton?.addEventListener('click', function () {
+    if (!state.selectedStudent) {
+      return;
+    }
+    handleDeleteStudent(state.selectedStudent.id);
   });
 
   elements.downloadTemplateButton.addEventListener('click', function () {
